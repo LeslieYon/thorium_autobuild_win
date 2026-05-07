@@ -1,0 +1,4 @@
+[submodule "ungoogled-chromium-windows"]
+	path = ungoogled-chromium-windows
+	url = https://github.com/ungoogled-software/ungoogled-chromium-windows.git
+	branch = master

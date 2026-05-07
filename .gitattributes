@@ -1,0 +1,22 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Patch files should preserve line endings
+*.patch text
+
+# Shell scripts should use LF
+*.sh text eol=lf
+
+# Python files
+*.py text
+
+# GN files
+*.gn text
+*.gni text
+
+# Markdown
+*.md text
+
+# Batch files should use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf

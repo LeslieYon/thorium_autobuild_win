@@ -1,0 +1,47 @@
+# =========== Build output ===========
+/build/
+/out/
+*.exe
+*.zip
+*.7z
+*.pak
+
+# =========== Python ===========
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.coverage
+.pytest_cache/
+
+# =========== Environment ===========
+.env
+!.env.example
+
+# =========== AI ===========
+AGENTS.md
+
+# =========== IDE ===========
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.orig
+*.bak
+
+# =========== OS ===========
+.DS_Store
+.tm_properties
+Thumbs.db
+Desktop.ini
+
+# =========== Node (GitHub Actions stage) ===========
+node_modules/
+
+# =========== Chromium build tree (if cloned in-tree) ===========
+chromium/
+src/
+
+# =========== Submodule working copies (managed by .gitmodules) ===========
+# ungoogled-chromium is a submodule; its .git is outside our repo

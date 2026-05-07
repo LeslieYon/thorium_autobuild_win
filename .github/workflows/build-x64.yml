@@ -1,0 +1,58 @@
+name: build-x64
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-x64-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Build preparation (shared across all SIMD variants)
+  prepare:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Cache source
+        uses: actions/cache@v4
+        with:
+          path: C:\thorium-autobuild-win\build\src
+          key: thorium-src-${{ github.sha }}
+
+  # Build all 4 SIMD variants in parallel
+  build-sse3:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      simd: sse3
+    secrets: inherit
+
+  build-sse4:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      simd: sse4
+    secrets: inherit
+
+  build-avx:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      simd: avx
+    secrets: inherit
+
+  build-avx2:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      simd: avx2
+    secrets: inherit

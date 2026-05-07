@@ -1,0 +1,61 @@
+name: build-x86
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-x86-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Cache source
+        uses: actions/cache@v4
+        with:
+          path: C:\thorium-autobuild-win\build\src
+          key: thorium-src-x86-${{ github.sha }}
+
+  # Build SIMD variants for x86 (SSE3/SSE4 are most relevant for 32-bit)
+  build-sse3:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      x86: true
+      simd: sse3
+    secrets: inherit
+
+  build-sse4:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      x86: true
+      simd: sse4
+    secrets: inherit
+
+  build-avx:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      x86: true
+      simd: avx
+    secrets: inherit
+
+  build-avx2:
+    needs: prepare
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      x86: true
+      simd: avx2
+    secrets: inherit

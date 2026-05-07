@@ -1,0 +1,27 @@
+name: 'Stage Thorium Build'
+description: 'Run a build stage for Thorium'
+inputs:
+  finished:
+    description: 'If a previous stage already finished the build, the stage will set all output variables to the input ones and exit'
+    required: true
+  from_artifact:
+    description: 'If a previous stage already uploaded build artifacts, the stage will resume building'
+    required: true
+  x86:
+    description: 'Build x86 binary'
+    required: false
+    default: false
+  arm:
+    description: 'Build arm64 binary'
+    required: false
+    default: false
+  simd:
+    description: 'SIMD variant to build (sse3, sse4, avx, avx2)'
+    required: false
+    default: 'avx2'
+outputs:
+  finished:
+    description: 'Whether the build is complete'
+runs:
+  using: 'node16'
+  main: 'index.js'

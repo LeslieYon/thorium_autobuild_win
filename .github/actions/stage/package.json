@@ -1,0 +1,9 @@
+{
+  "name": "thorium-stage",
+  "version": "1.0.0",
+  "description": "Thorium build stage action",
+  "main": "index.js",
+  "dependencies": {
+    "@actions/core": "^1.10.0"
+  }
+}
