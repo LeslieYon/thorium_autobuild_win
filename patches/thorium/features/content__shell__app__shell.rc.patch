@@ -1,0 +1,12 @@
+--- a/content/shell/app/shell.rc
++++ b/content/shell/app/shell.rc
+@@ -43,7 +43,8 @@
+ 
+ // Icon with lowest ID value placed first to ensure application icon
+ // remains consistent on all systems.
+-IDR_MAINFRAME ICON "content_shell.ico"
++// IDI_THORIUM_SHELL ICON "thorium_shell.ico"
++IDR_MAINFRAME ICON "thorium_shell.ico"
+ 
+ #ifdef APSTUDIO_INVOKED
+ /////////////////////////////////////////////////////////////////////////////

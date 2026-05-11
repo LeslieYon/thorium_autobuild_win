@@ -1,0 +1,18 @@
+--- a/sandbox/linux/BUILD.gn
++++ b/sandbox/linux/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -295,6 +295,9 @@
+       "suid/process_util_linux.c",
+       "suid/sandbox.c",
+     ]
++
++    cflags = [ "-fPIE", ]
++    ldflags = [ "-pie", ]
+   }
+ }
+ 

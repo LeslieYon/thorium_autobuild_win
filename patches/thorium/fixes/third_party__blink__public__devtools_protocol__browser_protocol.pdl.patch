@@ -1,0 +1,10 @@
+--- a/third_party/blink/public/devtools_protocol/browser_protocol.pdl
++++ b/third_party/blink/public/devtools_protocol/browser_protocol.pdl
+@@ -4856,6 +4856,7 @@
+   experimental type DisabledImageType extends string
+     enum
+       avif
++      jxl
+       webp
+ 
+   experimental command setDisabledImageTypes

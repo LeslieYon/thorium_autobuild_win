@@ -1,0 +1,36 @@
+--- a/content/test/BUILD.gn
++++ b/content/test/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -2277,8 +2277,8 @@
+       "../renderer/render_view_browsertest_mac.mm",
+     ]
+     deps += [ "//third_party/ocmock" ]
+-    data_deps += [ "//content/shell:content_shell" ]
+-    data += [ "$root_out_dir/Content Shell.app/" ]
++    data_deps += [ "//content/shell:thorium_shell" ]
++    data += [ "$root_out_dir/Thorium Shell.app/" ]
+     weak_frameworks = [ "ScreenCaptureKit.framework" ]  # macOS 12.3
+   }
+ 
+@@ -2325,7 +2325,7 @@
+       "//mojo/public/cpp/platform",
+       "//mojo/public/mojom/base",
+     ]
+-    data_deps += [ "//content/shell:content_shell" ]
++    data_deps += [ "//content/shell:thorium_shell" ]
+     if (use_ozone) {
+       deps += [ "//ui/ozone" ]
+     }
+@@ -2883,7 +2883,6 @@
+     "../browser/tracing/tracing_scenario_unittest.cc",
+     "../browser/usb/web_usb_service_impl_unittest.cc",
+     "../browser/web_contents/aura/gesture_nav_simple_unittest.cc",
+-    "../browser/web_contents/file_chooser_impl_unittest.cc",
+     "../browser/web_contents/web_contents_delegate_unittest.cc",
+     "../browser/web_contents/web_contents_impl_unittest.cc",
+     "../browser/web_contents/web_contents_user_data_unittest.cc",

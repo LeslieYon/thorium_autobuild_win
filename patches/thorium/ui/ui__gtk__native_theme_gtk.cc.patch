@@ -1,0 +1,37 @@
+--- a/ui/gtk/native_theme_gtk.cc
++++ b/ui/gtk/native_theme_gtk.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2016 The Chromium Authors
++// Copyright 2026 The Chromium Authors, Alex313031, qcasey and icepie
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -6,6 +6,7 @@
+ 
+ #include <algorithm>
+ 
++#include "base/command_line.h"
+ #include "base/no_destructor.h"
+ #include "base/strings/strcat.h"
+ #include "cc/paint/paint_canvas.h"
+@@ -173,6 +174,20 @@
+   SetPreferredContrast(
+       high_contrast ? ui::NativeThemeBase::PreferredContrast::kMore
+                     : ui::NativeThemeBase::PreferredContrast::kNoPreference);
++
++  static const bool auto_dark_mode =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("auto-dark-mode");
++  if (auto_dark_mode) {
++    // Brute force NativeUI to update
++    ui::NativeTheme::GetInstanceForNativeUi()->set_use_dark_colors(color_utils::IsDark(window_bg_color));
++    ui::NativeTheme::GetInstanceForNativeUi()->set_preferred_color_scheme(CalculatePreferredColorScheme());
++    ui::NativeTheme::GetInstanceForNativeUi()->NotifyOnNativeThemeUpdated();
++
++    // Brute force Web Contents to update
++    ui::NativeTheme::GetInstanceForWeb()->set_use_dark_colors(color_utils::IsDark(window_bg_color));
++    ui::NativeTheme::GetInstanceForWeb()->set_preferred_color_scheme(CalculatePreferredColorScheme());
++    ui::NativeTheme::GetInstanceForWeb()->NotifyOnNativeThemeUpdated();
++  }
+ 
+   NotifyOnNativeThemeUpdated();
+ }

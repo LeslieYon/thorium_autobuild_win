@@ -1,0 +1,51 @@
+--- a/chrome/app/app_management_strings.grdp
++++ b/chrome/app/app_management_strings.grdp
+@@ -67,10 +67,10 @@
+     Opening <ph name="BEGIN_LINK">&lt;a href="#"&gt;</ph>supported links<ph name="END_LINK">&lt;/a&gt;</ph>
+   </message>
+   <message name="IDS_APP_MANAGEMENT_INTENT_SHARING_APP_OPEN" desc="Label for the intent sharing option to open in a specified app.">
+-    Open in <ph name="APP_NAME">$1<ex>Chrome browser</ex></ph>
++    Open in <ph name="APP_NAME">$1<ex>Thorium browser</ex></ph>
+   </message>
+   <message name="IDS_APP_MANAGEMENT_INTENT_SHARING_BROWSER_OPEN" desc="Label for the intent sharing option to open in the browser.">
+-    Open in Chrome browser
++    Open in Thorium browser
+   </message>
+   <message name="IDS_APP_MANAGEMENT_INTENT_SHARING_TAB_EXPLANATION" desc="Label for the intent sharing description for when the app is set to open in tab mode.">
+     <ph name="APP_NAME">$1<ex>Gmail</ex></ph> is set to open in a new browser tab, supported links will also open in the browser. <ph name="BEGIN_LINK_LEARN_MORE">&lt;a href="https://support.google.com/chromebook?p=app_intent" target="_blank"&gt;</ph>Learn more<ph name="END_LINK_LEARN_MORE">&lt;/a&gt;</ph>
+@@ -117,7 +117,7 @@
+   <message name="IDS_APP_MANAGEMENT_APP_DETAILS_TITLE" desc="Title for App Details Section">
+     App details
+   </message>
+-  <message name="IDS_APP_MANAGEMENT_APP_DETAILS_TOOLTIP_WEB_A11Y" desc="Text to be read out by ChromeVox, when highlighting an info icon for Web Apps downloaded from the Chrome browser, stating the source URL of the app">
++  <message name="IDS_APP_MANAGEMENT_APP_DETAILS_TOOLTIP_WEB_A11Y" desc="Text to be read out by ThoriumVox, when highlighting an info icon for Web Apps downloaded from the Thorium browser, stating the source URL of the app">
+     From <ph name="APP_URL">$1<ex>https://google.com</ex></ph>
+   </message>
+   <message name="IDS_APP_MANAGEMENT_APP_DETAILS_INSTALL_SOURCE_WEB_STORE" desc="Text for Chrome Web Store installation source">
+@@ -126,14 +126,14 @@
+   <message name="IDS_APP_MANAGEMENT_APP_DETAILS_INSTALL_SOURCE_PLAY_STORE" desc="Text for Google Play Store installation source">
+     Google Play Store
+   </message>
+-  <message name="IDS_APP_MANAGEMENT_APP_DETAILS_INSTALL_SOURCE_BROWSER" desc="Text for Chrome browser installation source for Web App">
+-    Web App installed from Chrome browser
++  <message name="IDS_APP_MANAGEMENT_APP_DETAILS_INSTALL_SOURCE_BROWSER" desc="Text for Thorium browser installation source for Web App">
++    Web App installed from Thorium browser
+   </message>
+   <message name="IDS_APP_MANAGEMENT_APP_DETAILS_TYPE_AND_SOURCE_COMBINED" desc="Full text for installation source and app type line">
+     <ph name="APP_TYPE">$1<ex>Web App</ex></ph> installed from <ph name="BEGIN_LINK">&lt;a href="#"&gt;</ph><ph name="INSTALL_SOURCE">$2<ex>Google Play Store</ex></ph><ph name="END_LINK">&lt;/a&gt;</ph>
+   </message>
+   <message name="IDS_APP_MANAGEMENT_APP_DETAILS_TYPE_AND_SOURCE_PREINSTALLED_APP" desc="Explanation text for the installation source of an app, describing the type of the app, and that it came automatically installed with the device (preinstalled).">
+-    <ph name="APP_TYPE">$1<ex>ChromeOS System App</ex></ph> preinstalled on your <ph name="DEVICE_TYPE">$2<ex>Chromebook</ex></ph>
++    <ph name="APP_TYPE">$1<ex>ThoriumOS System App</ex></ph> preinstalled on your <ph name="DEVICE_TYPE">$2<ex>Thoriumbook</ex></ph>
+   </message>
+   <message name="IDS_APP_MANAGEMENT_APP_DETAILS_VERSION" desc="Text for application version">
+     Version: <ph name="APP_VERSION">$1<ex>17.2</ex></ph>
+@@ -226,7 +226,7 @@
+     </message>
+   </if>
+   <if expr="is_chromeos">
+-    <message name="IDS_APP_MANAGEMENT_FILE_HANDLING_SET_DEFAULTS_LINK" desc="Further explanation of the File Handling API, including text describing the purpose of the toggle (referencing the ChromeOS Files app) and a link to a learn more link for default filetype associations.">
++    <message name="IDS_APP_MANAGEMENT_FILE_HANDLING_SET_DEFAULTS_LINK" desc="Further explanation of the File Handling API, including text describing the purpose of the toggle (referencing the ThoriumOS Files app) and a link to a learn more link for default filetype associations.">
+       You can open and edit supported files with this app from the Files app or other apps. To control which files open this app by default, <ph name="BEGIN_LINK">&lt;a href="#"&gt;</ph>learn how to set default apps on your device<ph name="END_LINK">&lt;/a&gt;</ph>.
+     </message>
+   </if>

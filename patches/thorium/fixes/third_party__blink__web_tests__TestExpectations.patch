@@ -1,0 +1,15 @@
+--- a/third_party/blink/web_tests/TestExpectations
++++ b/third_party/blink/web_tests/TestExpectations
+@@ -5720,6 +5720,12 @@
+ # Started failing after rolling new version of check-layout-th.js
+ css3/flexbox/perpendicular-writing-modes-inside-flex-item.html [ Failure ]
+ 
++# JXL tests fail due to rounding error differences.
++# TODO(https://crbug.com/1274220): Rebaseline all images once new tone mapping
++# lands.
++crbug.com/1210658 virtual/jxl-enabled/images/jxl/jxl-images.html [ Crash Failure Pass Timeout ]
++crbug.com/1358616 virtual/jxl-enabled/images/jxl/progressive.html [ Crash Failure Pass Timeout ]
++
+ # Sheriff 2021-11-15
+ crbug.com/40205355 http/tests/devtools/sources/debugger-ui/debugger-inline-values.js [ Failure Pass Timeout ]
+ 

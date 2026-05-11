@@ -1,0 +1,20 @@
+--- a/content/common/gpu_pre_sandbox_hook_linux.cc
++++ b/content/common/gpu_pre_sandbox_hook_linux.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2017 The Chromium Authors
++// Copyright 2026 The Chromium Authors, RobRich999, and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -262,6 +262,11 @@
+       "/usr/lib64/dri/r300_dri.so",
+       "/usr/lib64/dri/r600_dri.so",
+       "/usr/lib64/dri/radeonsi_dri.so",
++      // GPU Log Warnings Workaround
++      "/usr/share/vulkan/icd.d",
++      "/usr/share/vulkan/icd.d/radeon_icd.x86_64.json"
++      "/etc/vulkan/icd.d",
++      "/etc/vulkan/icd.d/radeon_icd.x86_64.json"
+       // Allow libglvnd files and libs.
+       "/usr/share/glvnd/egl_vendor.d",
+       "/usr/share/glvnd/egl_vendor.d/50_mesa.json",

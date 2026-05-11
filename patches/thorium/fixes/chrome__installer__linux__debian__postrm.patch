@@ -1,0 +1,16 @@
+--- a/chrome/installer/linux/debian/postrm
++++ b/chrome/installer/linux/debian/postrm
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ #
+-# Copyright 2009 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -32,5 +32,4 @@
+   rm "$DEFAULTS_FILE" || exit 1
+ fi
+ # Remove any Google repository added by the package.
+-clean_sources_lists
+ uninstall_key

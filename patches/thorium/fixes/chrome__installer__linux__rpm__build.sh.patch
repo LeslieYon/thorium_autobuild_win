@@ -1,0 +1,179 @@
+--- a/chrome/installer/linux/rpm/build.sh
++++ b/chrome/installer/linux/rpm/build.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ #
+-# Copyright 2012 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -15,13 +15,13 @@
+   # Different channels need to install to different locations so they
+   # don't conflict with each other.
+   local PACKAGE_ORIG="${PACKAGE}"
+-  local PACKAGE_FILENAME="${PACKAGE}-${CHANNEL}"
++  local PACKAGE_FILENAME="${PACKAGE}"
+   if [ "$CHANNEL" != "stable" ]; then
+-    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
+-    local PACKAGE="${PACKAGE}-${CHANNEL}"
+-    local MENUNAME="${MENUNAME} (${CHANNEL})"
+-  fi
+-  process_template "${SCRIPTDIR}/chrome.spec.template" "${SPEC}"
++    local INSTALLDIR="${INSTALLDIR}"
++    local PACKAGE="${PACKAGE}"
++    local MENUNAME="${MENUNAME}"
++  fi
++  process_template "${SCRIPTDIR}/thorium.spec.template" "${SPEC}"
+ }
+ 
+ # Setup the installation directory hierarchy in the package staging area.
+@@ -38,12 +38,12 @@
+   local PACKAGE_ORIG="${PACKAGE}"
+   if [ "$CHANNEL" != "stable" ]; then
+     # Avoid file collisions between channels.
+-    local PACKAGE="${PACKAGE}-${CHANNEL}"
+-    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
++    local PACKAGE="${PACKAGE}"
++    local INSTALLDIR="${INSTALLDIR}"
+ 
+     # Make it possible to distinguish between menu entries
+     # for different channels.
+-    local MENUNAME="${MENUNAME} (${CHANNEL})"
++    local MENUNAME="${MENUNAME}"
+   fi
+   prep_staging_rpm
+   SHLIB_PERMS=755
+@@ -71,13 +71,14 @@
+       sed 's/^ *//' | LANG=C sort | uniq > "${EXPECTED_DEPENDS}"
+   rpm -qpR "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm" | LANG=C sort | uniq \
+       > "${ACTUAL_DEPENDS}"
++  cp -fv ${EXPECTED_DEPENDS} ${OUTPUTDIR}
+   BAD_DIFF=0
+   diff -u "${EXPECTED_DEPENDS}" "${ACTUAL_DEPENDS}" || BAD_DIFF=1
+   if [ $BAD_DIFF -ne 0 ] && [ -z "${IGNORE_DEPS_CHANGES:-}" ]; then
+     echo
+-    echo "ERROR: bad rpm dependencies!"
++    echo "NOTICE: bad rpm dependencies!"
+     echo
+-    exit $BAD_DIFF
++    echo $BAD_DIFF
+   fi
+ }
+ 
+@@ -109,7 +110,7 @@
+     --define "__os_install_post  %{nil}" \
+     --define "_build_id_links none" \
+     "${SPEC}"
+-  PKGNAME="${PACKAGE}-${CHANNEL}-${VERSION}-${PACKAGE_RELEASE}"
++  PKGNAME="${PACKAGE}-${VERSION}-${PACKAGE_RELEASE}"
+   mv "$RPMBUILD_DIR/RPMS/$ARCHITECTURE/${PKGNAME}.${ARCHITECTURE}.rpm" \
+      "${OUTPUTDIR}"
+   # Make sure the package is world-readable, otherwise it causes problems when
+@@ -117,6 +118,9 @@
+   chmod a+r "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm"
+ 
+   verify_package "$DEPENDS"
++  
++  # Rename package to match Thorium naming scheme
++  mv "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm" "${OUTPUTDIR}/${PACKAGE}_${VERSION}${NAME_SUFFIX}.rpm"
+ }
+ 
+ # Remove temporary files and unwanted packaging output.
+@@ -138,32 +142,10 @@
+   echo "-t platform target platform"
+ }
+ 
+-# Check that the channel name is one of the allowable ones.
+-verify_channel() {
+-  case $CHANNEL in
+-    stable )
+-      CHANNEL=stable
+-      ;;
+-    unstable|dev|alpha )
+-      CHANNEL=unstable
+-      ;;
+-    testing|beta )
+-      CHANNEL=beta
+-      ;;
+-    canary )
+-      CHANNEL=canary
+-      ;;
+-    * )
+-      echo
+-      echo "ERROR: '$CHANNEL' is not a valid channel type."
+-      echo
+-      exit 1
+-      ;;
+-  esac
+-}
++CHANNEL=stable
+ 
+ process_opts() {
+-  while getopts ":a:b:c:d:fho:t:" OPTNAME
++  while getopts ":a:b:c:d:fhn:o:t:" OPTNAME
+   do
+     case $OPTNAME in
+       a )
+@@ -171,7 +153,6 @@
+         ;;
+       c )
+         CHANNEL="$OPTARG"
+-        verify_channel
+         ;;
+       d )
+         BRANDING="$OPTARG"
+@@ -182,6 +163,9 @@
+       h )
+         usage
+         exit 0
++        ;;
++      n )
++        NAME_SUFFIX="$OPTARG"
+         ;;
+       o )
+         OUTPUTDIR=$(readlink -f "${OPTARG}")
+@@ -210,18 +194,19 @@
+ 
+ SCRIPTDIR=$(readlink -f "$(dirname "$0")")
+ OUTPUTDIR="${PWD}"
++NAME_SUFFIX=""
+ 
+ # call cleanup() on exit
+ trap cleanup 0
+ process_opts "$@"
+ export ARCHITECTURE="${ARCHITECTURE}"
+-IS_OFFICIAL_BUILD=${IS_OFFICIAL_BUILD:=0}
+-
+-STAGEDIR="${OUTPUTDIR}/rpm-staging-${CHANNEL}"
++IS_OFFICIAL_BUILD=1
++
++STAGEDIR="${OUTPUTDIR}/rpm-staging"
+ mkdir -p "${STAGEDIR}"
+-TMPFILEDIR="${OUTPUTDIR}/rpm-tmp-${CHANNEL}"
++TMPFILEDIR="${OUTPUTDIR}/rpm-tmp"
+ mkdir -p "${TMPFILEDIR}"
+-RPMBUILD_DIR="${OUTPUTDIR}/rpm-build-${CHANNEL}"
++RPMBUILD_DIR="${OUTPUTDIR}/rpm-build"
+ mkdir -p "${RPMBUILD_DIR}"
+ SPEC="${TMPFILEDIR}/chrome.spec"
+ 
+@@ -239,13 +224,14 @@
+ else
+   RDN_DESKTOP="${RDN}"
+ fi
+-eval $(sed -e "s/^\([^=]\+\)=\(.*\)$/\1='\2'/" \
++eval $(sed -e "s/^\([^=]\+\)=\(.*\)$/export \1='\2'/" \
+   "${OUTPUTDIR}/installer/theme/BRANDING")
+ 
+-REPOCONFIG="https://dl.google.com/linux/${PACKAGE#google-}/rpm/stable"
++# Unset repoconfig for Thorium
++REPOCONFIG=
+ REPOCONFIGREGEX=
+-verify_channel
+-USR_BIN_SYMLINK_NAME="${PACKAGE}-${CHANNEL}"
++
++USR_BIN_SYMLINK_NAME="thorium-browser"
+ 
+ stage_install_rpm
+ do_package

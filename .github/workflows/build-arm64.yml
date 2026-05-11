@@ -13,8 +13,32 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  prepare:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+      - name: Restore source cache
+        id: source-cache
+        uses: actions/cache@v4
+        with:
+          path: C:\thorium-autobuild-win\build\src
+          key: thorium-src-arm64-${{ github.sha }}
+      - name: Prepare Chromium source
+        if: ${{ steps.source-cache.outputs.cache-hit != 'true' }}
+        shell: pwsh
+        run: python build.py --ci --prepare-only --arm
+        working-directory: C:\thorium-autobuild-win
+
   build:
+    needs: prepare
     uses: ./.github/workflows/reusable-build.yml
     with:
       arm: true
+      simd: sse3
+      cache-key: thorium-src-arm64-${{ github.sha }}
+      artifact-name: thorium-arm64
     secrets: inherit

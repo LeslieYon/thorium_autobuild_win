@@ -1,0 +1,19 @@
+--- a/third_party/blink/web_tests/TestLists/highdpi
++++ b/third_party/blink/web_tests/TestLists/highdpi
+@@ -1327,6 +1327,7 @@
+ images/directly-composited-image-orientation.html
+ images/drag-image.html
+ images/jpeg-with-color-profile.html
++images/jxl/jxl-images.html
+ images/png-suite/test.html
+ images/png-with-color-profile.html
+ images/yuv-decode-eligible/color-profile-border-radius.html
+@@ -1556,7 +1557,7 @@
+ virtual/forced-high-contrast-colors/fast/css/forced-colors-mode/forced-colors-mode-04.html
+ virtual/forced-high-contrast-colors/fast/css/forced-colors-mode/forced-colors-mode-32.html
+ virtual/forced-high-contrast-colors/html/details_summary/color-scheme-validation/details-with-summary-open.html
+-
++virtual/jxl-enabled/images/jxl/jxl-images.html
+ virtual/off-main-thread-css-paint/http/tests/csspaint/border-color.html
+ virtual/off-main-thread-css-paint/http/tests/csspaint/entire-canvas-visible-zoom.html
+ virtual/off-main-thread-css-paint/http/tests/csspaint/geometry-background-image-zoom.html

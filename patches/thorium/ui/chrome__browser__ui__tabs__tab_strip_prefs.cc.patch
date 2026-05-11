@@ -1,0 +1,30 @@
+--- a/chrome/browser/ui/tabs/tab_strip_prefs.cc
++++ b/chrome/browser/ui/tabs/tab_strip_prefs.cc
+@@ -1,9 +1,10 @@
+-// Copyright 2024 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "chrome/browser/ui/tabs/tab_strip_prefs.h"
+ 
++#include "base/command_line.h"
+ #include "chrome/browser/profiles/profile.h"
+ #include "chrome/browser/ui/tabs/features.h"
+ #include "chrome/browser/ui/ui_features.h"
+@@ -22,7 +23,14 @@
+ bool GetDefaultTabSearchRightAligned() {
+   // These platforms are all left aligned, the others should be right.
+ #if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN)
+-  return false;
++  // Revert Google's stupid UI design decision
++  static const bool left_aligned_tab_search_button =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("left-aligned-tab-search-button");
++  if (left_aligned_tab_search_button) {
++    return false;
++  } else {
++    return true;
++  }
+ #else
+   return true;
+ #endif

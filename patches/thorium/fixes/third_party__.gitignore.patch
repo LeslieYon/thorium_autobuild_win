@@ -1,0 +1,10 @@
+--- a/third_party/.gitignore
++++ b/third_party/.gitignore
+@@ -79,6 +79,7 @@
+ /libei/cipd/lib64/
+ /libgifcodec
+ /libjingle/source
++/libjxl/src
+ /libupnp
+ /libva-fake-driver/src
+ /llvm

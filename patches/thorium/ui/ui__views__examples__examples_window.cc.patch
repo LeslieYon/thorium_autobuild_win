@@ -1,0 +1,35 @@
+--- a/ui/views/examples/examples_window.cc
++++ b/ui/views/examples/examples_window.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -142,7 +142,7 @@
+ 
+  private:
+   // WidgetDelegateView:
+-  std::u16string GetWindowTitle() const override { return u"Views Examples"; }
++  std::u16string GetWindowTitle() const override { return u"Thorium UI Debug Shell"; }
+   void WindowClosing() override {
+     instance_ = nullptr;
+     if (on_close_) {
+@@ -151,7 +151,7 @@
+   }
+   gfx::Size CalculatePreferredSize(
+       const SizeBounds& /*available_size*/) const override {
+-    gfx::Size size(800, 300);
++    gfx::Size size(800, 400);
+     for (size_t i = 0; i < tabbed_pane_->GetTabCount(); ++i) {
+       size.set_height(
+           std::max(size.height(),
+@@ -159,7 +159,7 @@
+     }
+     return size;
+   }
+-  gfx::Size GetMinimumSize() const override { return gfx::Size(50, 50); }
++  gfx::Size GetMinimumSize() const override { return gfx::Size(100, 50); }
+ 
+   void CreateSidePanel(ExampleVector examples) {
+     for (auto& example : examples) {

@@ -1,0 +1,51 @@
+--- a/tools/clang/scripts/build.py
++++ b/tools/clang/scripts/build.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-# Copyright 2019 The Chromium Authors
++# Copyright 2026 The Chromium Authors, RobRich999, and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -384,6 +384,9 @@
+           '-DLIBXML2_WITH_XPATH=OFF',
+           '-DLIBXML2_WITH_XPTR=OFF',
+           '-DLIBXML2_WITH_ZLIB=OFF',
++          '-DCMAKE_ASM_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++          '-DCMAKE_C_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++          '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
+           '..',
+       ],
+       setenv=True)
+@@ -830,11 +833,9 @@
+   ldflags = []
+ 
+   targets = 'AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;WebAssembly;X86'
+-  projects = 'clang;lld'
++  projects = 'clang;lld;polly;bolt'
+   if not args.no_tools:
+     projects += ';clang-tools-extra'
+-  if args.bolt:
+-    projects += ';bolt'
+ 
+   runtimes = ''
+   # On macOS, we always need to build compiler-rt because dsymutil's link needs
+@@ -871,6 +872,9 @@
+       '-DLLVM_ENABLE_CURL=OFF',
+       # Build libclang.a as well as libclang.so
+       '-DLIBCLANG_BUILD_STATIC=ON',
++      '-DCMAKE_ASM_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++      '-DCMAKE_C_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++      '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
+       # The Rust build (on Mac ARM at least if not others) depends on the
+       # FileCheck tool which is built but not installed by default, this
+       # puts it in the path for the Rust build to find and matches the
+@@ -1133,7 +1137,7 @@
+       with open(training_source, 'wb') as f:
+         DownloadUrl(CDS_URL + '/' + training_source, f)
+       train_cmd = [os.path.join(LLVM_INSTRUMENTED_DIR, 'bin', 'clang++'),
+-                  '-target', 'x86_64-unknown-unknown', '-O2', '-g', '-std=c++14',
++                  '-target', 'x86_64-unknown-unknown', '-O3', '-g', '-std=c++14',
+                    '-fno-exceptions', '-fno-rtti', '-w', '-c', training_source]
+       if sys.platform == 'darwin':
+         train_cmd.extend(['-isysroot', isysroot])

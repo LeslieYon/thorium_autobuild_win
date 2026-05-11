@@ -1,0 +1,66 @@
+--- a/chrome/browser/download/chrome_download_manager_delegate.cc
++++ b/chrome/browser/download/chrome_download_manager_delegate.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -1954,8 +1954,11 @@
+ bool ChromeDownloadManagerDelegate::ShouldBlockFile(
+     download::DownloadItem* item,
+     download::DownloadDangerType danger_type) const {
++  // Don't block downloads if flag is set
++  static const bool allow_insecure_downloads_ =
++    base::CommandLine::ForCurrentProcess()->HasSwitch("allow-insecure-downloads");
+   // Chrome-initiated background downloads should not be blocked.
+-  if (item && !item->RequireSafetyChecks()) {
++  if ((item && !item->RequireSafetyChecks()) || allow_insecure_downloads_) {
+     return false;
+   }
+ 
+@@ -2008,42 +2011,13 @@
+ void ChromeDownloadManagerDelegate::MaybeSendDangerousDownloadOpenedReport(
+     DownloadItem* download,
+     bool show_download_in_folder) {
+-#if BUILDFLAG(SAFE_BROWSING_DOWNLOAD_PROTECTION)
+-  safe_browsing::DownloadProtectionService* service =
+-      GetDownloadProtectionService();
+-  if (service) {
+-    service->MaybeSendDangerousDownloadOpenedReport(download,
+-                                                    show_download_in_folder);
+-  }
+-#endif
++  return;
+ }
+ 
+ void ChromeDownloadManagerDelegate::MaybeSendDangerousDownloadCanceledReport(
+     DownloadItem* download,
+     bool is_shutdown) {
+-#if BUILDFLAG(SAFE_BROWSING_DOWNLOAD_PROTECTION)
+-  safe_browsing::SafeBrowsingService* sb_service =
+-      g_browser_process->safe_browsing_service();
+-  if (!sb_service) {
+-    return;
+-  }
+-  // Note: We cannot go through download_protection_service here, because this
+-  // function may be called at shutdown. The download_protection_service
+-  // object may already be deleted at this point.
+-  if (is_shutdown) {
+-    sb_service->PersistDownloadReportAndSendOnNextStartup(
+-        download,
+-        safe_browsing::ClientSafeBrowsingReportRequest::
+-            DANGEROUS_DOWNLOAD_PROFILE_CLOSED,
+-        /*did_proceed=*/false, std::nullopt);
+-  } else {
+-    sb_service->SendDownloadReport(
+-        download,
+-        safe_browsing::ClientSafeBrowsingReportRequest::
+-            DANGEROUS_DOWNLOAD_AUTO_DELETED,
+-        /*did_proceed=*/false, std::nullopt);
+-  }
+-#endif
++  return;
+ }
+ 
+ void ChromeDownloadManagerDelegate::CheckDownloadAllowed(

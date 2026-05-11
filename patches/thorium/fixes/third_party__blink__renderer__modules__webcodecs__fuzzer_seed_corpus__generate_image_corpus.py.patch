@@ -1,0 +1,10 @@
+--- a/third_party/blink/renderer/modules/webcodecs/fuzzer_seed_corpus/generate_image_corpus.py
++++ b/third_party/blink/renderer/modules/webcodecs/fuzzer_seed_corpus/generate_image_corpus.py
+@@ -32,6 +32,7 @@
+     "ico": "image/x-icon",
+     "bmp": "image/bmp",
+     "jpg": "image/jpeg",
++    "jxl": "image/jxl",
+     "gif": "image/gif",
+     "cur": "image/x-icon",
+     "webp": "image/webp",

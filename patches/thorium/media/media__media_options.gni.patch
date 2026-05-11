@@ -1,0 +1,17 @@
+--- a/media/media_options.gni
++++ b/media/media_options.gni
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -263,7 +263,7 @@
+   alternate_cdm_storage_id_key = ""
+ }
+ 
+-assert(!enable_cdm_host_verification || is_mac || is_win,
++assert(!enable_cdm_host_verification || is_mac || is_win || target_os == "win",
+        "CDM host verification is only supported on Mac and Windows.")
+ 
+ # https://crbug.com/1475137#c37

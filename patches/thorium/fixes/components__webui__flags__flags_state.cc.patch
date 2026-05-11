@@ -1,0 +1,94 @@
+--- a/components/webui/flags/flags_state.cc
++++ b/components/webui/flags/flags_state.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2015 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -30,6 +30,7 @@
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/values.h"
+ #include "build/build_config.h"
++#include "chrome/browser/unexpire_flags.h"
+ #include "components/variations/field_trial_config/field_trial_util.h"
+ #include "components/variations/variations_associated_data.h"
+ #include "components/variations/variations_switches.h"
+@@ -232,6 +233,11 @@
+       command_line.GetSwitchValueASCII(command_line_switch);
+   const std::string new_value =
+       flags_storage.GetOriginListFlag(internal_entry_name);
++  if (command_line_switch == "custom-ntp") {
++    return existing_value.empty()
++           ? new_value
++           : existing_value;
++  }
+   return CombineAndSanitizeOriginLists(existing_value, new_value);
+ }
+ 
+@@ -482,7 +488,9 @@
+                                    const std::string& value,
+                                    FlagsStorage* flags_storage) {
+   const std::string new_value =
+-      CombineAndSanitizeOriginLists(std::string(), value);
++      internal_name == "custom-ntp"
++          ? value
++          : CombineAndSanitizeOriginLists(std::string(), value);
+   flags_storage->SetOriginListFlag(internal_name, new_value);
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+@@ -685,14 +693,21 @@
+   int current_platform = GetCurrentPlatform();
+ 
+   for (const FeatureEntry& entry : feature_entries_) {
++    std::string desc = entry.visible_description;
+     if (skip_feature_entry.Run(entry)) {
+-      continue;
++      // Alex313031: Comment the next three lines for component builds.
++#if !defined(_DEBUG)
++      if (flags::IsFlagExpired(flags_storage, entry.internal_name))
++        desc.insert(0, " NOTE: THIS FLAG IS EXPIRED AND MAY STOP FUNCTIONING OR BE REMOVED SOON! ");
++      else
++#endif
++        continue;
+     }
+ 
+     base::Value::Dict data;
+     data.Set("internal_name", entry.internal_name);
+     data.Set("name", entry.visible_name);
+-    data.Set("description", entry.visible_description);
++    data.Set("description", desc);
+ 
+     base::Value::List supported_platforms;
+     AddOsStrings(entry.supported_platforms, &supported_platforms);
+@@ -797,7 +812,7 @@
+     const std::string& switch_name,
+     const std::string& switch_value,
+     std::map<std::string, SwitchEntry>* name_to_switch_map) const {
+-  DCHECK(!base::Contains(*name_to_switch_map, key));
++  //DCHECK(!base::Contains(*name_to_switch_map, key));
+ 
+   SwitchEntry* entry = &(*name_to_switch_map)[key];
+   entry->switch_name = switch_name;
+@@ -810,7 +825,7 @@
+     bool feature_state,
+     const std::string& variation_id,
+     std::map<std::string, SwitchEntry>* name_to_switch_map) const {
+-  DCHECK(!base::Contains(*name_to_switch_map, key));
++  //DCHECK(!base::Contains(*name_to_switch_map, key));
+ 
+   SwitchEntry* entry = &(*name_to_switch_map)[key];
+   entry->feature_name = feature_name;
+@@ -1101,7 +1116,11 @@
+       continue;
+     }
+     if (delegate_ && delegate_->ShouldExcludeFlag(storage, entry)) {
+-      continue;
++      // Alex313031: Comment this line for component builds.
++#if !defined(_DEBUG)
++      if (!flags::IsFlagExpired(storage, entry.internal_name))
++#endif
++        continue;
+     }
+     return true;
+   }

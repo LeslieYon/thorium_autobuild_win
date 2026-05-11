@@ -1,0 +1,21 @@
+--- a/content/public/common/url_utils.cc
++++ b/content/public/common/url_utils.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2013 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -33,11 +33,7 @@
+ }
+ 
+ bool IsSavableURL(const GURL& url) {
+-  for (auto& scheme : GetSavableSchemes()) {
+-    if (url.SchemeIs(scheme))
+-      return true;
+-  }
+-  return false;
++  return true;
+ }
+ 
+ bool IsURLHandledByNetworkStack(const GURL& url) {

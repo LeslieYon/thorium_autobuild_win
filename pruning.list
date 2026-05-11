@@ -1,0 +1,7 @@
+# Thorium-specific pruning entries.
+#
+# The upstream Windows pruning pass is loaded from:
+#   ungoogled-chromium-windows/pruning.list
+#
+# Add only Thorium-specific removals here. Leave this file with comments only
+# when Thorium does not need extra pruning beyond the upstream Windows list.

@@ -23,5 +23,5 @@ outputs:
   finished:
     description: 'Whether the build is complete'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'index.js'

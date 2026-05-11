@@ -1,0 +1,19 @@
+--- a/content/shell/browser/shell_platform_delegate_views.cc
++++ b/content/shell/browser/shell_platform_delegate_views.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2020 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -374,8 +374,8 @@
+   params.bounds = gfx::Rect(initial_size);
+   params.delegate = delegate.release();
+ #if BUILDFLAG(IS_LINUX)
+-  params.wm_class_class = "chromium-content_shell";
+-  params.wm_class_name = params.wm_class_class;
++  params.wm_class_class = "thorium_shell";
++  params.wm_class_name = "Thorium Shell";
+ #endif  // BUILDFLAG(IS_LINUX)
+   shell_data.window_widget->Init(std::move(params));
+ #endif  // BUILDFLAG(IS_CHROMEOS)

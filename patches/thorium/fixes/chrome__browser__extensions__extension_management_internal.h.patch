@@ -1,0 +1,17 @@
+--- a/chrome/browser/extensions/extension_management_internal.h
++++ b/chrome/browser/extensions/extension_management_internal.h
+@@ -1,4 +1,4 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ #ifndef CHROME_BROWSER_EXTENSIONS_EXTENSION_MANAGEMENT_INTERNAL_H_
+@@ -189,7 +189,7 @@
+   std::optional<std::vector<Manifest::Type>> allowed_types;
+ 
+   // An enum setting indicates if manifest v2 is allowed.
+-  ManifestV2Setting manifest_v2_setting = ManifestV2Setting::kDefault;
++  ManifestV2Setting manifest_v2_setting = ManifestV2Setting::kEnabled;
+ 
+   UnpublishedAvailability unpublished_availability_setting =
+       UnpublishedAvailability::kAllowUnpublished;

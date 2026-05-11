@@ -1,0 +1,29 @@
+--- a/components/metrics/machine_id_provider_nonwin.cc
++++ b/components/metrics/machine_id_provider_nonwin.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2020 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -6,6 +6,8 @@
+ 
+ #include <stdint.h>
+ 
++#include "base/base_paths.h"
++#include "base/command_line.h"
+ #include "base/check.h"
+ #include "base/system/sys_info.h"
+ 
+@@ -17,6 +19,11 @@
+ 
+ // Checks if hardware model name is available.
+ bool MachineIdProvider::HasId() const {
++  static const bool disable_machine_id =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id");
++  if (disable_machine_id) {
++    return false;
++  }
+   return !base::SysInfo::HardwareModelName().empty();
+ }
+ 

@@ -1,0 +1,58 @@
+--- a/chrome/browser/download/insecure_download_blocking.cc
++++ b/chrome/browser/download/insecure_download_blocking.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2019 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -6,6 +6,7 @@
+ 
+ #include <optional>
+ 
++#include "base/command_line.h"
+ #include "base/debug/crash_logging.h"
+ #include "base/debug/dump_without_crashing.h"
+ #include "base/memory/raw_ptr.h"
+@@ -289,6 +290,8 @@
+     // used for Chrome stuff. Background fetch should probably be HTTPS-only.
+     auto download_source = item->GetDownloadSource();
+     auto transition_type = item->GetTransitionType();
++    static const bool allow_insecure_downloads_ =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("allow-insecure-downloads");
+     if (download_source == DownloadSource::RETRY ||
+         (transition_type & ui::PAGE_TRANSITION_RELOAD) ||
+         (transition_type & ui::PAGE_TRANSITION_TYPED) ||
+@@ -300,7 +303,8 @@
+         download_source == DownloadSource::OFFLINE_PAGE ||
+         download_source == DownloadSource::INTERNAL_API ||
+         download_source == DownloadSource::EXTENSION_API ||
+-        download_source == DownloadSource::EXTENSION_INSTALLER) {
++        download_source == DownloadSource::EXTENSION_INSTALLER ||
++        allow_insecure_downloads_) {
+       base::UmaHistogramEnumeration(
+           kInsecureDownloadHistogramName,
+           InsecureDownloadSecurityStatus::kDownloadIgnored);
+@@ -340,7 +344,8 @@
+         download_source == DownloadSource::OFFLINE_PAGE ||
+         download_source == DownloadSource::INTERNAL_API ||
+         download_source == DownloadSource::EXTENSION_API ||
+-        download_source == DownloadSource::EXTENSION_INSTALLER) {
++        download_source == DownloadSource::EXTENSION_INSTALLER ||
++        allow_insecure_downloads_) {
+       is_insecure_download_ = false;
+     } else {  // Not ignorable download.
+       // TODO(crbug.com/40857867): Add blocking metrics.
+@@ -473,8 +478,10 @@
+     const download::DownloadItem* item) {
+   InsecureDownloadData data(path, item);
+ 
+-  // If the download is fully secure, early abort.
+-  if (!data.is_insecure_download_) {
++  static const bool allow_insecure_downloads_ =
++    base::CommandLine::ForCurrentProcess()->HasSwitch("allow-insecure-downloads");
++  // If the download is fully secure, early abort. Don't nag.
++  if (!data.is_insecure_download_ || allow_insecure_downloads_) {
+     return InsecureDownloadStatus::SAFE;
+   }
+ 

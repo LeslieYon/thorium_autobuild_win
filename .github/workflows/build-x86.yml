@@ -21,41 +21,25 @@ jobs:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
-      - name: Cache source
+      - name: Restore source cache
+        id: source-cache
         uses: actions/cache@v4
         with:
           path: C:\thorium-autobuild-win\build\src
           key: thorium-src-x86-${{ github.sha }}
 
-  # Build SIMD variants for x86 (SSE3/SSE4 are most relevant for 32-bit)
-  build-sse3:
+      - name: Prepare Chromium source
+        if: ${{ steps.source-cache.outputs.cache-hit != 'true' }}
+        shell: pwsh
+        run: python build.py --ci --prepare-only --x86
+        working-directory: C:\thorium-autobuild-win
+
+  build:
     needs: prepare
     uses: ./.github/workflows/reusable-build.yml
     with:
       x86: true
       simd: sse3
-    secrets: inherit
-
-  build-sse4:
-    needs: prepare
-    uses: ./.github/workflows/reusable-build.yml
-    with:
-      x86: true
-      simd: sse4
-    secrets: inherit
-
-  build-avx:
-    needs: prepare
-    uses: ./.github/workflows/reusable-build.yml
-    with:
-      x86: true
-      simd: avx
-    secrets: inherit
-
-  build-avx2:
-    needs: prepare
-    uses: ./.github/workflows/reusable-build.yml
-    with:
-      x86: true
-      simd: avx2
+      cache-key: thorium-src-x86-${{ github.sha }}
+      artifact-name: thorium-x86
     secrets: inherit

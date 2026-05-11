@@ -1,0 +1,19 @@
+--- a/ash/webui/sample_system_web_app_ui/BUILD.gn
++++ b/ash/webui/sample_system_web_app_ui/BUILD.gn
+@@ -1,13 +1,12 @@
+-# Copyright 2019 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//build/config/chromeos/ui_mode.gni")
+ import("//chrome/test/base/ash/js2gtest.gni")
+ import("//third_party/closure_compiler/compile_js.gni")
+ 
+-assert(is_chromeos, "Sample System Web App is ChromeOS only")
+-assert(!is_official_build,
+-       "Sample System Web App is only built for unofficial builds")
++assert(is_chromeos_ash, "Sample System Web App is ash-chrome only")
+ 
+ static_library("sample_system_web_app_ui") {
+   sources = [

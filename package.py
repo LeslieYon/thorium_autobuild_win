@@ -18,13 +18,21 @@ if sys.version_info.major < 3:
 import argparse
 import os
 import platform
+import re
 from pathlib import Path
 import shutil
 
-sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
+_ROOT_DIR = Path(__file__).resolve().parent
+_UNGOOGLED_UTILS_DIR = _ROOT_DIR / 'ungoogled-chromium-windows' / 'ungoogled-chromium' / 'utils'
+
+sys.path.insert(0, str(_UNGOOGLED_UTILS_DIR))
 import filescfg
-from _common import ENCODING, get_chromium_version
+from _common import ENCODING
 sys.path.pop(0)
+
+
+def _get_chromium_version():
+    return (_ROOT_DIR / 'chromium_version.txt').read_text(encoding=ENCODING).strip()
 
 
 def _get_release_revision():
@@ -66,13 +74,14 @@ def _get_simd_variant(build_outputs):
     if args_gn.exists():
         with open(args_gn, 'r') as f:
             content = f.read()
-        if 'use_avx2=true' in content:
+        if re.search(r'^\s*use_avx2\s*=\s*true\s*$', content, re.MULTILINE):
             return 'AVX2'
-        elif 'use_avx=true' in content:
+        elif re.search(r'^\s*use_avx\s*=\s*true\s*$', content, re.MULTILINE):
             return 'AVX'
-        elif 'use_sse41=true' in content or 'use_sse42=true' in content:
+        elif (re.search(r'^\s*use_sse41\s*=\s*true\s*$', content, re.MULTILINE) or
+              re.search(r'^\s*use_sse42\s*=\s*true\s*$', content, re.MULTILINE)):
             return 'SSE4'
-        elif 'use_sse3=true' in content:
+        elif re.search(r'^\s*use_sse3\s*=\s*true\s*$', content, re.MULTILINE):
             return 'SSE3'
     return 'AVX2'
 
@@ -114,7 +123,7 @@ def main():
     # Determine version info
     chromium_version = 'unknown'
     try:
-        chromium_version = get_chromium_version()
+        chromium_version = _get_chromium_version()
     except Exception as e:
         print('Warning: Could not determine Chromium version:', e)
 

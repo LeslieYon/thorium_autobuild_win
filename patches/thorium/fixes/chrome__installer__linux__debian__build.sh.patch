@@ -1,0 +1,197 @@
+--- a/chrome/installer/linux/debian/build.sh
++++ b/chrome/installer/linux/debian/build.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ #
+-# Copyright 2012 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -22,7 +22,7 @@
+   process_template "${SCRIPTDIR}/changelog.template" "${DEB_CHANGELOG}"
+   debchange -a --nomultimaint -m --changelog "${DEB_CHANGELOG}" \
+     "Release Notes: ${RELEASENOTES}"
+-  GZLOG="${STAGEDIR}/usr/share/doc/${PACKAGE}-${CHANNEL}/changelog.gz"
++  GZLOG="${STAGEDIR}/usr/share/doc/${PACKAGE}/changelog.gz"
+   mkdir -p "$(dirname "${GZLOG}")"
+   gzip -9 -c "${DEB_CHANGELOG}" > "${GZLOG}"
+   chmod 644 "${GZLOG}"
+@@ -31,7 +31,7 @@
+ # Create the Debian control file needed by dpkg-deb.
+ gen_control() {
+   dpkg-gencontrol -v"${VERSIONFULL}" -c"${DEB_CONTROL}" -l"${DEB_CHANGELOG}" \
+-  -f"${DEB_FILES}" -p"${PACKAGE}-${CHANNEL}" -P"${STAGEDIR}" \
++  -f"${DEB_FILES}" -p"${PACKAGE}" -P"${STAGEDIR}" \
+   -O > "${STAGEDIR}/DEBIAN/control"
+   rm -f "${DEB_CONTROL}"
+ }
+@@ -50,23 +50,19 @@
+   # Always use a different name for /usr/bin symlink depending on channel.
+   # First, to avoid file collisions. Second, to make it possible to
+   # use update-alternatives for /usr/bin/google-chrome.
+-  local USR_BIN_SYMLINK_NAME="${PACKAGE}-${CHANNEL}"
++  local USR_BIN_SYMLINK_NAME="${PACKAGE}"
+ 
+   local PACKAGE_ORIG="${PACKAGE}"
+-  if [ "$CHANNEL" != "stable" ]; then
+-    # Avoid file collisions between channels.
+-    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
+-
+-    local PACKAGE="${PACKAGE}-${CHANNEL}"
+-
+-    # Make it possible to distinguish between menu entries
+-    # for different channels.
+-    local MENUNAME="${MENUNAME} (${CHANNEL})"
+-
+-    local RDN_DESKTOP="${RDN}.${CHANNEL}"
+-  else
+-    local RDN_DESKTOP="${RDN}"
+-  fi
++  # Avoid file collisions between channels.
++  local INSTALLDIR="${INSTALLDIR}"
++
++  local PACKAGE="${PACKAGE}"
++
++  # Make it possible to distinguish between menu entries
++  # for different channels.
++  local MENUNAME="${MENUNAME}"
++  local RDN_DESKTOP="${RDN}"
++
+   prep_staging_debian
+   SHLIB_PERMS=644
+   stage_install_common
+@@ -97,17 +93,20 @@
+   local EXPECTED_DEPENDS="${TMPFILEDIR}/expected_deb_depends"
+   local ACTUAL_DEPENDS="${TMPFILEDIR}/actual_deb_depends"
+   echo ${DEPENDS} | sed 's/, /\n/g' | LANG=C sort > "${EXPECTED_DEPENDS}"
+-  dpkg -I "${PACKAGE}-${CHANNEL}_${VERSIONFULL}_${ARCHITECTURE}.deb" | \
++  dpkg -I "${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb" | \
+       grep '^ Depends: ' | sed 's/^ Depends: //' | sed 's/, /\n/g' | \
+       LANG=C sort > "${ACTUAL_DEPENDS}"
+   BAD_DIFF=0
+   diff -u "${EXPECTED_DEPENDS}" "${ACTUAL_DEPENDS}" || BAD_DIFF=1
+   if [ $BAD_DIFF -ne 0 ]; then
+     echo
+-    echo "ERROR: bad dpkg dependencies!"
++    echo "ERROR: Bad dpkg dependencies!"
+     echo
+     exit $BAD_DIFF
+   fi
++
++  # Rename package to match Thorium naming scheme
++  mv -v "${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb" "${PACKAGE}_${DEBVERSIONNAME}${NAME_SUFFIX}.deb"
+ }
+ 
+ # Actually generate the package file.
+@@ -115,6 +114,7 @@
+   log_cmd echo "Packaging ${ARCHITECTURE}..."
+   PREDEPENDS="$COMMON_PREDEPS"
+   DEPENDS="${COMMON_DEPS}"
++  # RECOMMENDS="${COMMON_RECOMMENDS}"
+   PROVIDES="www-browser"
+   gen_changelog
+   process_template "${SCRIPTDIR}/control.template" "${DEB_CONTROL}"
+@@ -123,7 +123,7 @@
+     gen_control
+   fi
+   log_cmd fakeroot dpkg-deb -Znone -b "${STAGEDIR}" "${TMPFILEDIR}"
+-  local PACKAGEFILE="${PACKAGE}-${CHANNEL}_${VERSIONFULL}_${ARCHITECTURE}.deb"
++  local PACKAGEFILE="${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb"
+   if [ ${IS_OFFICIAL_BUILD} -ne 0 ]; then
+     (cd "${TMPFILEDIR}" && ar -x "${TMPFILEDIR}/${PACKAGEFILE}")
+     xz -z9 -T0 --lzma2='dict=256MiB' "${TMPFILEDIR}/data.tar"
+@@ -161,15 +161,15 @@
+   case $CHANNEL in
+     stable )
+       CHANNEL=stable
+-      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Stable%20updates"
++      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
+       ;;
+     beta|testing )
+       CHANNEL=beta
+-      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Beta%20updates"
++      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
+       ;;
+     dev|unstable|alpha )
+       CHANNEL=unstable
+-      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Dev%20updates"
++      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
+       ;;
+     # Canary is released twice a day automatically, so no release notes
+     # attached.
+@@ -187,7 +187,7 @@
+ }
+ 
+ process_opts() {
+-  while getopts ":a:b:c:d:fho:s:t:" OPTNAME
++  while getopts ":a:b:c:d:fhn:o:s:t:" OPTNAME
+   do
+     case $OPTNAME in
+       a )
+@@ -206,6 +206,9 @@
+         usage
+         exit 0
+         ;;
++      n )
++        NAME_SUFFIX="$OPTARG"
++        ;;
+       o )
+         OUTPUTDIR=$(readlink -f "${OPTARG}")
+         mkdir -p "${OUTPUTDIR}"
+@@ -236,15 +239,16 @@
+ 
+ SCRIPTDIR=$(readlink -f "$(dirname "$0")")
+ OUTPUTDIR="${PWD}"
++NAME_SUFFIX=""
+ 
+ # call cleanup() on exit
+ trap cleanup 0
+ process_opts "$@"
+-IS_OFFICIAL_BUILD=${IS_OFFICIAL_BUILD:=0}
+-
+-STAGEDIR="${OUTPUTDIR}/deb-staging-${CHANNEL}"
++IS_OFFICIAL_BUILD=1
++
++STAGEDIR="${OUTPUTDIR}/deb-staging"
+ mkdir -p "${STAGEDIR}"
+-TMPFILEDIR="${OUTPUTDIR}/deb-tmp-${CHANNEL}"
++TMPFILEDIR="${OUTPUTDIR}/deb-tmp"
+ mkdir -p "${TMPFILEDIR}"
+ DEB_CHANGELOG="${TMPFILEDIR}/changelog"
+ DEB_FILES="${TMPFILEDIR}/files"
+@@ -254,6 +258,7 @@
+ 
+ get_version_info
+ VERSIONFULL="${VERSION}-${PACKAGE_RELEASE}"
++DEBVERSIONNAME="${VERSION}"
+ 
+ if [ "$BRANDING" = "google_chrome" ]; then
+   source "${OUTPUTDIR}/installer/common/google-chrome.info"
+@@ -273,17 +278,23 @@
+ DEB_COMMON_DEPS="${OUTPUTDIR}/deb_common.deps"
+ COMMON_DEPS=$(sed ':a;N;$!ba;s/\n/, /g' "${DEB_COMMON_DEPS}")
+ COMMON_PREDEPS="dpkg (>= 1.14.0)"
++# MANUAL_RECOMMENDS="${SCRIPTDIR}/manual_recommends"
++# COMMON_RECOMMENDS=$(grep -v ^$ "${MANUAL_RECOMMENDS}" | grep -v ^# |
++#                       sed ':a;N;$!ba;s/\n/, /g')
+ 
+ # Make everything happen in the OUTPUTDIR.
+ cd "${OUTPUTDIR}"
+-BASEREPOCONFIG="dl.google.com/linux/chrome/deb/ stable main"
+ # Only use the default REPOCONFIG if it's unset (e.g. verify_channel might have
+ # set it to an empty string)
+-REPOCONFIG="${REPOCONFIG-deb [arch=${ARCHITECTURE}] https://${BASEREPOCONFIG}}"
+ # Allowed configs include optional HTTPS support and explicit multiarch
+ # platforms.
++
++# Unset repoconfig for Thorium
++#BASEREPOCONFIG="dl.google.com/linux/chrome/deb/ stable main"
++REPOCONFIG=
+ REPOCONFIGREGEX="deb (\\[arch=[^]]*\\b${ARCHITECTURE}\\b[^]]*\\]"
+-REPOCONFIGREGEX+="[[:space:]]*) https?://${BASEREPOCONFIG}"
++#REPOCONFIGREGEX+="[[:space:]]*) https?://${BASEREPOCONFIG}"
++
+ stage_install_debian
+ 
+ do_package

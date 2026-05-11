@@ -1,0 +1,47 @@
+--- a/chrome/browser/chrome_content_browser_client.cc
++++ b/chrome/browser/chrome_content_browser_client.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -822,11 +822,19 @@
+ 
+   // Don't change the URL when incognito mode.
+   if (profile->IsOffTheRecord()) {
+-    return false;
++    if (!base::CommandLine::ForCurrentProcess()->HasSwitch("custom-ntp")) {
++      return false;
++    }
+   }
+ 
+   std::string ntp_location =
+       profile->GetPrefs()->GetString(prefs::kNewTabPageLocationOverride);
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch("custom-ntp")) {
++    ntp_location = base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII("custom-ntp");
++  }
++  if (profile->IsOffTheRecord() && ntp_location.find("chrome://") != std::string::npos) {
++    return false;
++  }
+   if (ntp_location.empty()) {
+     return false;
+   }
+@@ -1397,7 +1405,6 @@
+   registry->RegisterBooleanPref(prefs::kDeviceNativeClientForceAllowed, false);
+   registry->RegisterBooleanPref(prefs::kDeviceNativeClientForceAllowedCache,
+                                 false);
+-  registry->RegisterBooleanPref(prefs::kIsFirstBootForNacl, true);
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+ #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
+   registry->RegisterBooleanPref(prefs::kOutOfProcessSystemDnsResolutionEnabled,
+@@ -5148,7 +5155,8 @@
+   }
+ 
+   sandbox::MitigationFlags mitigations = config->GetProcessMitigations();
+-  mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
++  // So we can use our own bins
++  //mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
+   sandbox::ResultCode result = config->SetProcessMitigations(mitigations);
+   if (result != sandbox::SBOX_ALL_OK) {
+     return false;

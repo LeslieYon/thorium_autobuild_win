@@ -1,0 +1,35 @@
+--- a/chrome/app/chrome_main_delegate.cc
++++ b/chrome/app/chrome_main_delegate.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -634,14 +634,21 @@
+       *base::CommandLine::ForCurrentProcess();
+   logging::InitChromeLogging(command_line, file_state);
+ 
+-#if BUILDFLAG(IS_CHROMEOS)
+   // Log the Chrome version for information. Do so at WARNING level as that's
+   // the min level on ChromeOS.
+   if (process_type.empty()) {
+-    LOG(WARNING) << "This is Chrome version " << chrome::kChromeVersion
+-                 << " (not a warning)";
+-  }
+-#endif  // BUILDFLAG(IS_CHROMEOS)
++    LOG(WARNING) << "This is " << chrome::kBrandName << " version: "
++                 << chrome::kChromeVersion << " (not a warning)";
++    LOG(WARNING) << "In Loving Memory of Linda Louise Frick: Grandma, Mother, and Sister.";
++  }
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++  static const bool is_forced_tab_scroll =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("scroll-tabs=always");
++  if (is_forced_tab_scroll) {
++      LOG(WARNING) << "Warning: chrome://flags#scroll-tabs is enabled on this non-Linux machine. "
++                   << "Bugs are likely and should be reported to Alex313031.";
++  }
++#endif
+ }
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 

@@ -1,0 +1,179 @@
+--- a/chrome/installer/linux/BUILD.gn
++++ b/chrome/installer/linux/BUILD.gn
+@@ -1,9 +1,10 @@
+-# Copyright 2015 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/c++/c++.gni")
+ import("//build/config/chrome_build.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/features.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+ import("//build/config/sysroot.gni")
+@@ -24,13 +25,34 @@
+ declare_args() {
+   # Enables checks that ensure the packages are installable on all supported
+   # distributions.
+-  enable_distro_version_check = true
++  enable_distro_version_check = false
+ }
+ 
+ assert(is_linux)
+ 
++# Determine SIMD instruction set suffix for package naming,
++# mirroring the logic in chrome/installer/mini_installer/BUILD.gn.
++_simd_suffix = ""
++if (current_cpu == "x86" || current_cpu == "x64") {
++  if (use_sse2 && !use_sse3) {
++    _simd_suffix = "_SSE2"
++  } else if (use_sse3 && !use_sse41 && !use_sse42) {
++    _simd_suffix = "_SSE3"
++  } else if (use_sse41 && !use_sse42) {
++    _simd_suffix = "_SSE4"
++  } else if (use_sse42 && !use_avx) {
++    _simd_suffix = "_SSE4.2"
++  } else if (use_avx && !use_avx2) {
++    _simd_suffix = "_AVX"
++  } else if (use_avx2 && !use_avx512) {
++    _simd_suffix = "_AVX2"
++  } else if (use_avx512) {
++    _simd_suffix = "_AVX512"
++  }
++}
++
+ packaging_files_executables = [
+-  "$root_out_dir/chrome",
++  "$root_out_dir/thorium",
+   "$root_out_dir/chrome_crashpad_handler",
+   "$root_out_dir/chrome_management_service",
+   "$root_out_dir/chrome_sandbox",
+@@ -161,7 +183,7 @@
+ }
+ 
+ strip_binary("strip_chrome_binary") {
+-  binary_input = "$root_out_dir/chrome"
++  binary_input = "$root_out_dir/thorium"
+   deps = [ "//chrome" ]
+ }
+ 
+@@ -228,10 +250,7 @@
+ # is_component_build=false before building this target.
+ group("linux") {
+   deps = [
+-    ":beta",
+-    ":canary",
+     ":stable",
+-    ":unstable",
+   ]
+ }
+ 
+@@ -278,6 +297,7 @@
+     "debian/changelog.template",
+     "debian/control.template",
+     "debian/debian.menu",
++    # "debian/manual_recommends",
+     "debian/postinst",
+     "debian/postrm",
+     "debian/prerm",
+@@ -334,7 +354,7 @@
+     visibility = [ ":*" ]
+     sources = [
+       "rpm/build.sh",
+-      "rpm/chrome.spec.template",
++      "rpm/thorium.spec.template",
+     ]
+     outputs = [ "$root_out_dir/installer/rpm/{{source_file_part}}" ]
+   }
+@@ -427,13 +447,11 @@
+ # channel:
+ #   Name of the channel.
+ template("linux_package") {
+-  assert(defined(invoker.channel))
+-  channel = invoker.channel
+ 
+   if (is_chrome_branded) {
+     package = "google-chrome"
+   } else {
+-    package = "chromium-browser"
++    package = "thorium-browser"
+   }
+ 
+   deb_target_name = "${target_name}_deb"
+@@ -461,8 +479,16 @@
+       assert(false, "Linux installer not configured for this architecture.")
+     }
+ 
++    # For x64, the SIMD suffix alone identifies the build variant (drop arch).
++    # For all other architectures, keep the arch identifier.
++    if (current_cpu == "x64") {
++      _deb_name_suffix = _simd_suffix
++    } else {
++      _deb_name_suffix = "_${deb_arch}${_simd_suffix}"
++    }
++
+     inputs = packaging_files
+-    outputs = [ "$root_out_dir/${package}-${channel}_${chrome_version_full}-1_${deb_arch}.deb" ]
++    outputs = [ "$root_out_dir/${package}_${chrome_version_full}${_deb_name_suffix}.deb" ]
+ 
+     args = [
+       rebase_path("$root_out_dir/installer/debian/build.sh", root_build_dir),
+@@ -472,6 +498,8 @@
+       invoker.channel,
+       "-d",
+       branding_path_component,
++      "-n",
++      _deb_name_suffix,
+       "-o",
+       rebase_path(root_out_dir, root_build_dir),
+       "-s",
+@@ -501,7 +529,7 @@
+       } else if (current_cpu == "arm") {
+         rpm_arch = "armhf"
+       } else if (current_cpu == "arm64") {
+-        rpm_arch = "aarch64"
++        rpm_arch = "arm64"
+       } else if (current_cpu == "mipsel") {
+         rpm_arch = "mipsel"
+       } else if (current_cpu == "mips64el") {
+@@ -514,8 +542,16 @@
+         assert(false, "Linux installer not configured for this architecture.")
+       }
+ 
++      # For x64, the SIMD suffix alone identifies the build variant (drop arch).
++      # For all other architectures, keep the arch identifier.
++      if (current_cpu == "x64") {
++        _rpm_name_suffix = _simd_suffix
++      } else {
++        _rpm_name_suffix = "_${rpm_arch}${_simd_suffix}"
++      }
++
+       inputs = packaging_files
+-      outputs = [ "$root_out_dir/${package}-${channel}-${chrome_version_full}-1.${rpm_arch}.rpm" ]
++      outputs = [ "$root_out_dir/${package}_${chrome_version_full}${_rpm_name_suffix}.rpm" ]
+ 
+       args = [
+         rebase_path("$root_out_dir/installer/rpm/build.sh", root_build_dir),
+@@ -525,6 +561,8 @@
+         invoker.channel,
+         "-d",
+         branding_path_component,
++        "-n",
++        _rpm_name_suffix,
+         "-o",
+         rebase_path(root_out_dir, root_build_dir),
+         "-t",
+@@ -552,12 +590,3 @@
+ linux_package("stable") {
+   channel = "stable"
+ }
+-linux_package("beta") {
+-  channel = "beta"
+-}
+-linux_package("unstable") {
+-  channel = "unstable"
+-}
+-linux_package("canary") {
+-  channel = "canary"
+-}

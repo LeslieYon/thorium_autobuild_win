@@ -1,0 +1,24 @@
+--- a/chrome/browser/profiles/profile_shortcut_manager_win.cc
++++ b/chrome/browser/profiles/profile_shortcut_manager_win.cc
+@@ -1,8 +1,10 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "chrome/browser/profiles/profile_shortcut_manager_win.h"
++
++#include "blah.h"
+ 
+ #include <shlobj.h>  // For SHChangeNotify().
+ #include <stddef.h>
+@@ -78,7 +80,8 @@
+ // Incrementing this number will cause profile icons to be regenerated on
+ // profile startup (it should be incremented whenever the product/avatar icons
+ // change, etc).
+-const int kCurrentProfileIconVersion = 10;
++// const char kBlahName[] = "11";
++const int kCurrentProfileIconVersion = 12;
+ 
+ bool disabled_for_unit_tests = false;
+ bool disable_unpinning_for_unit_tests = false;

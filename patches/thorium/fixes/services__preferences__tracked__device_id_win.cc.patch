@@ -1,0 +1,28 @@
+--- a/services/preferences/tracked/device_id_win.cc
++++ b/services/preferences/tracked/device_id_win.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2015 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -10,11 +10,19 @@
+ 
+ #include <memory>
+ 
++#include "base/base_paths.h"
++#include "base/command_line.h"
+ #include "base/check.h"
+ #include "base/containers/heap_array.h"
+ 
+ MachineIdStatus GetDeterministicMachineSpecificId(std::string* machine_id) {
+   DCHECK(machine_id);
++
++  static const bool disable_machine_id =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id");
++  if (disable_machine_id) {
++    return MachineIdStatus::NOT_IMPLEMENTED;
++  }
+ 
+   wchar_t computer_name[MAX_COMPUTERNAME_LENGTH + 1] = {};
+   DWORD computer_name_size = std::size(computer_name);

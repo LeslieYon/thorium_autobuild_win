@@ -1,0 +1,17 @@
+--- a/chrome/browser/memory_details_linux.cc
++++ b/chrome/browser/memory_details_linux.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -119,7 +119,7 @@
+   ProcessData current_browser =
+       GetProcessDataMemoryInformation(GetAllChildren(process_map, getpid()));
+   current_browser.name = l10n_util::GetStringUTF16(IDS_SHORT_PRODUCT_NAME);
+-  current_browser.process_name = u"chrome";
++  current_browser.process_name = u"thorium";
+ 
+   for (auto i = current_browser.processes.begin();
+        i != current_browser.processes.end(); ++i) {

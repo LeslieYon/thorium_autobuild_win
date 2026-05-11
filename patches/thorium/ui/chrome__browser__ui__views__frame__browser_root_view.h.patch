@@ -1,0 +1,17 @@
+--- a/chrome/browser/ui/views/frame/browser_root_view.h
++++ b/chrome/browser/ui/views/frame/browser_root_view.h
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -159,6 +159,8 @@
+   int scroll_remainder_x_ = 0;
+   int scroll_remainder_y_ = 0;
+ 
++  bool scroll_event_changes_tab_ = false;
++
+   std::unique_ptr<DropInfo> drop_info_;
+ 
+   base::OnceClosure on_filtering_complete_closure_;

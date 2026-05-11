@@ -1,0 +1,26 @@
+--- a/ui/base/x/x11_util.cc
++++ b/ui/base/x/x11_util.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -370,14 +370,9 @@
+     return false;
+   }
+ 
+-  ui::WindowManagerName wm = GuessWindowManager();
+-  // If we don't know which WM is active, conservatively disable custom frames.
+-  if (wm == WM_OTHER || wm == WM_UNNAMED) {
+-    return false;
+-  }
+-
+-  // Stacking WMs should use custom frames.
+-  return !IsWmTiling(wm);
++  // Never default to using the custom title bar, unless the windows manager is a tiling WM.
++  // Thorium should integrate, not be a special little snowflake.
++  return false;
+ }
+ 
+ bool IsWmTiling(WindowManagerName window_manager) {

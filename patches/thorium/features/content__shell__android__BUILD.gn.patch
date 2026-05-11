@@ -1,0 +1,26 @@
+--- a/content/shell/android/BUILD.gn
++++ b/content/shell/android/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -210,7 +210,7 @@
+ 
+ content_shell_apk_tmpl("content_shell_apk") {
+   target_type = "android_apk"
+-  apk_name = "ContentShell"
++  apk_name = "Thorium_Shell"
+   android_manifest = content_shell_manifest
+   android_manifest_dep = ":content_shell_manifest"
+   shared_libraries = [ ":libcontent_shell_content_view" ]
+@@ -220,7 +220,7 @@
+ 
+ content_shell_apk_tmpl("content_shell_test_apk") {
+   target_type = "instrumentation_test_apk"
+-  apk_name = "ContentShellTest"
++  apk_name = "Thorium_Shell_Test"
+   android_manifest = content_shell_test_manifest
+   android_manifest_dep = ":content_shell_test_manifest"
+   shared_libraries = [ ":libcontent_native_test" ]

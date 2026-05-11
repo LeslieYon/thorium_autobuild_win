@@ -1,0 +1,77 @@
+--- a/build/config/arm.gni
++++ b/build/config/arm.gni
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031.
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -120,15 +120,42 @@
+   }
+ } else if (current_cpu == "arm64" || v8_current_cpu == "arm64" ||
+            current_cpu == "arm64e" || v8_current_cpu == "arm64e") {
+-  # arm64 supports only "hard".
+-  arm_float_abi = "hard"
+-  arm_use_neon = true
+   declare_args() {
+     # Enables the new Armv8 branch protection features. Valid strings are:
+     # - "pac": Enables Pointer Authentication Code (PAC, featured in Armv8.3)
+     # - "standard": Enables both PAC and Branch Target Identification (Armv8.5).
+     # - "none": No branch protection.
+     arm_control_flow_integrity = "none"
++    
++    # Version of the ARM processor when compiling on ARM. Ignored on non-ARM
++    # platforms.
++    arm_version = 8
++    
++    # arm64 supports only "hard".
++    arm_float_abi = "hard"
++
++    # The ARM64 architecture. This will be a string like "armv8-a" or "armv8.5-a.
++    # An empty string means to use the default for the arm_version.
++    arm_arch = "armv8-a"
++    
++    # The ARM variant-specific tuning mode. This will be a string like "armv6"
++    # or "cortex-a15". An empty string means to use the default for the
++    # arm_version.
++    arm_tune = "generic-armv8-a"
++
++    # The ARM64 floating point hardware. This will be a string like "neon" or
++    # "vfpv3-d16". An empty string means to use the default for the arm_version.
++    arm_fpu = "neon"
++
++    # Whether to use the neon FPU instruction set or not.
++    arm_use_neon = "true"
++
++    # Whether to enable optional NEON code paths.
++    arm_optionally_use_neon = false
++
++    # Thumb is a reduced instruction set available on some ARM processors that
++    # has increased code density.
++    arm_use_thumb = true
+ 
+     if ((is_android || is_linux) && target_cpu == "arm64") {
+       # Enable PAC and BTI on AArch64 Linux/Android systems.
+@@ -137,7 +164,6 @@
+       # use the arm64 simulator.
+       arm_control_flow_integrity = "standard"
+     }
+-
+     if (host_os == "mac" && host_cpu == "arm64") {
+       # Disable ARM integrity flow or build
+       # will fail because of this issue
+@@ -145,8 +171,13 @@
+       arm_control_flow_integrity = "none"
+     }
+   }
++  # Initial values from upstream. arm64 supports only "hard".
++  arm_version = 8
++  arm_float_abi = "hard"
++  arm_use_neon = true
++  
+   assert(arm_control_flow_integrity == "none" ||
+              arm_control_flow_integrity == "standard" ||
+              arm_control_flow_integrity == "pac",
+-         "Invalid branch protection option")
++         "Invalid ARM branch protection option.")
+ }

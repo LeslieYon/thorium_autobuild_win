@@ -1,0 +1,20 @@
+--- a/chrome/installer/linux/debian/additional_deps
++++ b/chrome/installer/linux/debian/additional_deps
+@@ -1,4 +1,4 @@
+-# Copyright 2018 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ #
+@@ -21,6 +21,11 @@
+ wget
+ libcurl3-gnutls | libcurl3-nss | libcurl4 | libcurl3
+ 
++# u2f udev rules have moved from being installed by default by systemd on Debian
++# systems to a separate package called libu2f-udev. Pull it in manually so that
++# u2f keys will work.
++# libu2f-udev
++
+ # Try to use Vulkan when possible.
+ libvulkan1
+ 

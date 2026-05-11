@@ -1,0 +1,17 @@
+--- a/components/offline_pages/core/offline_page_model.cc
++++ b/components/offline_pages/core/offline_page_model.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2016 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -21,7 +21,7 @@
+ 
+ // static
+ bool OfflinePageModel::CanSaveURL(const GURL& url) {
+-  return url.is_valid() && url.SchemeIsHTTPOrHTTPS();
++  return url.is_valid();
+ }
+ 
+ OfflinePageModel::OfflinePageModel() = default;

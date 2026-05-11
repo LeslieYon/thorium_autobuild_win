@@ -1,0 +1,46 @@
+--- a/components/history/core/browser/history_backend.cc
++++ b/components/history/core/browser/history_backend.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -14,6 +14,7 @@
+ #include <utility>
+ #include <vector>
+ 
++#include "base/command_line.h"
+ #include "base/compiler_specific.h"
+ #include "base/containers/flat_set.h"
+ #include "base/feature_list.h"
+@@ -1326,8 +1327,12 @@
+   // Get the first item in our database.
+   db_->GetStartDate(&first_recorded_time_);
+ 
+-  // Start expiring old stuff.
+-  expirer_.StartExpiringOldStuff(base::Days(kExpireDaysThreshold));
++  // Start expiring old stuff if flag is unset.
++  static const bool keep_all_history =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("keep-all-history");
++  if (!keep_all_history) {
++    expirer_.StartExpiringOldStuff(base::Days(kExpireDaysThreshold));
++  }
+ }
+ 
+ void HistoryBackend::OnMemoryPressure(
+@@ -1549,7 +1554,13 @@
+ }
+ 
+ bool HistoryBackend::IsExpiredVisitTime(const base::Time& time) const {
+-  return time < expirer_.GetCurrentExpirationTime();
++  static const bool keep_all_history =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("keep-all-history");
++  if (keep_all_history) {
++    return false;
++  } else {
++    return time < expirer_.GetCurrentExpirationTime();
++  }
+ }
+ 
+ // static

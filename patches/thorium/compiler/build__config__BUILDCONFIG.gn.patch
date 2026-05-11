@@ -1,0 +1,12 @@
+--- a/build/config/BUILDCONFIG.gn
++++ b/build/config/BUILDCONFIG.gn
+@@ -421,6 +421,9 @@
+   default_compiler_configs += [ "//build/config:release" ]
+ }
+ 
++# Make sure Thorium SIMD flags come last
++default_compiler_configs += [ "//build/config/compiler:thorium_simd_optimization", ]
++
+ # Static libraries and source sets use only the compiler ones.
+ set_defaults("static_library") {
+   configs = default_compiler_configs

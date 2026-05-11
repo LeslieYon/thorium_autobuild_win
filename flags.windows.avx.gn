@@ -1,0 +1,7 @@
+use_sse3=true
+use_sse41=true
+use_sse42=true
+use_avx=true
+use_avx2=false
+use_avx512=false
+use_fma=false

@@ -1,0 +1,45 @@
+--- a/chrome/browser/ui/browser.h
++++ b/chrome/browser/ui/browser.h
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -31,6 +31,7 @@
+ #include "chrome/browser/ui/browser_navigator_params.h"
+ #include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
+ #include "chrome/browser/ui/chrome_web_modal_dialog_manager_delegate.h"
++#include "chrome/browser/ui/simple_message_box.h"
+ #include "chrome/browser/ui/signin/signin_view_controller.h"
+ #include "chrome/browser/ui/tabs/tab_strip_model.h"
+ #include "chrome/browser/ui/tabs/tab_strip_model_observer.h"
+@@ -1237,11 +1238,17 @@
+   // Returns true if the window can close, false otherwise.
+   bool CanCloseWithInProgressDownloads();
+ 
++  // Called when the window is closing to check if more than one tab is open
++  bool CanCloseWithMultipleTabs();
++
+   // Called when the user has decided whether to proceed or not with the browser
+   // closure.  |cancel_downloads| is true if the downloads should be canceled
+   // and the browser closed, false if the browser should stay open and the
+   // downloads running.
+   void InProgressDownloadResponse(bool cancel_downloads);
++
++  // MessageBox for when the window is closing if more than one tab is open
++  void MultitabResponse(chrome::MessageBoxResult result);
+ 
+   // Called when the user has decided whether to proceed or not with the browser
+   // closure, in case the cookie migration notice was shown. |proceed_closing|
+@@ -1413,6 +1420,10 @@
+   // when the browser is closed with in-progress downloads.
+   CancelDownloadConfirmationState cancel_download_confirmation_state_;
+ 
++  // State used to figure out whether we should prompt the user for confirmation
++  // when the browser is closed with multiple tabs open.
++  CancelDownloadConfirmationState close_multitab_confirmation_state_;
++
+   /////////////////////////////////////////////////////////////////////////////
+ 
+   // Override values for the bounds of the window and its maximized or minimized

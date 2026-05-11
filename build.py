@@ -34,21 +34,29 @@ import shutil
 import subprocess
 import ctypes
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent / 'ungoogled-chromium' / 'utils'))
-import downloads
-import domain_substitution
-import prune_binaries
-import patches as uc_patches
-from _common import ENCODING, USE_REGISTRY, ExtractorEnum, get_logger
-sys.path.pop(0)
+from typing import Any
 
 _ROOT_DIR = Path(__file__).resolve().parent
+_UNGOOGLED_WINDOWS_DIR = _ROOT_DIR / 'ungoogled-chromium-windows'
+_UNGOOGLED_CHROMIUM_DIR = _UNGOOGLED_WINDOWS_DIR / 'ungoogled-chromium'
+_UNGOOGLED_UTILS_DIR = _UNGOOGLED_CHROMIUM_DIR / 'utils'
+
+sys.path.insert(0, str(_UNGOOGLED_UTILS_DIR))
+import clone as uc_clone  # type: ignore[import-not-found]
+import downloads  # type: ignore[import-not-found]
+import prune_binaries  # type: ignore[import-not-found]
+import patches as _uc_patches  # type: ignore[import-not-found]
+from _common import ENCODING, USE_REGISTRY, ExtractorEnum, get_logger  # type: ignore[import-not-found]
+sys.path.pop(0)
+
+uc_patches: Any = _uc_patches
+
 _PATCH_BIN_RELPATH = Path('third_party/git/usr/bin/patch.exe')
 
-# Thorium patch directory
 _THORIUM_PATCH_DIR = _ROOT_DIR / 'patches' / 'thorium'
-_UNGOOGLED_PATCH_DIR = _ROOT_DIR / 'patches' / 'ungoogled-chromium'
+_THORIUM_SERIES_FILE = _ROOT_DIR / 'patches' / 'series'
+_UNGOOGLED_PATCH_DIR = _UNGOOGLED_WINDOWS_DIR / 'patches'
+_OVERLAY_DIR = _ROOT_DIR / 'overlay'
 
 # Default Chromium version file
 _CHROMIUM_VERSION_FILE = _ROOT_DIR / 'chromium_version.txt'
@@ -64,6 +72,49 @@ def _get_chromium_version():
         if version:
             return version
     return None
+
+
+def _first_existing_path(*paths):
+    """Return the first existing path, or the last candidate for clear errors."""
+    for candidate in paths:
+        if candidate.exists():
+            return candidate
+    return paths[-1]
+
+
+def _config_file(filename, fallback_dir):
+    """Resolve a root override first, then fall back to the submodule copy."""
+    return _first_existing_path(_ROOT_DIR / filename, fallback_dir / filename)
+
+
+def _read_list_file(filepath):
+    """Read a line-oriented config file, ignoring blank lines and comments."""
+    if not filepath.exists():
+        return []
+    entries = []
+    for line in filepath.read_text(encoding=ENCODING).splitlines():
+        line = line.strip()
+        if line and not line.startswith('#'):
+            entries.append(line)
+    return entries
+
+
+def _prune_files_with_warnings(source_tree, pruning_list, label):
+    """Prune files and warn, instead of failing, when entries are absent."""
+    entries = _read_list_file(pruning_list)
+    if not entries:
+        get_logger().info('No pruning entries for %s (%s)', label, pruning_list)
+        return
+
+    get_logger().info('Pruning %d entries from %s...', len(entries), label)
+    missing_files = sorted(prune_binaries.prune_files(source_tree, entries))
+    if missing_files:
+        preview = ', '.join(missing_files[:10])
+        if len(missing_files) > 10:
+            preview += ', ...'
+        get_logger().warning(
+            '%s pruning skipped %d missing files; continuing. Missing: %s',
+            label, len(missing_files), preview)
 
 
 def _checkout_chromium_version(source_tree, version):
@@ -147,6 +198,8 @@ def _run_build_process_timeout(*args, timeout):
     cmd_input.append('exit\n')
     with subprocess.Popen(('cmd.exe', '/k'), encoding=ENCODING, stdin=subprocess.PIPE,
                           creationflags=subprocess.CREATE_NEW_PROCESS_GROUP) as proc:
+        if proc.stdin is None:
+            raise RuntimeError('Build process stdin pipe was not created')
         proc.stdin.write('\n'.join(cmd_input))
         proc.stdin.close()
         try:
@@ -175,13 +228,75 @@ def _make_tmp_paths():
         tmp_path.mkdir()
 
 
+def _reset_source_tree(source_tree):
+    """Remove any partial source tree and recreate the target directory."""
+    if source_tree.exists():
+        shutil.rmtree(source_tree)
+    source_tree.mkdir(parents=True, exist_ok=True)
+
+
+def _clone_chromium_source(source_tree, chromium_version, args):
+    """Clone Chromium from git and checkout the pinned version when available."""
+    uc_clone.clone(argparse.Namespace(
+        output=source_tree,
+        custom_config=None,
+        pgo='win32' if args.x86 else 'win-arm64' if args.arm else 'win64',
+        sysroot=None,
+    ))
+
+    if chromium_version:
+        _checkout_chromium_version(source_tree, chromium_version)
+
+
+def _download_chromium_tarball(source_tree, downloads_cache, extractors, chromium_version,
+                               disable_ssl_verification):
+    """Download and unpack the Chromium tarball into the source tree."""
+    get_logger().info('Downloading Chromium tarball...')
+    download_info = downloads.DownloadInfo([_UNGOOGLED_CHROMIUM_DIR / 'downloads.ini'])
+    downloads.retrieve_downloads(download_info, downloads_cache, None, True,
+                                 disable_ssl_verification)
+    downloads.check_downloads(download_info, downloads_cache, None)
+
+    get_logger().info('Unpacking Chromium tarball...')
+    downloads.unpack_downloads(download_info, downloads_cache, None,
+                               source_tree, extractors)
+    if chromium_version:
+        get_logger().info('Using tarball version. Expected Chromium version: %s', chromium_version)
+
+
+def _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_version, args):
+    """Prepare Chromium source using tarball first when appropriate, then fall back to git."""
+    use_tarball = args.tarball or (args.ci and chromium_version)
+
+    if use_tarball:
+        try:
+            _download_chromium_tarball(source_tree, downloads_cache, extractors, chromium_version,
+                                       args.disable_ssl_verification)
+            return 'tarball'
+        except downloads.HashMismatchError as exc:
+            if args.tarball:
+                get_logger().error('File checksum does not match: %s', exc)
+                sys.exit(1)
+            get_logger().warning('Chromium tarball checksum failed; falling back to git clone: %s', exc)
+        except Exception as exc:  # noqa: BLE001 - fall back to git clone in CI when tarball is unavailable
+            if args.tarball:
+                raise
+            get_logger().warning('Chromium tarball is unavailable; falling back to git clone: %s', exc)
+
+        _reset_source_tree(source_tree)
+
+    get_logger().info('Cloning Chromium source from git...')
+    _clone_chromium_source(source_tree, chromium_version, args)
+    return 'git'
+
+
 def _apply_thorium_patches(source_tree, patch_bin_path):
     """
     Apply all Thorium-specific patches to the source tree.
     Patches are organized by category in patches/thorium/<category>/
     The series file defines the order of patch application.
     """
-    series_file = _THORIUM_PATCH_DIR.parent / 'series'
+    series_file = _THORIUM_SERIES_FILE
     if not series_file.exists():
         get_logger().warning('No series file found at %s', series_file)
         return
@@ -210,7 +325,7 @@ def _apply_thorium_patches(source_tree, patch_bin_path):
 
     get_logger().info('Applying %d Thorium patches...', len(patch_paths))
     uc_patches.apply_patches(
-        uc_patches.generate_patches_from_list(patch_paths),
+        patch_paths,
         source_tree,
         patch_bin_path=patch_bin_path
     )
@@ -219,7 +334,7 @@ def _apply_thorium_patches(source_tree, patch_bin_path):
 
 def _apply_source_overrides(source_tree):
     """
-    Apply ALL source overrides from lib/overlay/ to the Chromium source tree.
+    Apply ALL source overrides from overlay/ to the Chromium source tree.
     
     This is the unified mechanism for three types of modifications:
     1. OVERWRITE existing files — modified versions of Chromium files
@@ -228,25 +343,26 @@ def _apply_source_overrides(source_tree):
        (e.g. libjxl, highway, Thorium flag definitions, branding images)
     3. DELETE removed files — handled via pruning.list (files to remove)
     
-    The lib/overlay/ directory mirrors the Chromium source tree structure.
+    The overlay/ directory mirrors the Chromium source tree structure.
     At copy time, if the target file already exists it's an overwrite;
     if not, it's a new file creation.
     """
-    overlay_src = _ROOT_DIR / 'lib' / 'overlay'
+    overlay_src = _OVERLAY_DIR
     if not overlay_src.exists():
-        get_logger().info('No source overrides in lib/overlay/')
+        get_logger().info('No source overrides in overlay/')
         return
 
-    get_logger().info('Applying source overrides from lib/overlay/...')
+    get_logger().info('Applying source overrides from overlay/...')
     
     # Walk through overlay directory and copy each file
     new_count = 0
     overwrite_count = 0
     for f in overlay_src.rglob('*'):
-        if not f.is_file():
+        if not f.is_file() or f.name == '.gitkeep':
             continue
         rel = f.relative_to(overlay_src)
         dst = source_tree / rel
+        existed_before = dst.exists()
         
         # Create parent directory if needed
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -254,7 +370,7 @@ def _apply_source_overrides(source_tree):
         # Copy the file
         shutil.copy2(f, dst)
         
-        if (source_tree / rel).exists():
+        if existed_before:
             overwrite_count += 1
         else:
             new_count += 1
@@ -375,7 +491,7 @@ def main():
         help='Number of CPU threads to use for compiling')
     parser.add_argument(
         '--ci', action='store_true',
-        help='CI mode: skip steps if already done, use timeout for build')
+        help='CI mode: prefer tarball source preparation, fall back to git clone when needed')
     parser.add_argument(
         '--x86', action='store_true',
         help='Build for 32-bit x86')
@@ -401,6 +517,8 @@ def main():
 
     # Read target Chromium version from chromium_version.txt
     chromium_version = _get_chromium_version()
+    uc_clone.get_chromium_version = _get_chromium_version
+    downloads.get_chromium_version = _get_chromium_version
     if chromium_version:
         get_logger().info('Target Chromium version: %s (from chromium_version.txt)', chromium_version)
     else:
@@ -431,38 +549,12 @@ def main():
         }
 
         # Prepare source folder
-        if args.tarball or args.ci:
-            get_logger().info('Downloading Chromium tarball...')
-            download_info = downloads.DownloadInfo(
-                [_ROOT_DIR / 'ungoogled-chromium' / 'downloads.ini'])
-            downloads.retrieve_downloads(download_info, downloads_cache, None, True,
-                                         args.disable_ssl_verification)
-            try:
-                downloads.check_downloads(download_info, downloads_cache, None)
-            except downloads.HashMismatchError as exc:
-                get_logger().error('File checksum does not match: %s', exc)
-                sys.exit(1)
-
-            get_logger().info('Unpacking Chromium tarball...')
-            downloads.unpack_downloads(download_info, downloads_cache, None,
-                                       source_tree, extractors)
-            if chromium_version:
-                get_logger().info('Using tarball version. Expected Chromium version: %s', chromium_version)
-        else:
-            subprocess.run([
-                sys.executable,
-                str(Path('lib', 'ungoogled', 'utils', 'clone.py')),
-                '-o', 'build\\src',
-                '-p', 'win32' if args.x86 else 'win-arm64' if args.arm else 'win64'
-            ], check=True)
-
-            # After cloning, checkout the pinned Chromium version
-            if chromium_version:
-                _checkout_chromium_version(source_tree, chromium_version)
+        _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_version, args)
 
         # Retrieve Windows-specific downloads
         get_logger().info('Downloading required files...')
-        download_info_win = downloads.DownloadInfo([_ROOT_DIR / 'downloads.ini'])
+        download_info_win = downloads.DownloadInfo([
+            _config_file('downloads.ini', _UNGOOGLED_WINDOWS_DIR)])
         downloads.retrieve_downloads(download_info_win, downloads_cache, None, True,
                                      args.disable_ssl_verification)
         try:
@@ -471,16 +563,15 @@ def main():
             get_logger().error('File checksum does not match: %s', exc)
             sys.exit(1)
 
-        # Prune binaries
-        pruning_list = (_ROOT_DIR / 'ungoogled-chromium' / 'pruning.list') if args.tarball \
-            else (_ROOT_DIR / 'pruning.list')
-        unremovable_files = prune_binaries.prune_files(
+        # Prune binaries. Apply the upstream Windows list first, then Thorium-only additions.
+        _prune_files_with_warnings(
             source_tree,
-            pruning_list.read_text(encoding=ENCODING).splitlines()
-        )
-        if unremovable_files:
-            get_logger().error('Files could not be pruned: %s', unremovable_files)
-            parser.exit(1)
+            _UNGOOGLED_WINDOWS_DIR / 'pruning.list',
+            'ungoogled-chromium-windows')
+        _prune_files_with_warnings(
+            source_tree,
+            _ROOT_DIR / 'pruning.list',
+            'Thorium')
 
         # Unpack downloads
         DIRECTX = source_tree / 'third_party' / 'microsoft_dxheaders' / 'src'
@@ -513,15 +604,6 @@ def main():
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
 
-        # Substitute domains
-        domain_substitution_list = (_ROOT_DIR / 'ungoogled-chromium' / 'domain_substitution.list') \
-            if args.tarball else (_ROOT_DIR / 'domain_substitution.list')
-        domain_substitution.apply_substitution(
-            _ROOT_DIR / 'ungoogled-chromium' / 'domain_regex.list',
-            domain_substitution_list,
-            source_tree, None
-        )
-
     # ----- Stage: GN Gen -----
     if args.prepare_only:
         get_logger().info('--prepare-only specified. Skipping GN gen and build.')
@@ -532,11 +614,13 @@ def main():
         if not args.ci or not output_dir.exists():
             # Create output directory and args.gn
             output_dir.mkdir(parents=True, exist_ok=True)
-            gn_flags = _read_flags_file(_ROOT_DIR / 'ungoogled-chromium' / 'flags.gn')
+            gn_flags = _read_flags_file(_UNGOOGLED_CHROMIUM_DIR / 'flags.gn')
             gn_flags += '\n'
-            windows_flags = _read_flags_file(_ROOT_DIR / 'flags.windows.gn')
+            windows_flags = _read_flags_file(
+                _config_file('flags.windows.gn', _UNGOOGLED_WINDOWS_DIR))
             # Add SIMD-specific flags for the chosen variant
-            simd_flags = _read_flags_file(_ROOT_DIR / ('flags.windows.' + args.simd + '.gn'))
+            simd_flags = '' if args.arm else _read_flags_file(
+                _ROOT_DIR / ('flags.windows.' + args.simd + '.gn'))
             if simd_flags:
                 get_logger().info('Using SIMD flags for variant: %s', args.simd)
                 windows_flags += '\n' + simd_flags

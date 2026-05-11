@@ -1,0 +1,46 @@
+--- a/components/os_crypt/sync/os_crypt_win.cc
++++ b/components/os_crypt/sync/os_crypt_win.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -11,6 +11,7 @@
+ #include "base/check_op.h"
+ #include "base/containers/span.h"
+ #include "base/feature_list.h"
++#include "base/command_line.h"
+ #include "base/logging.h"
+ #include "base/memory/singleton.h"
+ #include "base/metrics/histogram_functions.h"
+@@ -50,6 +51,14 @@
+ 
+ bool EncryptStringWithDPAPI(const std::string& plaintext,
+                             std::string* ciphertext) {
++  static const bool disable_encryption =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-encryption");
++
++  if (disable_encryption) {
++    *ciphertext = plaintext;
++    return true;
++  }
++
+   DATA_BLOB input;
+   input.pbData =
+       const_cast<BYTE*>(reinterpret_cast<const BYTE*>(plaintext.data()));
+@@ -88,6 +97,14 @@
+ 
+ bool DecryptStringWithDPAPI(const std::string& ciphertext,
+                             std::string* plaintext) {
++  static const bool disable_encryption =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-encryption");
++
++  if (disable_encryption) {
++    *plaintext = ciphertext;
++    return true;
++  }
++
+   DATA_BLOB input;
+   input.pbData =
+       const_cast<BYTE*>(reinterpret_cast<const BYTE*>(ciphertext.data()));

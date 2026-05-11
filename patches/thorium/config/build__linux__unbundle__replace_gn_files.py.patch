@@ -1,0 +1,10 @@
+--- a/build/linux/unbundle/replace_gn_files.py
++++ b/build/linux/unbundle/replace_gn_files.py
+@@ -55,6 +55,7 @@
+     'libaom': 'third_party/libaom/BUILD.gn',
+     'libdrm': 'third_party/libdrm/BUILD.gn',
+     'libjpeg': 'third_party/libjpeg.gni',
++    'libjxl': 'third_party/libjxl/BUILD.gn',
+     'libpng': 'third_party/libpng/BUILD.gn',
+     'libsecret': 'third_party/libsecret/BUILD.gn',
+     'libusb': 'third_party/libusb/BUILD.gn',
