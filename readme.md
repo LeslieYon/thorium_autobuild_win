@@ -25,6 +25,12 @@ The build scripts read the Chromium version from `chromium_version.txt` and use 
 
 In CI, `build.py --ci` tries the official Chromium source tarball first for speed. If that tarball is missing or cannot be retrieved for the pinned version, it automatically falls back to cloning the matching Chromium git tag.
 
+GitHub Actions builds read Google API credentials from repository secrets and pass them to the reusable build workflow as environment variables for `build.py`. Configure these repository secrets before running CI builds that need Google-backed features:
+
+- `GOOGLE_API_KEY`
+- `GOOGLE_DEFAULT_CLIENT_ID`
+- `GOOGLE_DEFAULT_CLIENT_SECRET`
+
 Source pruning is layered: `ungoogled-chromium-windows/pruning.list` is applied first, then the root `pruning.list` is applied for Thorium-only removals. Missing pruning targets are logged as warnings and do not stop the build. Thorium builds do not run ungoogled domain substitution.
 
 ## Maintenance

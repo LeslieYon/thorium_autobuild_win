@@ -42,7 +42,10 @@ jobs:
       simd: sse3
       cache-key: thorium-src-${{ github.sha }}
       artifact-name: thorium-sse3
-    secrets: inherit
+    secrets:
+      GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
+      GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}
+      GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets['GOOGLE_DEFAULT_CLIENT_SECRET'] }}
 
   build-sse4:
     needs: prepare
@@ -51,7 +54,10 @@ jobs:
       simd: sse4
       cache-key: thorium-src-${{ github.sha }}
       artifact-name: thorium-sse4
-    secrets: inherit
+    secrets:
+      GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
+      GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}
+      GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets['GOOGLE_DEFAULT_CLIENT_SECRET'] }}
 
   build-avx:
     needs: prepare
@@ -60,7 +66,10 @@ jobs:
       simd: avx
       cache-key: thorium-src-${{ github.sha }}
       artifact-name: thorium-avx
-    secrets: inherit
+    secrets:
+      GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
+      GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}
+      GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets['GOOGLE_DEFAULT_CLIENT_SECRET'] }}
 
   build-avx2:
     needs: prepare
@@ -69,4 +78,7 @@ jobs:
       simd: avx2
       cache-key: thorium-src-${{ github.sha }}
       artifact-name: thorium-avx2
-    secrets: inherit
+    secrets:
+      GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
+      GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}
+      GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets['GOOGLE_DEFAULT_CLIENT_SECRET'] }}

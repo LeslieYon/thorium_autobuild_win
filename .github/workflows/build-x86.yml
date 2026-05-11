@@ -42,4 +42,7 @@ jobs:
       simd: sse3
       cache-key: thorium-src-x86-${{ github.sha }}
       artifact-name: thorium-x86
-    secrets: inherit
+    secrets:
+      GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
+      GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}
+      GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets['GOOGLE_DEFAULT_CLIENT_SECRET'] }}

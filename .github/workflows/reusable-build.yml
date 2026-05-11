@@ -24,6 +24,18 @@ on:
       artifact-name:
         type: string
         required: true
+    secrets:
+      GOOGLE_API_KEY:
+        required: false
+      GOOGLE_DEFAULT_CLIENT_ID:
+        required: false
+      GOOGLE_DEFAULT_CLIENT_SECRET:
+        required: false
+
+env:
+  GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+  GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets.GOOGLE_DEFAULT_CLIENT_ID }}
+  GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets.GOOGLE_DEFAULT_CLIENT_SECRET }}
 
 jobs:
   build-1:
