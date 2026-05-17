@@ -1,0 +1,36 @@
+# Keeping list — protects files from upstream pruning deletion.
+#
+# Files listed here are present in ungoogled-chromium-windows/pruning.list
+# but must NOT be deleted during Thorium builds, because Thorium (unlike
+# ungoogled-chromium) still needs them. Each path is relative to the
+# Chromium source tree root and must match exactly with the corresponding
+# entry in the upstream pruning list.
+#
+# Supports fnmatch wildcards: *, ?, [...]. For example, to keep all JSON
+# files under a directory, use: path/to/dir/*.json
+#
+# If a Chromium version bump adds new entries to the upstream pruning list
+# that break the Thorium build, add them here rather than using overlay/.
+
+# signin/ — Thorium uses Google sign-in; preference name constants required.
+components/signin/public/base/signin_pref_names.cc
+components/signin/public/base/signin_pref_names.h
+
+# safe_browsing/ — safe_browsing_prefs still referenced by BUILD.gn;
+# Thorium's other safe browsing patches don't remove this dependency.
+components/safe_browsing/core/common/safe_browsing_prefs.cc
+components/safe_browsing/core/common/safe_browsing_prefs.h
+
+# domain_reliability/ — Baked-in configs required at build time by
+# components/domain_reliability/BUILD.gn (bake_in_configs action).
+components/domain_reliability/baked_in_configs/*.json
+
+# mei_preload/ — The preloaded_data.pb binary is pruned by upstream, but
+# Thorium does not apply the companion ungoogled patch that removes the
+# build dependency. Without it, ninja fails with:
+#   '../../chrome/browser/resources/media/mei_preload/preloaded_data.pb',
+#   needed by 'MEIPreload/preloaded_data.pb', missing and no known rule
+chrome/browser/resources/media/mei_preload/preloaded_data.pb
+
+# other files protected
+components/privacy_sandbox/privacy_sandbox_attestations/preload/privacy-sandbox-attestations.dat

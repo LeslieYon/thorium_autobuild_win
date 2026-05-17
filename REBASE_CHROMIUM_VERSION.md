@@ -28,6 +28,10 @@ python3 devutils/generate_patches.py \
 ./devutils/check_patch_files.sh
 ```
 
+### 4. Update ./patches/series.ungoogled-windows and ./patches/series
+
+### 5. check for ungoogled project if have any new fix-build patch, and apply them in our project.
+
 ## Version History
 
 | Date | Chromium Version | Thorium Revision | Notes |

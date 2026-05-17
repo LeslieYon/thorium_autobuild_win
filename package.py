@@ -86,6 +86,29 @@ def _get_simd_variant(build_outputs):
     return 'AVX2'
 
 
+def _get_mini_installer_exe_name(simd_variant):
+    """Return the mini_installer exe filename for the given SIMD variant.
+
+    Thorium's modified chrome/installer/mini_installer/BUILD.gn renames the
+    mini_installer executable per SIMD variant. The condition chain in the
+    ``group("mini_installer")`` block determines the target name based on the
+    use_sse3/use_sse41/use_sse42/use_avx/use_avx2 flags.
+
+    Mapping (for x64):
+      SSE3  → thorium_SSE3_mini_installer.exe
+      SSE4  → thorium_SSE4.2_mini_installer.exe  (both sse41+sse42 are true)
+      AVX   → thorium_AVX_mini_installer.exe
+      AVX2  → thorium_AVX2_mini_installer.exe
+    """
+    mapping = {
+        'sse3': 'thorium_SSE3_mini_installer.exe',
+        'sse4': 'thorium_SSE4.2_mini_installer.exe',
+        'avx': 'thorium_AVX_mini_installer.exe',
+        'avx2': 'thorium_AVX2_mini_installer.exe',
+    }
+    return mapping.get(simd_variant, 'thorium_mini_installer.exe')
+
+
 def main():
     """Entrypoint"""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -136,10 +159,12 @@ def main():
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     # Copy mini_installer
-    mini_installer_src = build_outputs / 'mini_installer.exe'
+    simd_variant_lower = simd_variant.lower()
+    mini_installer_exe_name = _get_mini_installer_exe_name(simd_variant_lower)
+    mini_installer_src = build_outputs / mini_installer_exe_name
     if mini_installer_src.exists():
         installer_name = 'thorium_{simd}_{ver}-{rel}.{pkg}_installer_{cpu}.exe'.format(
-            simd=simd_variant.lower(),
+            simd=simd_variant_lower,
             ver=chromium_version,
             rel=release_revision,
             pkg=thorium_revision,
@@ -147,7 +172,7 @@ def main():
         shutil.copyfile(mini_installer_src, dest_dir / installer_name)
         print('Created installer:', installer_name)
     else:
-        print('Warning: mini_installer.exe not found')
+        print('Warning: {} not found'.format(mini_installer_exe_name))
 
     # Get timestamp
     timestamp = None
@@ -166,7 +191,7 @@ def main():
         cpu=target_cpu)
 
     excluded_files = set([
-        Path('mini_installer.exe'),
+        Path(mini_installer_exe_name),
         Path('mini_installer_exe_version.rc'),
         Path('setup.exe'),
         Path('chrome.packed.7z'),

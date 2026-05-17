@@ -1,0 +1,66 @@
+--- a/chrome/browser/enterprise/signals/context_info_fetcher.cc
++++ b/chrome/browser/enterprise/signals/context_info_fetcher.cc
+@@ -21,6 +21,7 @@
+ #include "components/device_signals/core/browser/browser_utils.h"
+ #include "components/enterprise/browser/identifiers/profile_id_service.h"
+ #include "components/policy/content/policy_blocklist_service.h"
++#include "components/prefs/pref_service.h"
+ #include "components/version_info/version_info.h"
+ #include "device_management_backend.pb.h"
+ 
+--- a/chrome/browser/ui/safety_hub/revoked_permissions_service.cc
++++ b/chrome/browser/ui/safety_hub/revoked_permissions_service.cc
+@@ -28,6 +28,7 @@
+ #include "chrome/app/chrome_command_ids.h"
+ #include "chrome/browser/browser_process.h"
+ #include "chrome/browser/engagement/site_engagement_service_factory.h"
++#include "chrome/browser/profiles/profile.h"
+ #include "chrome/browser/ui/safety_hub/safety_hub_prefs.h"
+ #include "chrome/browser/ui/safety_hub/safety_hub_service.h"
+ #include "chrome/browser/ui/safety_hub/safety_hub_util.h"
+--- a/chrome/browser/extensions/api/settings_private/prefs_util.cc
++++ b/chrome/browser/extensions/api/settings_private/prefs_util.cc
+@@ -61,5 +61,6 @@
+ #include "components/saved_tab_groups/public/pref_names.h"
+ #include "components/search_engines/default_search_manager.h"
++#include "components/signin/public/base/signin_pref_names.h"
+ #include "components/spellcheck/browser/pref_names.h"
+ #include "components/supervised_user/core/common/pref_names.h"
+ #include "components/translate/core/browser/translate_pref_names.h"
+--- a/chrome/browser/prefs/chrome_pref_service_factory.cc
++++ b/chrome/browser/prefs/chrome_pref_service_factory.cc
+@@ -59,5 +59,6 @@
+ #include "components/search_engines/default_search_manager.h"
+ #include "components/search_engines/search_engines_pref_names.h"
++#include "components/signin/public/base/signin_pref_names.h"
+ #include "components/signin/public/base/signin_switches.h"
+ #include "components/supervised_user/core/browser/supervised_user_pref_store.h"
+ #include "components/sync/base/data_type.h"
+--- a/chrome/browser/policy/configuration_policy_handler_list_factory.cc
++++ b/chrome/browser/policy/configuration_policy_handler_list_factory.cc
+@@ -463,9 +448,6 @@ const PolicyToPreferenceMapEntry kSimple
+   { key::kAdsSettingForIntrusiveAdsSites,
+     prefs::kManagedDefaultAdsSetting,
+     base::Value::Type::INTEGER },
+-  { key::kAdvancedProtectionAllowed,
+-    prefs::kAdvancedProtectionAllowed,
+-    base::Value::Type::BOOLEAN },
+   { key::kAllowCrossOriginAuthPrompt,
+     prefs::kAllowCrossOriginAuthPrompt,
+     base::Value::Type::BOOLEAN },
+@@ -703,15 +685,6 @@ const PolicyToPreferenceMapEntry kSimple
+   { key::kPasswordDismissCompromisedAlertEnabled,
+     password_manager::prefs::kPasswordDismissCompromisedAlertEnabled,
+     base::Value::Type::BOOLEAN },
+-  { key::kPasswordProtectionChangePasswordURL,
+-    prefs::kPasswordProtectionChangePasswordURL,
+-    base::Value::Type::STRING },
+-  { key::kPasswordProtectionLoginURLs,
+-    prefs::kPasswordProtectionLoginURLs,
+-    base::Value::Type::LIST },
+-  { key::kPasswordProtectionWarningTrigger,
+-    prefs::kPasswordProtectionWarningTrigger,
+-    base::Value::Type::INTEGER },
+ #if BUILDFLAG(ENABLE_PDF)
+   { key::kPdfLocalFileAccessAllowedForDomains,
+     prefs::kPdfLocalFileAccessAllowedForDomains,

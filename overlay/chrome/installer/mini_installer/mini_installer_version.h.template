@@ -1,0 +1,24 @@
+#ifndef CHROME_INSTALLER_MINI_INSTALLER_MINI_INSTALLER_VERSION_H_
+#define CHROME_INSTALLER_MINI_INSTALLER_MINI_INSTALLER_VERSION_H_
+
+// Copyright 2026 Alex313031
+
+namespace mini_installer {
+
+static constexpr int MAJOR_VERSION = @MAJOR@;
+
+static constexpr int MINOR_VERSION = @MINOR@;
+
+static constexpr int BUILD_VERSION = @BUILD@;
+
+static constexpr int PATCH_VERSION = @PATCH@;
+
+static constexpr wchar_t kVersionString[] = L"@MAJOR@.@MINOR@.@BUILD@.@PATCH@";
+
+static constexpr wchar_t kProductName[] = L"Thorium";
+
+static constexpr wchar_t kBetaProductName[] = L"Thorium Beta";
+
+} // namespace mini_installer
+
+#endif // CHROME_INSTALLER_MINI_INSTALLER_MINI_INSTALLER_VERSION_H_

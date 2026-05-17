@@ -33,10 +33,16 @@ import re
 import shutil
 import subprocess
 import ctypes
+import fnmatch
 from pathlib import Path
 from typing import Any
 
-_ROOT_DIR = Path(__file__).resolve().parent
+# Allow external override via THORIUM_BUILD_ROOT environment variable.
+# local_build.py sets this to the thorium_autobuild_win directory when
+# invoking build.py as a subprocess.
+_ROOT_DIR = Path(
+    os.environ.get('THORIUM_BUILD_ROOT', str(Path(__file__).resolve().parent))
+)
 _UNGOOGLED_WINDOWS_DIR = _ROOT_DIR / 'ungoogled-chromium-windows'
 _UNGOOGLED_CHROMIUM_DIR = _UNGOOGLED_WINDOWS_DIR / 'ungoogled-chromium'
 _UNGOOGLED_UTILS_DIR = _UNGOOGLED_CHROMIUM_DIR / 'utils'
@@ -56,6 +62,7 @@ _PATCH_BIN_RELPATH = Path('third_party/git/usr/bin/patch.exe')
 _THORIUM_PATCH_DIR = _ROOT_DIR / 'patches' / 'thorium'
 _THORIUM_SERIES_FILE = _ROOT_DIR / 'patches' / 'series'
 _UNGOOGLED_PATCH_DIR = _UNGOOGLED_WINDOWS_DIR / 'patches'
+_UNGOOGLED_WINDOWS_SERIES_FILE = _ROOT_DIR / 'patches' / 'series.ungoogled-windows'
 _OVERLAY_DIR = _ROOT_DIR / 'overlay'
 
 # Default Chromium version file
@@ -99,12 +106,47 @@ def _read_list_file(filepath):
     return entries
 
 
-def _prune_files_with_warnings(source_tree, pruning_list, label):
-    """Prune files and warn, instead of failing, when entries are absent."""
+def _prune_files_with_warnings(source_tree, pruning_list, label,
+                               keeping_list=None):
+    """Prune files and warn, instead of failing, when entries are absent.
+
+    Args:
+        source_tree: Root of the Chromium source tree.
+        pruning_list: Path to the list of files to delete.
+        label: Human-readable label for log messages.
+        keeping_list: Optional path to a list of entries from pruning_list
+            that must NOT be deleted (e.g. files Thorium needs but the
+            upstream ungoogled-chromium-windows pruning removes).
+    """
     entries = _read_list_file(pruning_list)
     if not entries:
         get_logger().info('No pruning entries for %s (%s)', label, pruning_list)
         return
+
+    # Apply keeping list: exclude protected entries so they survive pruning.
+    # Supports fnmatch wildcards (*, ?, [...]) in keeping list entries.
+    if keeping_list is not None:
+        keep_entries = _read_list_file(keeping_list)
+        if keep_entries:
+            before = len(entries)
+            # Separate exact and wildcard patterns for efficiency
+            exact_patterns = {p for p in keep_entries
+                              if '*' not in p and '?' not in p and '[' not in p}
+            wild_patterns = [p for p in keep_entries
+                             if '*' in p or '?' in p or '[' in p]
+            if wild_patterns:
+                entries = [
+                    e for e in entries
+                    if e not in exact_patterns
+                    and not any(fnmatch.fnmatch(e, wp) for wp in wild_patterns)
+                ]
+            else:
+                entries = [e for e in entries if e not in exact_patterns]
+            skipped = before - len(entries)
+            if skipped:
+                get_logger().info(
+                    'Keeping %d entries from %s (protected by %s)',
+                    skipped, label, keeping_list)
 
     get_logger().info('Pruning %d entries from %s...', len(entries), label)
     missing_files = sorted(prune_binaries.prune_files(source_tree, entries))
@@ -235,10 +277,46 @@ def _reset_source_tree(source_tree):
     source_tree.mkdir(parents=True, exist_ok=True)
 
 
+def _ensure_depot_tools_deps():
+    """Ensure Python dependencies needed by depot_tools' gclient are available.
+
+    The ungoogled-chromium depot_tools.patch changes gclient.bat from vpython3
+    to python3, bypassing the virtual environment that normally provides httplib2.
+    gerrit_util.py (from depot_tools) imports httplib2.socks, which was removed
+    in httplib2 >= 0.20.0. We install the compatible version here so gclient
+    can run during source preparation (clone.py -> gclient sync).
+    """
+    try:
+        import httplib2.socks  # type: ignore[import-untyped] # noqa: F401
+    except ImportError:
+        get_logger().info(
+            'Installing httplib2==0.19.1 (required by depot_tools gclient)')
+        subprocess.check_call([
+            sys.executable, '-m', 'pip', 'install',
+            '--disable-pip-version-check', 'httplib2==0.19.1'
+        ])
+
+
+class _GclientSafePath(type(Path())):
+    """Path subclass with forward-slash __str__ for .gclient compatibility.
+
+    When a Windows path like C:\\thorium-autobuild-win\\build\\src is written
+    into the .gclient file (a Python-evaluated config), the ``\\b`` in
+    ``\\build`` is interpreted as a backspace escape character.
+
+    This subclass returns forward slashes from __str__() so the path
+    ``C:/thorium-autobuild-win/build/src`` never contains problematic
+    ``\\``-based escapes when used in Python string literals inside .gclient.
+    """
+    def __str__(self):
+        return super().__str__().replace('\\', '/')
+
+
 def _clone_chromium_source(source_tree, chromium_version, args):
     """Clone Chromium from git and checkout the pinned version when available."""
+    _ensure_depot_tools_deps()
     uc_clone.clone(argparse.Namespace(
-        output=source_tree,
+        output=_GclientSafePath(source_tree),
         custom_config=None,
         pgo='win32' if args.x86 else 'win-arm64' if args.arm else 'win64',
         sysroot=None,
@@ -290,6 +368,68 @@ def _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_
     return 'git'
 
 
+def _apply_ungoogled_windows_patches(source_tree, patch_bin_path):
+    """
+    Apply selected ungoogled-chromium-windows patches from the submodule.
+
+    The list of patches to apply is specified in a curated whitelist file
+    (patches/series.ungoogled-windows). The whitelist supports section markers
+    to resolve patch paths against different base directories:
+
+      #[windows]  (default) — resolve relative to <submodule>/patches/
+      #[main]               — resolve relative to <submodule>/ungoogled-chromium/patches/
+
+    This allows prerequisite patches from the main ungoogled-chromium series to
+    be referenced without ../ paths.
+    """
+    series_file = _UNGOOGLED_WINDOWS_SERIES_FILE
+    if not series_file.exists():
+        get_logger().warning('No whitelist found at %s', series_file)
+        return
+
+    # Base directories for each section
+    _BASE_DIRS = {
+        'windows': _UNGOOGLED_PATCH_DIR,
+        'main': _UNGOOGLED_CHROMIUM_DIR / 'patches',
+    }
+
+    # Parse entries with section markers
+    patch_paths = []
+    current_base = _BASE_DIRS['windows']  # default section
+    with open(series_file, 'r', encoding=ENCODING) as f:
+        for line in f:
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
+                # Check for section marker: #[section_name]
+                if stripped.startswith('#[') and stripped.endswith(']'):
+                    section = stripped[2:-1].strip()
+                    if section in _BASE_DIRS:
+                        current_base = _BASE_DIRS[section]
+                    else:
+                        get_logger().warning('Unknown section in %s: %s',
+                                             series_file.name, section)
+                continue
+
+            patch_path = (current_base / stripped).resolve()
+            if not patch_path.exists():
+                get_logger().warning('Whitelisted patch not found: %s', patch_path)
+                continue
+            patch_paths.append(patch_path)
+
+    if not patch_paths:
+        get_logger().warning('No ungoogled-chromium-windows patches to apply')
+        return
+
+    get_logger().info('Applying %d ungoogled-chromium-windows patches (from %s)...',
+                      len(patch_paths), series_file.name)
+    uc_patches.apply_patches(
+        patch_paths,
+        source_tree,
+        patch_bin_path=patch_bin_path
+    )
+    get_logger().info('ungoogled-chromium-windows patches applied successfully.')
+
+
 def _apply_thorium_patches(source_tree, patch_bin_path):
     """
     Apply all Thorium-specific patches to the source tree.
@@ -330,6 +470,40 @@ def _apply_thorium_patches(source_tree, patch_bin_path):
         patch_bin_path=patch_bin_path
     )
     get_logger().info('Thorium patches applied successfully.')
+
+
+def _run_safe_browsing_patch_extraction(source_tree):
+    """
+    Run the safe_browsing patch extraction module.
+
+    This regenerates the auto-generated patch file
+    patches/thorium/fixes/autogenerated_remove-safebrowsing-prefs-deps.patch
+    by scanning ungoogled-chromium source patches for content related to
+    safe_browsing.
+
+    The extraction happens before Thorium patches are applied so that the
+    auto-generated patch (listed first in patches/series) is always up to
+    date.
+    """
+    import subprocess
+
+    script = _ROOT_DIR / 'devutils' / 'extract_safebrowsing_patches.py'
+    if not script.exists():
+        get_logger().warning(
+            'Safe browsing extraction script not found: %s', script)
+        return
+
+    get_logger().info('Running safe_browsing patch extraction...')
+    result = subprocess.run(
+        [sys.executable, str(script)],
+        capture_output=True, text=True, cwd=_ROOT_DIR)
+
+    if result.returncode != 0:
+        get_logger().warning(
+            'Safe browsing extraction failed (rc=%d): %s',
+            result.returncode, result.stderr.strip())
+    elif result.stdout.strip():
+        get_logger().info(result.stdout.strip())
 
 
 def _apply_source_overrides(source_tree):
@@ -467,8 +641,27 @@ def _setup_rust_toolchain(source_tree):
             subprocess.run([str(rustc_path), '--version'], stdout=f)
 
 
+def _check_admin():
+    """Check if the script is running with Administrator privileges.
+    Exit with an error if not running as admin."""
+    try:
+        is_admin = ctypes.windll.shell32.IsUserAnAdmin()
+    except (AttributeError, OSError):
+        # Not Windows or ctypes not available, try Unix method
+        try:
+            is_admin = os.geteuid() == 0
+        except AttributeError:
+            is_admin = False
+    if not is_admin:
+        print('ERROR: Administrator privileges required.')
+        print('  This script must be run as Administrator.')
+        print('  Please restart the terminal/command prompt as Administrator and try again.')
+        sys.exit(1)
+
+
 def main():
     """CLI Entrypoint"""
+    _check_admin()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         '--disable-ssl-verification',
@@ -520,6 +713,10 @@ def main():
     uc_clone.get_chromium_version = _get_chromium_version
     downloads.get_chromium_version = _get_chromium_version
     if chromium_version:
+        downloads.DownloadInfo._ini_vars['_chromium_version'] = chromium_version
+    else:
+        downloads.DownloadInfo._ini_vars.pop('_chromium_version', None)
+    if chromium_version:
         get_logger().info('Target Chromium version: %s (from chromium_version.txt)', chromium_version)
     else:
         get_logger().warning(
@@ -531,6 +728,23 @@ def main():
     downloads_cache = _ROOT_DIR / 'build' / 'download_cache'
     output_dir_name = 'thorium_' + args.simd
     output_dir = source_tree / 'out' / output_dir_name
+
+    # Windows MAX_PATH safety check: the longest known generated file subpath
+    # is 184 characters (e.g. the Blink v8_union_*_videoframe.cc path under
+    # gen/). If output_dir + 184 would exceed 255 (leaving a 5-char margin
+    # below the 260-char MAX_PATH limit), abort early with a clear message.
+    _MAX_GEN_SUBPATH = 184
+    _PATH_WARN_LIMIT = 255
+    if len(str(output_dir)) + _MAX_GEN_SUBPATH > _PATH_WARN_LIMIT:
+        get_logger().error(
+            'Build path too long (%d + %d = %d > %d). Windows MAX_PATH limit '
+            'may cause build failures.\n'
+            '  Output directory: %s\n'
+            '  Move the project to a shorter path (e.g. C:\\thorium) and retry.',
+            len(str(output_dir)), _MAX_GEN_SUBPATH,
+            len(str(output_dir)) + _MAX_GEN_SUBPATH, _PATH_WARN_LIMIT,
+            output_dir)
+        sys.exit(1)
 
     # ----- Stage: Prepare Source -----
     if args.gn_only or args.build_only:
@@ -564,10 +778,13 @@ def main():
             sys.exit(1)
 
         # Prune binaries. Apply the upstream Windows list first, then Thorium-only additions.
+        # The keeping.list file protects entries from the upstream pruning that
+        # Thorium still needs (e.g. signin_pref_names removed by ungoogled).
         _prune_files_with_warnings(
             source_tree,
             _UNGOOGLED_WINDOWS_DIR / 'pruning.list',
-            'ungoogled-chromium-windows')
+            'ungoogled-chromium-windows',
+            keeping_list=_ROOT_DIR / 'keeping.list')
         _prune_files_with_warnings(
             source_tree,
             _ROOT_DIR / 'pruning.list',
@@ -586,17 +803,19 @@ def main():
         downloads.unpack_downloads(download_info_win, downloads_cache, None,
                                    source_tree, extractors)
 
-        # Apply ungoogled-chromium patches
-        get_logger().info('Applying ungoogled-chromium patches...')
-        uc_patches.apply_patches(
-            uc_patches.generate_patches_from_series(
-                _UNGOOGLED_PATCH_DIR, resolve=True),
+        # Apply selected ungoogled-chromium-windows patches
+        # Uses the curated whitelist in patches/series.ungoogled-windows.
+        get_logger().info('Applying ungoogled-chromium-windows patches...')
+        _apply_ungoogled_windows_patches(
             source_tree,
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
 
         # Apply source overrides (overwrite + create new)
         _apply_source_overrides(source_tree)
+
+        # Run safe_browsing patch extraction (regenerates auto-generated patch)
+        _run_safe_browsing_patch_extraction(source_tree)
 
         # Apply Thorium-specific patches
         _apply_thorium_patches(

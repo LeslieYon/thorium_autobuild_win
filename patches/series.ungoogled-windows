@@ -1,0 +1,45 @@
+# Ungoogled-Chromium-Windows patches selected for Thorium builds.
+#
+# This is a curated whitelist of Windows-specific compatibility patches from
+# the ungoogled-chromium-windows submodule, plus prerequisite patches from the
+# main ungoogled-chromium series that they depend on.
+#
+# Section markers control the base directory for path resolution:
+#   #[windows]  — relative to <submodule>/patches/                (default)
+#   #[main]     — relative to <submodule>/ungoogled-chromium/patches/
+#
+# The following patches from the submodule are intentionally omitted:
+#   windows-disable-encryption.patch — depends on ungoogled-only header
+#     (ungoogled_platform_flag_entries.h); Thorium has its own patches for the
+#     same C++ files (patches/thorium/fixes/components__os_crypt__*.cc.patch).
+#   windows-disable-machine-id.patch — same dependency on ungoogled-only header.
+
+# ----- Prerequisites from main series -----
+#[main]
+core/inox-patchset/0001-fix-building-without-safebrowsing.patch
+core/ungoogled-chromium/fix-building-without-safebrowsing.patch
+core/ungoogled-chromium/fix-building-with-prunned-binaries.patch
+
+# ----- Windows-specific patches -----
+#[windows]
+ungoogled-chromium/windows/windows-disable-reorder-fix-linking.patch
+ungoogled-chromium/windows/windows-disable-win-build-output.patch
+ungoogled-chromium/windows/windows-disable-rcpy.patch
+ungoogled-chromium/windows/windows-fix-building-gn.patch
+ungoogled-chromium/windows/windows-compile-mini-installer.patch
+ungoogled-chromium/windows/windows-no-unknown-warnings.patch
+ungoogled-chromium/windows/windows-fix-showIncludes.patch
+ungoogled-chromium/windows/windows-fix-rc.patch
+ungoogled-chromium/windows/windows-disable-event-log.patch
+ungoogled-chromium/windows/windows-fix-clang-format-exe.patch
+ungoogled-chromium/windows/windows-disable-rlz.patch
+ungoogled-chromium/windows/windows-fix-command-ids.patch
+ungoogled-chromium/windows/windows-disable-download-warning-prompt.patch
+ungoogled-chromium/windows/windows-fix-rc-terminating-error.patch
+ungoogled-chromium/windows/windows-fix-building-without-safebrowsing.patch
+ungoogled-chromium/windows/windows-fix-generate-resource-allowed-list.patch
+ungoogled-chromium/windows/windows-disable-clang-version-check.patch
+ungoogled-chromium/windows/windows-fix-licenses-gn-path.patch
+ungoogled-chromium/windows/windows-fix-building-with-rust.patch
+ungoogled-chromium/windows/windows-fix-remove-unused-preferences-fields.patch
+ungoogled-chromium/windows/windows-fix-missing-includes.patch

@@ -21,7 +21,12 @@ runs:
         }
         Copy-Item -Path $env:GITHUB_WORKSPACE -Destination 'C:\thorium-autobuild-win' -Recurse
 
-    - name: Setup Stage
+    - name: Setup Stage (C:\ drive)
       shell: pwsh
       run: npm install
       working-directory: C:\thorium-autobuild-win\.github\actions\stage
+
+    - name: Setup Stage (workspace)
+      shell: pwsh
+      run: npm install
+      working-directory: ${{ github.workspace }}\.github\actions\stage

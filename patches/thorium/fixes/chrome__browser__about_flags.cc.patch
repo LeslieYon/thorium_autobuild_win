@@ -37,16 +37,3 @@
      {variations::switches::kEnableBenchmarking,
       flag_descriptions::kEnableBenchmarkingName,
       flag_descriptions::kEnableBenchmarkingDescription, kOsAll,
-@@ -9022,6 +9027,12 @@
-          "LauncherDynamicAnimations")},
- #endif  // BUILDFLAG(IS_CHROMEOS)
- 
-+#if BUILDFLAG(ENABLE_JXL_DECODER)
-+    {"enable-jxl", flag_descriptions::kEnableJXLName,
-+     flag_descriptions::kEnableJXLDescription, kOsAll,
-+     FEATURE_VALUE_TYPE(blink::features::kJXL)},
-+#endif  // BUILDFLAG(ENABLE_JXL_DECODER)
-+
- #if BUILDFLAG(IS_ANDROID)
-     {"enable-surface-control", flag_descriptions::kAndroidSurfaceControlName,
-      flag_descriptions::kAndroidSurfaceControlDescription, kOsAndroid,
