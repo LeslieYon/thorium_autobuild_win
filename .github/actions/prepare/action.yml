@@ -16,15 +16,15 @@ runs:
     - name: Init - Copy workspace to C:\\
       shell: pwsh
       run: |
-        if (Test-Path 'C:\thorium-autobuild-win') {
-          Remove-Item 'C:\thorium-autobuild-win' -Recurse -Force
+        if (Test-Path 'C:\tbw') {
+          Remove-Item 'C:\tbw' -Recurse -Force
         }
-        Copy-Item -Path $env:GITHUB_WORKSPACE -Destination 'C:\thorium-autobuild-win' -Recurse
+        Copy-Item -Path $env:GITHUB_WORKSPACE -Destination 'C:\tbw' -Recurse
 
     - name: Setup Stage (C:\ drive)
       shell: pwsh
       run: npm install
-      working-directory: C:\thorium-autobuild-win\.github\actions\stage
+      working-directory: C:\tbw\.github\actions\stage
 
     - name: Setup Stage (workspace)
       shell: pwsh

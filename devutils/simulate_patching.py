@@ -3,26 +3,19 @@
 Thorium Patching Simulation Tool
 =================================
 
-Simulate the build.py patching process on a local Chromium source tree to
-verify all patches apply cleanly before attempting an actual build.
+Simulate the build.py patching process exactly on a local Chromium source tree:
+1. Verify source tree and reset git submodules to clean state
+2. Analyze pruning lists (informational, no files deleted)
+3. Apply ungoogled-chromium-windows patches (in order)
+4. Apply overlay/ files to source tree
+5. Apply Thorium patches (in order)
+6. Revert ALL changes — leaves the source tree pristine
 
-Use cases:
-  - Verify patches after upgrading Chromium version
-  - Diagnose patch conflicts after modifying ungoogled-chromium-windows submodule
-  - Validate overlay/ file coverage
-  - Quick feedback loop during patch development
-
-Two verification modes:
-  1. Dry-run mode (default) — checks each patch independently against the
-     current source tree using 'git apply --check'. Fast, no source modification.
-  2. Sequential mode (--sequential) — applies patches IN ORDER, accumulating
-     changes so later patches see earlier modifications. Then reverts all changes.
-     More accurate but slower.
+Uses the same 'patch -p1' binary as build.py for maximum accuracy.
 
 Usage:
-  python devutils/simulate_patching.py                         # dry-run mode
-  python devutils/simulate_patching.py --sequential             # sequential mode
-  python devutils/simulate_patching.py --source-dir ../chromium # custom source
+  python devutils/simulate_patching.py
+  python devutils/simulate_patching.py --source-dir ../chromium
 """
 
 import sys
@@ -31,7 +24,7 @@ import subprocess
 import time
 import argparse
 import shutil
-import difflib
+import tempfile
 from pathlib import Path
 
 # ====================================================================
@@ -39,7 +32,8 @@ from pathlib import Path
 # ====================================================================
 ROOT_DIR = Path(__file__).resolve().parent.parent
 CHROMIUM_DIR = ROOT_DIR.parent / "chromium"
-GIT_CMD = r"/usr/bin/git"
+GIT_CMD = ROOT_DIR.parent / "PortableGit" / "cmd" / "git.exe"
+PATCH_CMD = ROOT_DIR.parent / "PortableGit" / "usr" / "bin" / "patch.exe"
 
 # Derived paths
 UNGOOGLED_WINDOWS_DIR = ROOT_DIR / "ungoogled-chromium-windows"
@@ -61,10 +55,6 @@ sys.path.pop(0)
 
 # Global counters
 stats = {"passed": 0, "failed": 0, "total": 0, "warnings": []}
-
-
-def eprint(*args, **kwargs):
-    print(*args, **kwargs)
 
 
 def warn(msg):
@@ -116,35 +106,52 @@ def parse_series_with_sections(series_path, base_dirs):
     return patches
 
 
-def check_patch(patch_path, tree_path, check_only=True, git_cmd=GIT_CMD):
+def apply_patch(patch_path, tree_path, patch_cmd=PATCH_CMD):
     """
-    Test if a patch applies. Returns (success: bool, error_msg: str|None).
+    Apply a single patch using the same 'patch -p1' command as build.py.
 
-    In check_only mode, uses 'git apply --check' (no files modified).
-    Otherwise, applies the patch for real.
+    Returns (success: bool, error_msg: str|None).
+    error_msg combines stdout + stderr for complete diagnostics.
     """
     stats["total"] += 1
     cmd = [
-        git_cmd, "-C", str(tree_path),
-        "apply", "--allow-empty"
+        str(patch_cmd), "-p1", "--ignore-whitespace",
+        "-i", str(patch_path),
+        "-d", str(tree_path),
+        "--no-backup-if-mismatch", "--forward",
     ]
-    if check_only:
-        cmd.append("--check")
-    cmd += ["--ignore-whitespace", "-p1", str(patch_path)]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Ensure patch can create temp files: MSYS2's /tmp/ may not be writable
+    patch_env = os.environ.copy()
+    tmpdir = tempfile.gettempdir()
+    for var in ('TMPDIR', 'TMP', 'TEMP'):
+        if var not in patch_env or not patch_env[var]:
+            patch_env[var] = tmpdir
+    result = subprocess.run(cmd, capture_output=True, text=True, env=patch_env)
     if result.returncode == 0:
         stats["passed"] += 1
         return True, None
     else:
         stats["failed"] += 1
-        return False, result.stderr.strip()
+        # patch outputs error details to stdout, not stderr
+        err = result.stdout.strip() or result.stderr.strip()
+        # Add hint for common cases
+        if 'Reversed' in result.stdout or 'previously applied' in result.stdout:
+            hint = ('HINT: This patch was already applied to the source tree '
+                    '(e.g. via overlay files or a prior build). '
+                    'Make sure the source tree is clean before running.')
+            err = err + '\n' + hint
+        elif 'No such file or directory' in (result.stdout + result.stderr):
+            hint = ('HINT: A file the patch wants to modify does not exist. '
+                    'The source tree may be incomplete (e.g. missing submodule).')
+            err = err + '\n' + hint
+        return False, err
 
 
 # ====================================================================
 # Verification steps
 # ====================================================================
 
-def verify_source_tree(source_tree, git_cmd=GIT_CMD):
+def verify_source_tree(source_tree):
     """Check the source tree exists and is in a known state."""
     print("=" * 60)
     print("SOURCE TREE VERIFICATION")
@@ -159,18 +166,18 @@ def verify_source_tree(source_tree, git_cmd=GIT_CMD):
     # Try to get git tag
     try:
         result = subprocess.run(
-            [git_cmd, "-C", str(source_tree), "describe", "--tags", "--always"],
+            [GIT_CMD, "-C", str(source_tree), "describe", "--tags", "--always"],
             capture_output=True, text=True,
         )
         if result.returncode == 0:
             print(f"  \u2705 Git tag: {result.stdout.strip()}")
     except FileNotFoundError:
-        warn(f"git not found at {git_cmd} — install Git or update GIT_CMD path")
+        warn(f"git not found at {GIT_CMD}")
 
     # Check if source tree is clean
     try:
         result = subprocess.run(
-            [git_cmd, "-C", str(source_tree), "status", "--porcelain"],
+            [GIT_CMD, "-C", str(source_tree), "status", "--porcelain"],
             capture_output=True, text=True,
         )
         if result.returncode == 0:
@@ -186,8 +193,8 @@ def verify_source_tree(source_tree, git_cmd=GIT_CMD):
     return True
 
 
-def check_pruning(prune_path, label, source_tree):
-    """Check pruning list entries against source tree (without deleting)."""
+def analyze_pruning(prune_path, label, source_tree):
+    """Analyze pruning list entries against source tree (informational only)."""
     entries = read_list_file(prune_path)
     if not entries:
         print(f"\n{'='*60}")
@@ -218,18 +225,17 @@ def check_pruning(prune_path, label, source_tree):
         print(f"      ... and {count - 5} more")
 
 
-def check_patches(mode, label, series_path, base_dirs, source_tree, git_cmd=GIT_CMD):
+def apply_patches(label, series_path, base_dirs, source_tree, patch_cmd=PATCH_CMD):
     """
-    Check all patches in a series file.
-
-    mode: 'dry-run' or 'sequential'
+    Apply all patches from a series file in order, matching build.py's
+    uc_patches.apply_patches() behavior.
     """
     patches = parse_series_with_sections(series_path, base_dirs)
     if not patches:
         return
 
     print(f"\n{'='*60}")
-    print(f"PATCHES: {label} ({mode})")
+    print(f"PATCHES: {label}")
     print(f"{'='*60}")
     print(f"  Series: {series_path}")
     print(f"  Count:  {len(patches)}")
@@ -247,18 +253,17 @@ def check_patches(mode, label, series_path, base_dirs, source_tree, git_cmd=GIT_
             not_found += 1
             continue
 
-        check_only = (mode == "dry-run")
-        ok, err = check_patch(pp, source_tree, check_only=check_only, git_cmd=git_cmd)
-        elapsed = time.time() - start
+        ok, err = apply_patch(pp, source_tree, patch_cmd=patch_cmd)
 
         if ok:
             print(f"  \u2705 [{i}/{len(patches)}] {pp.name}")
         else:
             print(f"  \u274c [{i}/{len(patches)}] {pp.name}")
-            # Show first 3 lines of error
-            for line in err.split("\n")[:3]:
-                if line.strip():
-                    print(f"       {line.strip()}")
+            # Show all non-empty lines from the error message
+            for line in err.split("\n"):
+                line = line.strip()
+                if line:
+                    print(f"       {line}")
 
     new_failed = stats["failed"] - failed_before
     duration = time.time() - start
@@ -266,44 +271,47 @@ def check_patches(mode, label, series_path, base_dirs, source_tree, git_cmd=GIT_
     print(f"  Result: {passed}/{len(patches)} passed  ({duration:.1f}s)")
 
 
-def check_overlay(overlay_path, source_tree, git_cmd=GIT_CMD):
-    """Analyze overlay files against source tree."""
+
+
+
+def apply_overlay(overlay_path, source_tree):
+    """
+    Copy overlay files to the source tree, matching build.py's
+    _apply_source_overrides() behavior exactly.
+    Overlay files either overwrite existing Chromium files or create new ones.
+    """
     if not overlay_path.exists():
         print(f"\n{'='*60}")
-        print("OVERLAY")
+        print("OVERLAY: Apply")
         print(f"{'='*60}")
-        print("  overlay/ not found")
+        print("  overlay/ not found — nothing to apply")
         return
 
     print(f"\n{'='*60}")
-    print("OVERLAY: Source Overrides")
+    print("OVERLAY: Apply to Source Tree")
     print(f"{'='*60}")
     print(f"  Overlay dir: {overlay_path}")
 
-    new_files = []
-    overwrite_files = []
-
+    new_count = 0
+    overwrite_count = 0
     for f in overlay_path.rglob("*"):
         if not f.is_file() or f.name == ".gitkeep":
             continue
         rel = f.relative_to(overlay_path)
         dst = source_tree / rel
-        if dst.exists():
-            overwrite_files.append(rel)
-        else:
-            new_files.append(rel)
+        existed_before = dst.exists()
 
-    print(f"  Total overlay entries: {len(new_files) + len(overwrite_files)}")
-    print(f"  Would create {len(new_files)} new files")
-    for n in sorted(new_files)[:8]:
-        print(f"      + {n}")
-    if len(new_files) > 8:
-        print(f"      ... and {len(new_files) - 8} more")
-    print(f"  Would overwrite {len(overwrite_files)} existing files")
-    for o in sorted(overwrite_files)[:8]:
-        print(f"      ~ {o}")
-    if len(overwrite_files) > 8:
-        print(f"      ... and {len(overwrite_files) - 8} more")
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, dst)
+
+        if existed_before:
+            overwrite_count += 1
+            print(f"      ~ {rel}")
+        else:
+            new_count += 1
+            print(f"      + {rel}")
+
+    print(f"  Applied: {overwrite_count} overwritten, {new_count} new files")
 
 
 # ====================================================================
@@ -312,39 +320,47 @@ def check_overlay(overlay_path, source_tree, git_cmd=GIT_CMD):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Simulate Thorium patching on a local Chromium source tree.",
+        description="Simulate Thorium patching on a local Chromium source tree "
+                    "exactly as build.py would. Always applies patches in order, "
+                    "copies overlay files, then reverts all changes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                           # dry-run: check all patches independently
-  %(prog)s --sequential              # sequential: apply in order, then revert
-  %(prog)s --source-dir ../src       # use a custom Chromium source path
-  %(prog)s --quick                   # skip pruning & overlay checks
+  %(prog)s                          # full simulation with defaults
+  %(prog)s --source-dir ../src      # use a different Chromium source
         """,
-    )
-    parser.add_argument(
-        "--sequential", action="store_true",
-        help="Apply patches sequentially (not dry-run), then revert. Slower but more accurate."
     )
     parser.add_argument(
         "--source-dir", type=str, default=None,
         help=f"Path to Chromium source tree (default: {CHROMIUM_DIR})"
     )
-    parser.add_argument(
-        "--quick", action="store_true",
-        help="Skip pruning and overlay checks. Test patches only."
-    )
-    parser.add_argument(
-        "--git-cmd", type=str, default=GIT_CMD,
-        help=f"Path to git executable (default: {GIT_CMD})"
-    )
     args = parser.parse_args()
-    git_cmd = args.git_cmd
 
     source_tree = Path(args.source_dir) if args.source_dir else CHROMIUM_DIR
 
+    # Auto-detect patch binary — same one build.py uses
+    if PATCH_CMD.exists():
+        patch_cmd = PATCH_CMD
+    else:
+        patch_cmd = None
+        patch_env = os.environ.get('PATCH_BIN')
+        if patch_env:
+            patch_cmd = Path(patch_env)
+            if not patch_cmd.exists():
+                patch_cmd = shutil.which(patch_env)
+                if patch_cmd:
+                    patch_cmd = Path(patch_cmd)
+        if patch_cmd is None:
+            which_patch = shutil.which('patch')
+            if which_patch:
+                patch_cmd = Path(which_patch)
+    if not patch_cmd or not patch_cmd.exists():
+        print("  \u274c patch binary not found — install patch or set PATCH_BIN env var")
+        sys.exit(1)
+    print(f"  Using patch: {patch_cmd}")
+
     print("=" * 60)
-    print(f"THORIUM PATCHING SIMULATION  ({args.sequential and 'SEQUENTIAL' or 'DRY-RUN'})")
+    print("THORIUM PATCHING SIMULATION")
     print(f"Chromium:  {source_tree}")
     print(f"Thorium:   {ROOT_DIR}")
     version_file = ROOT_DIR / "chromium_version.txt"
@@ -352,26 +368,55 @@ Examples:
         print(f"Version:   {version_file.read_text(encoding=ENCODING).strip()}")
     print("=" * 60)
 
-    # Step 0: Verify source tree
-    if not verify_source_tree(source_tree, git_cmd=git_cmd):
+    # Step 1: Verify source tree
+    if not verify_source_tree(source_tree):
         sys.exit(1)
 
-    # Prune — if not --quick
-    if not args.quick:
-        check_pruning(
-            UNGOOGLED_WINDOWS_DIR / "pruning.list",
-            "ungoogled-chromium-windows",
-            source_tree,
-        )
-        check_pruning(
-            ROOT_DIR / "pruning.list",
-            "Thorium-specific",
-            source_tree,
-        )
+    # Step 2: Reset dirty git submodules to their committed state.
+    # This ensures third_party/ffmpeg and other submodules are clean
+    # before patching, matching the real build's fresh source tree.
+    # Only resets submodules with local modifications (marked ' M' in status)
+    # to avoid the expensive full `submodule update --init` on the entire tree.
+    print(f"\n{'='*60}")
+    print("RESET SUBMODULES")
+    print(f"{'='*60}")
+    result = subprocess.run(
+        [GIT_CMD, "-C", str(source_tree), "status", "--porcelain"],
+        capture_output=True, text=True,
+    )
+    dirty_submodules = []
+    for line in result.stdout.strip().split("\n"):
+        line = line.strip()
+        if line.startswith("M"):
+            # Submodule modification: "M <path>" or " M <path>"
+            parts = line.split()
+            if len(parts) >= 2:
+                dirty_submodules.append(parts[-1])
+    if dirty_submodules:
+        for sm in dirty_submodules:
+            subprocess.run(
+                [GIT_CMD, "-C", str(source_tree), "submodule", "update",
+                 "--force", "--init", "--no-fetch", sm],
+                capture_output=True, text=True,
+            )
+        print(f"  \u2705 Reset {len(dirty_submodules)} submodule(s): {', '.join(dirty_submodules)}")
+    else:
+        print(f"  \u2705 No dirty submodules found")
 
-    # Ungoogled-chromium-windows patches
-    check_patches(
-        args.sequential and "sequential" or "dry-run",
+    # Step 3: Analyze pruning (informational only — no files deleted)
+    analyze_pruning(
+        UNGOOGLED_WINDOWS_DIR / "pruning.list",
+        "ungoogled-chromium-windows",
+        source_tree,
+    )
+    analyze_pruning(
+        ROOT_DIR / "pruning.list",
+        "Thorium-specific",
+        source_tree,
+    )
+
+    # Step 4: Apply ungoogled-chromium-windows patches
+    apply_patches(
         "ungoogled-chromium-windows",
         UNGOOGLED_SERIES_FILE,
         {
@@ -379,32 +424,58 @@ Examples:
             "windows": UNGOOGLED_PATCH_DIR,
         },
         source_tree,
-        git_cmd=git_cmd,
+        patch_cmd=patch_cmd,
     )
 
-    # Overlay (unless --quick)
-    if not args.quick:
-        check_overlay(OVERLAY_DIR, source_tree)
+    # Step 5: Apply overlay (matches build.py order: overlay BEFORE Thorium patches)
+    apply_overlay(OVERLAY_DIR, source_tree)
 
-    # Thorium patches
-    check_patches(
-        args.sequential and "sequential" or "dry-run",
+    # Step 6: Apply Thorium patches
+    apply_patches(
         "Thorium",
         THORIUM_SERIES_FILE,
         {"thorium": THORIUM_PATCH_DIR.parent},
         source_tree,
-        git_cmd=git_cmd,
+        patch_cmd=patch_cmd,
     )
 
-    # Revert if sequential mode
-    if args.sequential:
-        print(f"\n{'='*60}")
-        print("REVERTING source tree...")
-        subprocess.run([git_cmd, "-C", str(source_tree), "checkout", "--", "."],
-                       capture_output=True)
-        subprocess.run([git_cmd, "-C", str(source_tree), "clean", "-fd"],
-                       capture_output=True)
-        print("  Source tree restored to original state.")
+    # Step 7: Revert ALL changes — restore source tree to pristine state
+    print(f"\n{'='*60}")
+    print("REVERTING source tree...")
+    subprocess.run([GIT_CMD, "-C", str(source_tree), "reset", "--hard", "HEAD"],
+                   capture_output=True)
+    subprocess.run([GIT_CMD, "-C", str(source_tree), "clean", "-fdx"],
+                   capture_output=True)
+    # Reset submodules that got dirtied by overlay/patches
+    result = subprocess.run(
+        [GIT_CMD, "-C", str(source_tree), "status", "--porcelain"],
+        capture_output=True, text=True,
+    )
+    for line in result.stdout.strip().split("\n"):
+        line = line.strip()
+        if line.startswith("M"):
+            parts = line.split()
+            if len(parts) >= 2:
+                subprocess.run(
+                    [GIT_CMD, "-C", str(source_tree), "submodule", "update",
+                     "--force", "--no-fetch", parts[-1]],
+                    capture_output=True, text=True,
+                )
+
+    result = subprocess.run(
+        [GIT_CMD, "-C", str(source_tree), "status", "--porcelain"],
+        capture_output=True, text=True,
+    )
+    remaining = result.stdout.strip()
+    if remaining:
+        lines = remaining.split("\n")
+        warn(f"Source tree still has {len(lines)} uncommitted change(s) after revert:")
+        for line in lines[:10]:
+            print(f"      {line}")
+        if len(lines) > 10:
+            print(f"      ... and {len(lines) - 10} more")
+    else:
+        print("  \u2705 Source tree restored to original state.")
 
     # Summary
     print(f"\n{'='*60}")

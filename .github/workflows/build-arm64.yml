@@ -13,7 +13,9 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ARM64 build temporarily disabled
   prepare:
+    if: false
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
@@ -25,13 +27,13 @@ jobs:
         id: source-cache
         uses: actions/cache@v4
         with:
-          path: C:\thorium-autobuild-win\build\src
+          path: C:\tbw\build\src
           key: thorium-src-arm64-${{ github.sha }}
       - name: Prepare Chromium source
         if: ${{ steps.source-cache.outputs.cache-hit != 'true' }}
         shell: pwsh
         run: python build.py --ci --prepare-only --arm
-        working-directory: C:\thorium-autobuild-win
+        working-directory: C:\tbw
 
   build:
     needs: prepare

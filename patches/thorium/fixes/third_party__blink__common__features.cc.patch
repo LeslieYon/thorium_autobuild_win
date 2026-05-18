@@ -101,16 +101,6 @@
  
  // Selectively allows the JavaScript API to be disabled in just one of the
  // contexts. The Protected Audience param's name has not been updated (from
-@@ -2290,6 +2298,9 @@
-              "LocalCompileHints",
-              base::FEATURE_ENABLED_BY_DEFAULT);
- 
-+// Enables the JPEG XL Image File Format (JXL).
-+BASE_FEATURE(kJXL, "JXL", base::FEATURE_ENABLED_BY_DEFAULT);
-+
- BASE_FEATURE(kQuoteEmptySecChUaStringHeadersConsistently,
-              "QuoteEmptySecChUaStringHeadersConsistently",
-              base::FEATURE_ENABLED_BY_DEFAULT);
 @@ -2490,9 +2501,10 @@
  
  // If enabled, force renderer process foregrounded from CommitNavigation to

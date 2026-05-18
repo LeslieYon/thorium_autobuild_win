@@ -901,7 +901,11 @@ def main():
         # Run ninja build
         get_logger().info('Starting Thorium build for SIMD variant: %s', args.simd)
         if args.ci:
-            _run_build_process_timeout(*ninja_commandline, timeout=3.5 * 60 * 60)
+            try:
+                _run_build_process_timeout(*ninja_commandline, timeout=3.5 * 60 * 60)
+            except KeyboardInterrupt:
+                get_logger().info('Build timed out, will resume in next stage.')
+                sys.exit(2)
             get_logger().info('Build completed. Running packaging...')
             os.chdir(_ROOT_DIR)
             subprocess.run([sys.executable, 'package.py', '--simd', args.simd])

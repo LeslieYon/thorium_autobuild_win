@@ -1,21 +1,22 @@
-name: build-x86
+name: test-build-x64-avx2
+
 on:
   workflow_dispatch:
-#  push:
-#    tags:
-#      - '*'
+    inputs:
+      python-version:
+        description: Python version for the build environment
+        required: false
+        default: '3.12'
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-x86-${{ github.ref }}
-  cancel-in-progress: false
+  group: test-build-x64-avx2-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # x86 build temporarily disabled
   prepare:
-    if: false
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
@@ -23,27 +24,28 @@ jobs:
           submodules: 'recursive'
       - name: Prepare
         uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs['python-version'] }}
       - name: Restore source cache
         id: source-cache
         uses: actions/cache@v4
         with:
           path: C:\tbw\build\src
-          key: thorium-src-x86-${{ github.sha }}
-
+          key: thorium-src-test-x64-avx2-${{ github.sha }}
       - name: Prepare Chromium source
         if: ${{ steps.source-cache.outputs.cache-hit != 'true' }}
         shell: pwsh
-        run: python build.py --ci --prepare-only --x86
+        run: python build.py --ci --prepare-only --simd avx
         working-directory: C:\tbw
 
-  build:
+  build-avx2:
     needs: prepare
     uses: ./.github/workflows/reusable-build.yml
     with:
-      x86: true
-      simd: sse3
-      cache-key: thorium-src-x86-${{ github.sha }}
-      artifact-name: thorium-x86
+      python-version: ${{ inputs['python-version'] }}
+      simd: avx2
+      cache-key: thorium-src-test-x64-avx2-${{ github.sha }}
+      artifact-name: thorium-test-x64-avx2
     secrets:
       GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
       GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}

@@ -51,7 +51,7 @@ jobs:
       - name: Restore prepared source
         uses: actions/cache/restore@v4
         with:
-          path: C:\thorium-autobuild-win\build\src
+          path: C:\tbw\build\src
           key: ${{ inputs.cache-key }}
       - name: Run Stage
         id: stage
@@ -62,21 +62,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -93,11 +84,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -107,21 +93,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -138,11 +115,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -152,21 +124,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -183,11 +146,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -197,21 +155,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -228,11 +177,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -242,21 +186,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -273,11 +208,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -287,21 +217,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -318,11 +239,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -332,21 +248,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -363,11 +270,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -377,21 +279,12 @@ jobs:
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
-      - name: Upload stage state
-        if: ${{ steps.stage.outputs.finished != 'true' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
-          retention-days: 1
-          compression-level: 0
-          overwrite: true
       - name: Upload package
         if: ${{ steps.stage.outputs.finished == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
@@ -408,11 +301,6 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Download stage state
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name }}-state
-          path: C:\thorium-autobuild-win\build
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
@@ -427,7 +315,224 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact-name }}
-          path: C:\thorium-autobuild-win\build\thorium_*
+          path: C:\tbw\build\thorium_*
+          if-no-files-found: error
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+
+  build-10:
+    needs: build-9
+    if: ${{ needs.build-9.outputs.finished != 'true' }}
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
+          simd: ${{ inputs.simd }}
+      - name: Upload package
+        if: ${{ steps.stage.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: C:\tbw\build\thorium_*
+          if-no-files-found: error
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+
+  build-11:
+    needs: build-10
+    if: ${{ needs.build-10.outputs.finished != 'true' }}
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
+          simd: ${{ inputs.simd }}
+      - name: Upload package
+        if: ${{ steps.stage.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: C:\tbw\build\thorium_*
+          if-no-files-found: error
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+
+  build-12:
+    needs: build-11
+    if: ${{ needs.build-11.outputs.finished != 'true' }}
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
+          simd: ${{ inputs.simd }}
+      - name: Upload package
+        if: ${{ steps.stage.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: C:\tbw\build\thorium_*
+          if-no-files-found: error
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+
+  build-13:
+    needs: build-12
+    if: ${{ needs.build-12.outputs.finished != 'true' }}
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
+          simd: ${{ inputs.simd }}
+      - name: Upload package
+        if: ${{ steps.stage.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: C:\tbw\build\thorium_*
+          if-no-files-found: error
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+
+  build-14:
+    needs: build-13
+    if: ${{ needs.build-13.outputs.finished != 'true' }}
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
+          simd: ${{ inputs.simd }}
+      - name: Upload package
+        if: ${{ steps.stage.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: C:\tbw\build\thorium_*
+          if-no-files-found: error
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+
+  build-15:
+    needs: build-14
+    if: ${{ needs.build-14.outputs.finished != 'true' }}
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
+          simd: ${{ inputs.simd }}
+      - name: Upload package
+        if: ${{ steps.stage.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: C:\tbw\build\thorium_*
+          if-no-files-found: error
+    outputs:
+      finished: ${{ steps.stage.outputs.finished }}
+
+  build-16:
+    needs: build-15
+    if: ${{ needs.build-15.outputs.finished != 'true' }}
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs.python-version }}
+      - name: Run Stage
+        id: stage
+        uses: ./.github/actions/stage
+        with:
+          finished: ${{ join(needs.*.outputs.finished) }}
+          from_artifact: true
+          x86: ${{ inputs.x86 }}
+          arm: ${{ inputs.arm }}
+          simd: ${{ inputs.simd }}
+      - name: Upload package
+        if: ${{ steps.stage.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: C:\tbw\build\thorium_*
           if-no-files-found: error
       - name: Fail if build exceeded stage budget
         if: ${{ steps.stage.outputs.finished != 'true' }}
@@ -436,19 +541,15 @@ jobs:
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
 
-  finalize:
-    needs:
-      - build-1
-      - build-2
-      - build-3
-      - build-4
-      - build-5
-      - build-6
-      - build-7
-      - build-8
-      - build-9
-    if: ${{ always() && contains(needs.*.outputs.finished, 'true') }}
+  complete:
+    needs: build-16
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
-      - name: Build completed
-        run: echo "Thorium build completed successfully."
+      - name: Ensure build finished
+        run: |
+          if [ "${{ needs.build-16.outputs.finished }}" != "true" ]; then
+            echo "Build did not finish after 16 stages."
+            exit 1
+          fi
+          echo "Thorium build completed successfully."

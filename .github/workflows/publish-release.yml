@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows:
-      - build-x64
+      - build-x64-avx2
+      - build-x64-sse4
       - build-x86
       - build-arm64
     types:
@@ -26,9 +27,7 @@ jobs:
       publishable: ${{ steps.runs.outputs.publishable }}
       target_tag: ${{ steps.context.outputs.target_tag }}
       target_sha: ${{ steps.context.outputs.target_sha }}
-      x64_sse3_run_id: ${{ steps.runs.outputs.x64_sse3_run_id }}
       x64_sse4_run_id: ${{ steps.runs.outputs.x64_sse4_run_id }}
-      x64_avx_run_id: ${{ steps.runs.outputs.x64_avx_run_id }}
       x64_avx2_run_id: ${{ steps.runs.outputs.x64_avx2_run_id }}
       x86_run_id: ${{ steps.runs.outputs.x86_run_id }}
       arm_run_id: ${{ steps.runs.outputs.arm_run_id }}
@@ -103,12 +102,10 @@ jobs:
         with:
           script: |
             const workflows = [
-              { key: 'x64_sse3', file: 'build-x64.yml', simd: 'sse3' },
-              { key: 'x64_sse4', file: 'build-x64.yml', simd: 'sse4' },
-              { key: 'x64_avx', file: 'build-x64.yml', simd: 'avx' },
-              { key: 'x64_avx2', file: 'build-x64.yml', simd: 'avx2' },
-              { key: 'x86', file: 'build-x86.yml', simd: 'x86' },
-              { key: 'arm', file: 'build-arm64.yml', simd: 'arm' },
+              { key: 'x64_sse4', file: 'build-x64-sse4.yml', simd: 'sse4', optional: true },
+              { key: 'x64_avx2', file: 'build-x64-avx2.yml', simd: 'avx2', optional: false },
+              { key: 'x86', file: 'build-x86.yml', simd: 'x86', optional: true },
+              { key: 'arm', file: 'build-arm64.yml', simd: 'arm', optional: true },
             ];
             const targetSha = process.env.TARGET_SHA;
             const outputs = { publishable: 'true' };
@@ -139,6 +136,11 @@ jobs:
               matches.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
               const latest = matches[0];
               if (!latest) {
+                if (workflow.optional) {
+                  core.info(`Optional workflow ${workflow.file} (${workflow.simd}) not found, skipping.`);
+                  outputs[`${workflow.key}_run_id`] = '';
+                  continue;
+                }
                 core.info(`No successful run found for ${workflow.file} at ${targetSha}`);
                 outputs.publishable = 'false';
                 continue;
@@ -158,16 +160,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Download all x64 SIMD variants
-      - name: Download x64 SSE3 package
-        uses: actions/download-artifact@v7
-        with:
-          name: thorium-sse3
-          path: artifacts/x64/sse3
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.resolve-release-context.outputs.x64_sse3_run_id }}
-
       - name: Download x64 SSE4 package
+        if: ${{ needs.resolve-release-context.outputs.x64_sse4_run_id != '' }}
         uses: actions/download-artifact@v7
         with:
           name: thorium-sse4
@@ -175,15 +169,6 @@ jobs:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
           run-id: ${{ needs.resolve-release-context.outputs.x64_sse4_run_id }}
-
-      - name: Download x64 AVX package
-        uses: actions/download-artifact@v7
-        with:
-          name: thorium-avx
-          path: artifacts/x64/avx
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.resolve-release-context.outputs.x64_avx_run_id }}
 
       - name: Download x64 AVX2 package
         uses: actions/download-artifact@v7
@@ -195,6 +180,7 @@ jobs:
           run-id: ${{ needs.resolve-release-context.outputs.x64_avx2_run_id }}
 
       - name: Download x86 package
+        if: ${{ needs.resolve-release-context.outputs.x86_run_id != '' }}
         uses: actions/download-artifact@v7
         with:
           name: thorium-x86
@@ -204,6 +190,7 @@ jobs:
           run-id: ${{ needs.resolve-release-context.outputs.x86_run_id }}
 
       - name: Download arm64 package
+        if: ${{ needs.resolve-release-context.outputs.arm_run_id != '' }}
         uses: actions/download-artifact@v7
         with:
           name: thorium-arm64
@@ -226,6 +213,8 @@ jobs:
           echo "## Thorium Release ${{ needs.resolve-release-context.outputs.target_tag }}" > release-notes.md
           echo "" >> release-notes.md
           echo "### Downloads" >> release-notes.md
-          echo "- Windows x64 (x64)" >> release-notes.md
-          echo "- Windows x86 (32-bit)" >> release-notes.md
-          echo "- Windows ARM64" >> release-notes.md
+          find artifacts -name 'thorium*' -exec basename {} \; 2>/dev/null | while IFS= read -r f; do echo "- \`$f\`" >> release-notes.md; done
+          # Fallback if no files found
+          if ! grep -q '^- `' release-notes.md; then
+            echo "- See release assets below for available builds." >> release-notes.md
+          fi

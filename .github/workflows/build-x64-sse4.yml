@@ -1,21 +1,19 @@
-name: build-x86
+name: build-x64-sse4
 on:
   workflow_dispatch:
-#  push:
-#    tags:
-#      - '*'
+  push:
+    tags:
+      - '*'
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-x86-${{ github.ref }}
+  group: build-x64-sse4-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  # x86 build temporarily disabled
   prepare:
-    if: false
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
@@ -28,22 +26,20 @@ jobs:
         uses: actions/cache@v4
         with:
           path: C:\tbw\build\src
-          key: thorium-src-x86-${{ github.sha }}
-
+          key: thorium-src-${{ github.sha }}
       - name: Prepare Chromium source
         if: ${{ steps.source-cache.outputs.cache-hit != 'true' }}
         shell: pwsh
-        run: python build.py --ci --prepare-only --x86
+        run: python build.py --ci --prepare-only
         working-directory: C:\tbw
 
   build:
     needs: prepare
     uses: ./.github/workflows/reusable-build.yml
     with:
-      x86: true
-      simd: sse3
-      cache-key: thorium-src-x86-${{ github.sha }}
-      artifact-name: thorium-x86
+      simd: sse4
+      cache-key: thorium-src-${{ github.sha }}
+      artifact-name: thorium-sse4
     secrets:
       GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
       GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}

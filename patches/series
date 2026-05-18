@@ -47,7 +47,7 @@ thorium/original/remove_discovery_module_from_ntp.patch
 thorium/original/ffmpeg_hevc_ac3.patch
 #
 # === Conditional/special-purpose patches ===
-# thorium/original/angle-lockfree.patch          # SSE2 only - conditional
+thorium/original/angle-lockfree.patch
 thorium/original/restore-libjxl-in-M138.patch
 # thorium/original/Restore-libjxl-image-type-emulation-in-M119.patch  # Old JXL
 # thorium/original/netflix.patch                 # Raspberry Pi only
@@ -240,3 +240,4 @@ thorium/ui/ui__gtk__native_theme_gtk.cc.patch
 thorium/ui/ui__views__examples__BUILD.gn.patch
 thorium/ui/ui__views__examples__examples_window.cc.patch
 thorium/ui/ui__webui__resources__images__BUILD.gn.patch
+thorium/v8/v8__BUILD.gn.patch

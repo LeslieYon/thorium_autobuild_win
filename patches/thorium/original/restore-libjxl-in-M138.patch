@@ -1039,21 +1039,3 @@ index 4c5b5f0be4a3f..613d24043d576 100644
    <int value="190395448" label="SearchWebInSidePanel:enabled"/>
    <int value="191737931" label="enable-mark-http-as"/>
    <int value="191891628" label="AutocompleteExtendedSuggestions:enabled"/>
---- a/third_party/blink/web_tests/VirtualTestSuites
-+++ b/third_party/blink/web_tests/VirtualTestSuites
-@@ -512,6 +512,15 @@
-     "exclusive_tests": ["fast/hidpi/static"],
-     "args": ["--force-device-scale-factor=2"],
-     "owners": ["paint-dev@chromium.org"],
-+    "expires": "never"
-+  },
-+  {
-+    "prefix": "jxl-enabled",
-+    "platforms": ["Linux", "Mac", "Win"],
-+    "bases": ["http/tests/inspector-protocol/emulation/emulation-set-disabled-image-types-jxl.js",
-+              "images/jxl"],
-+    "exclusive_tests": ["http/tests/inspector-protocol/emulation/emulation-set-disabled-image-types-jxl.js"],
-+    "args": ["--enable-features=JXL"],
-     "expires": "never"
-   },
-   {

@@ -3,7 +3,7 @@
 Thorium Autobuild Win reorganizes Thorium's Chromium changes into a standard patch-and-overlay layout and provides a Windows build pipeline on top of the `ungoogled-chromium-windows` submodule.
 
 **Pinned Chromium version**: `138.0.7204.306` (see `chromium_version.txt`)
-**Submodule**: `ungoogled-chromium-windows` at tag `138.0.7204.183-1.1`
+**Submodule**: `ungoogled-chromium-windows` at `138.0.7204.168-1.1` (1 commit ahead)
 
 ## Layout
 
@@ -14,13 +14,14 @@ Thorium Autobuild Win reorganizes Thorium's Chromium changes into a standard pat
 - `revision.txt` — release revision number (currently 1)
 - `downloads.ini` — extra download dependencies (e.g. libjxl source)
 - `pruning.list` — Thorium-specific file removal list
+- `keeping.list` — protects files from upstream pruning (e.g. signin, safe_browsing)
 - `flags.windows.gn` — SIMD-agnostic GN build flags
 - `flags.windows.{sse3,sse4,avx,avx2}.gn` — per-variant SIMD overrides
 - `flags.windows.x86.gn` / `flags.windows.arm64.gn` — architecture flags
 - `overlay/` — direct source overrides and binary/resource replacements
-- `patches/series` — Thorium patch order (225 entries)
-- `patches/series.ungoogled-windows` — whitelisted ungoogled-windows patches (20 entries)
-- `patches/thorium/` — 225 generated Thorium patches organized by category
+- `patches/series` — Thorium patch order (218 entries)
+- `patches/series.ungoogled-windows` — whitelisted ungoogled-windows patches (24 entries)
+- `patches/thorium/` — 218 generated + 28 original Thorium patches organized by category
 - `devutils/` — patch maintenance helpers
 - `ungoogled-chromium-windows/` — external Windows support submodule
 
@@ -90,22 +91,23 @@ Google API credentials are passed from repository secrets to the reusable build 
 
 ## Patch Inventory
 
-`patches/thorium/` contains **225 per-file patches** organized by category:
+`patches/thorium/` contains **218 series entries** (222 files on disk) organized by category:
 
 | Category | Count | Description |
 |----------|-------|-------------|
-| fixes | 100 | Bug fixes and compatibility patches |
+| fixes | 76 | Bug fixes and compatibility patches |
+| original | 28 | Original Thorium multi-file patches (from `other/`) |
 | ui | 28 | UI changes, dark mode, etc. |
 | branding | 27 | Thorium branding elements |
-| config | 24 | Build configuration patches |
-| features | 30 | Feature patches (FTP, GPC, parallel download, etc.) |
-| media | 7 | Codec support (HEVC, AC3, JPEG XL) |
+| features | 26 | Feature patches (FTP, GPC, parallel download, etc.) |
+| config | 18 | Build configuration patches |
 | compiler | 6 | SIMD, LTO, LLVM optimizations |
+| media | 6 | Codec support (HEVC, AC3, JPEG XL) |
 | windows | 2 | Windows-specific patches |
 | privacy | 1 | Privacy sandbox, DoH, DNT |
-| **Total** | **225** | |
+| **Total** | **218** | |
 
-All 225 `patches/series` entries match the 225 patch files on disk. The patches were generated from diffing `thorium/src` against a pristine `chromium/` checkout, decomposing the original 27 multi-file `.patch` files into individual file-level diffs.
+All 218 `patches/series` entries are active. The `original/` category holds the original multi-file `.patch` files from Thorium's `other/` directory (applied first), followed by the per-file generated patches from diffing `thorium/src` against a pristine `chromium/` checkout.
 
 ## Source Pruning
 
@@ -128,3 +130,9 @@ python devutils/generate_patches.py --thorium-src ../thorium/src --chromium-src 
 # Dry-run patch migration from original Thorium patches
 python devutils/migrate_patches.py --dry-run
 ```
+
+## License
+
+BSD 3-Clause. See [Chromium LICENSE](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/LICENSE) for the full text.
+
+This project is part of the Thorium ecosystem, a fork of Chromium. All source code in this repository is subject to the terms of the BSD 3-Clause License, same as Chromium.
