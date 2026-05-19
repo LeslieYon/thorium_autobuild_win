@@ -50,7 +50,8 @@ def _branding_replace(text: str) -> str:
 def combined_replace(text: str) -> str:
     """Brand replacement — MUST match sync_brand_strings.branding_replace().
 
-    Order: Google Chrome → Thorium, Chromium → Thorium, Chrome → Thorium.
+    Order: Google Chrome -> Thorium, Chromium -> Thorium.
+    ("Chrome" alone is NOT replaced — those hunks stay in patches.)
     """
     return _branding_replace(text)
 
@@ -64,36 +65,9 @@ def _is_grd_file(file_header: str) -> bool:
     return file_header.endswith('.grd') or file_header.endswith('.grdp')
 
 
-def _hunk_is_pure_branding(hunk_body: str) -> Tuple[bool, int]:
-    """Check whether every changed line in *hunk_body* is pure branding.
-
-    Returns:
-        (is_pure, removed_line_count)
-    """
-    removed = 0
-    for line in hunk_body.split('\n'):
-        if line.startswith('-'):
-            old = line[1:]
-            removed += 1
-        elif line.startswith('+'):
-            new = line[1:]
-            # Find the corresponding removed line (previous '-' line).
-            # For a pure branding hunk, combined_replace(old) == new.
-            # We check this by looking at the context: in a unified diff,
-            # '+' lines immediately follow their corresponding '-' lines.
-            # Simple heuristic: skip ahead — we verify per‑hunk below.
-            pass
-        # context lines (space) are ignored
-
-    return True, removed
-
-
-def _hunk_is_pure_branding_strict(hunk_body: str) -> bool:
-    """Strict check: every ``-`` line, when brand‑replaced, equals the
+def _hunk_is_pure_branding(hunk_body: str) -> bool:
+    """Check whether every ``-`` line, when brand‑replaced, equals the
     corresponding ``+`` line.  Context (`` ``) lines are ignored.
-
-    This handles the common diff pattern where a block of ``-`` lines is
-    followed by a block of ``+`` lines.
     """
     old_lines: List[str] = []
     new_lines: List[str] = []
@@ -103,24 +77,17 @@ def _hunk_is_pure_branding_strict(hunk_body: str) -> bool:
             old_lines.append(line[1:])
         elif line.startswith('+'):
             new_lines.append(line[1:])
-        # context lines — ignored
 
-    # If either list is empty there's nothing to compare
     if not old_lines and not new_lines:
-        return True  # empty hunk — safe to remove
+        return True
     if not old_lines or not new_lines:
-        return False  # only additions or only removals → structural
-
-    # Zip and compare.  Old lines might be more or fewer than new lines
-    # in a structural change.  For pure branding they should be equal in
-    # count and content (after replacement).
+        return False
     if len(old_lines) != len(new_lines):
         return False
 
     for old, new in zip(old_lines, new_lines):
         if combined_replace(old) != new:
             return False
-
     return True
 
 
@@ -174,18 +141,18 @@ def process_patch(patch_path: Path, dry_run: bool) -> Tuple[str, int, int]:
         hunk_body_lines = result[body_start:body_end]
         hunk_body = '\n'.join(hunk_body_lines)
 
-        if _hunk_is_pure_branding_strict(hunk_body):
+        if _hunk_is_pure_branding(hunk_body):
             # Remove this whole hunk: header line + body lines.
-            if not dry_run:
-                del result[hdr_idx:body_end]
+            # Always modify the working copy (even in dry-run) so that
+            # remaining-hunk counting and write-back logic is consistent.
+            del result[hdr_idx:body_end]
             removed_count += 1
 
-    # Clean up: remove leading/trailing blank lines
-    if removed_count > 0 and not dry_run:
-        while result and result[0] == '':
-            result.pop(0)
-        while result and result[-1] == '':
-            result.pop()
+    # Clean up: remove leading/trailing blank lines (always, for counting)
+    while result and result[0] == '':
+        result.pop(0)
+    while result and result[-1] == '':
+        result.pop()
 
     # How many hunks remain?
     remaining = len([l for l in result if l and l.startswith('@@ ')])
@@ -208,7 +175,8 @@ def process_patch(patch_path: Path, dry_run: bool) -> Tuple[str, int, int]:
 
     # Some hunks removed, some kept
     if not dry_run:
-        patch_path.write_text('\n'.join(result), encoding='utf-8')
+        # Patch files must end with a trailing newline.
+        patch_path.write_text('\n'.join(result) + '\n', encoding='utf-8')
     logger.info('  [CLEANED] %s — %d/%d hunk(s) removed',
                 patch_path.name, removed_count, total)
     return 'cleaned', remaining, removed_count

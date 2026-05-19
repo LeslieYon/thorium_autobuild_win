@@ -1,0 +1,170 @@
+--- a/chrome/app/generated_resources.grd
++++ b/chrome/app/generated_resources.grd
+@@ -277,6 +277,9 @@
+   <release seq="1">
+     <!-- IMPORTANT: .grdp files must be in the same directory as this file -->
+     <messages fallback_to_english="true">
++      <!-- Thorium Browser specific strings -->
++      <part file="thorium_strings.grdp" />
++
+       <!-- Access Code Cast specific strings -->
+       <part file="access_code_cast_strings.grdp" />
+ 
+@@ -301,7 +304,7 @@
+       <!-- Shortcut Input specific strings -->
+       <part file="shortcut_input_strings.grdp" />
+ 
+-      <!-- Chrome-OS-specific strings -->
++      <!-- Thorium-OS-specific strings -->
+       <if expr="is_chromeos">
+         <part file="chromeos_shared_strings.grdp" />
+         <part file="chromeos_strings.grdp" />
+--- a/chrome/app/theme/chromium/BRANDING
++++ b/chrome/app/theme/chromium/BRANDING
+@@ -1,10 +1,10 @@
+-COMPANY_FULLNAME=The Chromium Authors
+-COMPANY_SHORTNAME=The Chromium Authors
+-PRODUCT_FULLNAME=Chromium
+-PRODUCT_SHORTNAME=Chromium
+-PRODUCT_INSTALLER_FULLNAME=Chromium Installer
+-PRODUCT_INSTALLER_SHORTNAME=Chromium Installer
+-COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors. All rights reserved.
+-MAC_BUNDLE_ID=org.chromium.Chromium
++COMPANY_FULLNAME=Alex313031
++COMPANY_SHORTNAME=Alex313031
++PRODUCT_FULLNAME=Thorium
++PRODUCT_SHORTNAME=Thorium
++PRODUCT_INSTALLER_FULLNAME=Thorium Installer
++PRODUCT_INSTALLER_SHORTNAME=Thorium Installer
++COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors and Alex313031.
++MAC_BUNDLE_ID=org.chromium.Thorium
+ MAC_CREATOR_CODE=Cr24
+ MAC_TEAM_ID=
+--- a/chrome/app/theme/theme_resources.grd
++++ b/chrome/app/theme/theme_resources.grd
+@@ -155,17 +155,18 @@
+       </if>
+       <structure type="chrome_scaled_image" name="IDR_PLUGINS_FAVICON" file="common/favicon_plugins.png" />
+       <structure type="chrome_scaled_image" name="IDR_PRERENDER" file="common/prerender_succeed_icon.png" />
+-      <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/product_logo_32.png" />
+       <if expr="_google_chrome">
+         <then>
+           <if expr="is_linux">
+             <then>
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/linux/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/linux/product_logo_32.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_BETA" file="${branding_path_component}/linux/product_logo_32_beta.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_DEV" file="${branding_path_component}/linux/product_logo_32_dev.png" />
+             </then>
+             <else> <!-- not is_linux -->
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/product_logo_32.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_BETA" file="${branding_path_component}/product_logo_32_beta.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_DEV" file="${branding_path_component}/product_logo_32_dev.png" />
+             </else>
+@@ -182,9 +183,11 @@
+           <if expr="is_linux">
+             <then>
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/linux/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/linux/product_logo_32.png" />
+             </then>
+             <else>
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/product_logo_32.png" />
+             </else>
+           </if> <!-- is_linux -->
+           <if expr="_is_chrome_for_testing_branded">
+@@ -195,6 +198,15 @@
+             <else> <!-- not _is_chrome_for_testing_branded -->
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_NAME_22" file="${branding_path_component}/product_logo_name_22.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_NAME_22_WHITE" file="${branding_path_component}/product_logo_name_22_white.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_MASCOT" file="chromium/thorium_mascot.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_NETERROR_FAVICON" file="chromium/dino_favicon.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_ROBOT" file="chromium/technical_error.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_AI_CHROME" file="chromium/ai_chrome.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_CHROMIUM_BLANK" file="chromium/chromium_blank.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_CHROMIUM_QUESTION" file="chromium/chromium_question.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_THORIUM_ATOMIC" file="chromium/thorium_atomic.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_THORIUM_ELEMENT" file="chromium/thorium_element.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_THORIUM_GUY" file="chromium/thorium_guy.png" />
+             </else>
+           </if> <!-- _is_chrome_for_testing_branded -->
+         </else>
+--- a/chrome/app/vector_icons/BUILD.gn
++++ b/chrome/app/vector_icons/BUILD.gn
+@@ -1,10 +1,11 @@
+-# Copyright 2017 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//components/vector_icons/vector_icons.gni")
+ import("//device/vr/buildflags/buildflags.gni")
++import("//third_party/blink/public/public_features.gni")
+ import("//ui/webui/webui_features.gni")
+ 
+ aggregate_vector_icons("chrome_vector_icons") {
+@@ -156,6 +157,7 @@
+     "privacy_tip.icon",
+     "qr_code_chrome_refresh.icon",
+     "qrcode_generator.icon",
++    "quick_commands.icon",
+     "read_later_add.icon",
+     "reading_list.icon",
+     "release_alert.icon",
+@@ -209,6 +211,7 @@
+     "translate.icon",
+     "trash_can.icon",
+     "trash_can_refresh.icon",
++    "trash_can_regular.icon",
+     "tv.icon",
+     "ungroup_refresh.icon",
+     "user_account_avatar.icon",
+@@ -245,6 +248,24 @@
+ 
+     # go/keep-sorted end
+   ]
++
++  if (is_thorium_build) {
++    sources += [
++      "thorium/browser_tools_thorium.icon",
++      "thorium/browser_tools_chrome_refresh_thorium.icon",
++      "thorium/chrome_labs_thorium.icon",
++      "thorium/chrome_labs_chrome_refresh_thorium.icon",
++      "thorium/navigate_home_thorium.icon",
++      "thorium/navigate_home_chrome_refresh_thorium.icon",
++      "thorium/science_thorium.icon",
++      "thorium/side_panel_left_thorium.icon",
++      "thorium/side_panel_left_chrome_refresh_thorium.icon",
++      "thorium/side_panel_left_touch_thorium.icon",
++      "thorium/side_panel_thorium.icon",
++      "thorium/side_panel_chrome_refresh_thorium.icon",
++      "thorium/side_panel_touch_thorium.icon",
++    ]
++  }
+ 
+   if (is_mac) {
+     sources += [ "new_tab_mac_touchbar.icon" ]
+--- a/components/components_settings_strings.grdp
++++ b/components/components_settings_strings.grdp
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <grit-part>
+   <message name="IDS_SETTINGS_TITLE" desc="Title for the settings tab.">
+-    Settings
++    Thorium Settings
+   </message>
+   <message name="IDS_SETTINGS_HIDE_ADVANCED_SETTINGS" desc="Title for the link to hide advanced settings.">
+     Hide advanced settings...
+--- a/components/new_or_sad_tab_strings.grdp
++++ b/components/new_or_sad_tab_strings.grdp
+@@ -10,7 +10,7 @@
+ 
+       <!-- Sad Tab Strings -->
+       <message name="IDS_SAD_TAB_TITLE" desc="The title of the sad tab page that is shown when a tab crashes. This is intended to be a humorous exclamation of dismay." formatter_data="android_java">
+-        Aw, Snap!
++        Aw, #@%!, this tab's process has gone bye bye...
+       </message>
+       <message name="IDS_SAD_TAB_MESSAGE" desc="The message displayed on the sad tab page." formatter_data="android_java">
+         Something went wrong while displaying this webpage.

@@ -55,6 +55,13 @@ import patches as _uc_patches  # type: ignore[import-not-found]
 from _common import ENCODING, USE_REGISTRY, ExtractorEnum, get_logger  # type: ignore[import-not-found]
 sys.path.pop(0)
 
+# Import brand string sync script (runs after Thorium patches to update XTB)
+try:
+    from patch_scripts.sync_brand_strings import sync_brand_strings
+    _HAS_SYNC_BRAND_STRINGS = True
+except ImportError:
+    _HAS_SYNC_BRAND_STRINGS = False
+
 uc_patches: Any = _uc_patches
 
 _PATCH_BIN_RELPATH = Path('third_party/git/usr/bin/patch.exe')
@@ -822,6 +829,23 @@ def main():
             source_tree,
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
         )
+
+        # ----- Stage: Sync Brand Strings (GRD/GRDP -> XTB) -----
+        # Replaces string-replacement hunks in patches/thorium/branding/.
+        # Phase 1: apply brand substitutions directly to GRD/GRDP files.
+        # Phase 2: update XTB translation files with new translation IDs.
+        # See patch_scripts/sync_brand_strings.md for details.
+        if _HAS_SYNC_BRAND_STRINGS:
+            get_logger().info('Syncing brand strings in GRD/GRDP -> XTB files...')
+            try:
+                sync_brand_strings(source_tree, dry_run=False)
+                get_logger().info('Brand string sync completed.')
+            except Exception as exc:
+                get_logger().warning('Brand string sync failed (non-fatal): %s', exc)
+        else:
+            get_logger().warning(
+                'sync_brand_strings module not found. Run this script from the '
+                'thorium_autobuild_win root directory.')
 
     # ----- Stage: GN Gen -----
     if args.prepare_only:
