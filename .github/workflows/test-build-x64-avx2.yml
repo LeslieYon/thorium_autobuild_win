@@ -28,14 +28,14 @@ jobs:
           python-version: ${{ inputs['python-version'] }}
       - name: Restore source cache
         id: source-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: C:\tbw\build\src
           key: thorium-src-test-x64-avx2-${{ github.sha }}
       - name: Prepare Chromium source
         if: ${{ steps.source-cache.outputs.cache-hit != 'true' }}
         shell: pwsh
-        run: python build.py --ci --prepare-only --simd avx
+        run: python build.py --ci --prepare-only --simd avx2
         working-directory: C:\tbw
 
   build-avx2:

@@ -25,7 +25,7 @@ jobs:
         uses: ./.github/actions/prepare
       - name: Restore source cache
         id: source-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: C:\tbw\build\src
           key: thorium-src-x86-${{ github.sha }}
