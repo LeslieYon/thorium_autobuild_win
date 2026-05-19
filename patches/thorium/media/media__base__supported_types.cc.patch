@@ -1,11 +1,5 @@
 --- a/media/base/supported_types.cc
 +++ b/media/base/supported_types.cc
-@@ -1,4 +1,4 @@
--// Copyright 2017 The Chromium Authors
-+// Copyright 2026 The Chromium Authors, Alex313031, and midzer
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -229,25 +229,12 @@
  #endif  // !BUILDFLAG(USE_PROPRIETARY_CODECS)
  

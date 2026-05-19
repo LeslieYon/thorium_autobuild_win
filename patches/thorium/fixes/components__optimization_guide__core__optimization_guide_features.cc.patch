@@ -1,11 +1,5 @@
 --- a/components/optimization_guide/core/optimization_guide_features.cc
 +++ b/components/optimization_guide/core/optimization_guide_features.cc
-@@ -1,4 +1,4 @@
--// Copyright 2019 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -44,27 +44,34 @@
      base::FEATURE_DISABLED_BY_DEFAULT;
  #endif

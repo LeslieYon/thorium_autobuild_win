@@ -1,11 +1,5 @@
 --- a/chrome/browser/download/insecure_download_blocking.cc
 +++ b/chrome/browser/download/insecure_download_blocking.cc
-@@ -1,4 +1,4 @@
--// Copyright 2019 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -6,6 +6,7 @@
  
  #include <optional>

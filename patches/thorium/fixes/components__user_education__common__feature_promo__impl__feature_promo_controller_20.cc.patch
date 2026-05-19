@@ -1,11 +1,5 @@
 --- a/components/user_education/common/feature_promo/impl/feature_promo_controller_20.cc
 +++ b/components/user_education/common/feature_promo/impl/feature_promo_controller_20.cc
-@@ -1,4 +1,4 @@
--// Copyright 2024 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -227,8 +227,8 @@
      outputs->anchor_element = anchor_element;
    }

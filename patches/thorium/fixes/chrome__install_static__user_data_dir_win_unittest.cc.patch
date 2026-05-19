@@ -1,11 +1,5 @@
 --- a/chrome/install_static/user_data_dir_win_unittest.cc
 +++ b/chrome/install_static/user_data_dir_win_unittest.cc
-@@ -1,4 +1,4 @@
--// Copyright 2016 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -30,8 +30,8 @@
  const wchar_t kUserDataDirNameSuffix[] =
      L"\\Google\\Chrome for Testing\\User Data";

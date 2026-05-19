@@ -1,11 +1,5 @@
 --- a/chrome/browser/download/download_ui_controller.cc
 +++ b/chrome/browser/download/download_ui_controller.cc
-@@ -1,4 +1,4 @@
--// Copyright 2013 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -55,6 +55,9 @@
  
  namespace {

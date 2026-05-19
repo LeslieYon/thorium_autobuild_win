@@ -1,13 +1,5 @@
 --- a/build/toolchain/apple/linker_driver.py
 +++ b/build/toolchain/apple/linker_driver.py
-@@ -1,6 +1,6 @@
- #!/usr/bin/env python3
- 
--# Copyright 2016 The Chromium Authors
-+# Copyright 2026 The Chromium Authors, midzer, and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
 @@ -150,19 +150,23 @@
          self._linker_driver_pre_actions = {}
          self._compiler_driver_args = []

@@ -1,11 +1,5 @@
 --- a/components/privacy_sandbox/tracking_protection_prefs.cc
 +++ b/components/privacy_sandbox/tracking_protection_prefs.cc
-@@ -1,4 +1,4 @@
--// Copyright 2023 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -12,13 +12,13 @@
  
  void RegisterProfilePrefs(PrefRegistrySimple* registry) {

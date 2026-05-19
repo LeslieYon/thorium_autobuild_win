@@ -1,11 +1,5 @@
 --- a/chrome/browser/download/download_target_determiner.cc
 +++ b/chrome/browser/download/download_target_determiner.cc
-@@ -1,4 +1,4 @@
--// Copyright 2013 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -8,6 +8,7 @@
  #include <string>
  #include <vector>

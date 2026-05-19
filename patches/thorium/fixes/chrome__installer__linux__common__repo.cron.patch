@@ -1,13 +1,5 @@
 --- a/chrome/installer/linux/common/repo.cron
 +++ b/chrome/installer/linux/common/repo.cron
-@@ -1,6 +1,6 @@
- #!/bin/sh
- #
--# Copyright 2009 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- #
 @@ -28,17 +28,4 @@
  
  install_key

@@ -1,11 +1,5 @@
 --- a/third_party/blink/common/features.cc
 +++ b/third_party/blink/common/features.cc
-@@ -1,4 +1,4 @@
--// Copyright 2018 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -32,9 +32,10 @@
  
  // Controls the capturing of the Ad-Auction-Signals header, and the maximum

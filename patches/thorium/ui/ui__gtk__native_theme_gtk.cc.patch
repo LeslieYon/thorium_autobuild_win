@@ -1,11 +1,5 @@
 --- a/ui/gtk/native_theme_gtk.cc
 +++ b/ui/gtk/native_theme_gtk.cc
-@@ -1,4 +1,4 @@
--// Copyright 2016 The Chromium Authors
-+// Copyright 2026 The Chromium Authors, Alex313031, qcasey and icepie
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -6,6 +6,7 @@
  
  #include <algorithm>

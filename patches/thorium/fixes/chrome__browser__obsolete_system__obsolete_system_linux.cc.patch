@@ -1,21 +1,5 @@
 --- a/chrome/browser/obsolete_system/obsolete_system_linux.cc
 +++ b/chrome/browser/obsolete_system/obsolete_system_linux.cc
-@@ -1,4 +1,4 @@
--// Copyright 2022 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
-@@ -12,7 +12,8 @@
- const char kLinuxObsoleteUrl[] =
-     "https://support.google.com/chrome/?p=unsupported_linux";
- 
--// This list contains the most recently obsoleted distros.
-+// This list contains the most recently obsoleted distros according to
-+// `kLinuxObsoleteUrl`.
- const char* const kObsoleteDistros[] = {
-     // Prevent clang-format from adding multiple entries per line.
-     // clang-format off
 @@ -30,7 +31,7 @@
      "Fedora 38",
      "Ubuntu 14.04",

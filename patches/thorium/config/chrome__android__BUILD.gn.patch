@@ -1,11 +1,5 @@
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -1,4 +1,4 @@
--# Copyright 2014 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
 @@ -164,8 +164,6 @@
    android_resources("chrome_base_module_resources") {
      sources = [

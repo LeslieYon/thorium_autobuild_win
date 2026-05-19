@@ -1,11 +1,5 @@
 --- a/chrome/browser/ui/startup/google_api_keys_infobar_delegate.cc
 +++ b/chrome/browser/ui/startup/google_api_keys_infobar_delegate.cc
-@@ -1,4 +1,4 @@
--// Copyright 2013 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -17,9 +17,6 @@
  // static
  void GoogleApiKeysInfoBarDelegate::Create(

@@ -1,12 +1,5 @@
 --- a/chrome/installer/linux/common/apt.include
 +++ b/chrome/installer/linux/common/apt.include
-@@ -1,4 +1,6 @@
- @@include@@repo_variables.include
-+
-+# Copyright (c) 2026 Alex313031.
- 
- APT_GET="`command -v apt-get 2> /dev/null`"
- APT_CONFIG="`command -v apt-config 2> /dev/null`"
 @@ -302,128 +304,6 @@
    eval $("$APT_CONFIG" shell APT_SOURCESDIR 'Dir::Etc::sourceparts/d')
  }

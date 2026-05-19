@@ -203,7 +203,6 @@ thorium/fixes/third_party__blink__common__features.cc.patch
 thorium/fixes/third_party__blink__renderer__modules__webaudio__audio_context.cc.patch
 thorium/config/third_party__widevine__cdm__BUILD.gn.patch
 thorium/config/third_party__widevine__cdm__widevine.gni.patch
-thorium/fixes/third_party__widevine__LICENSE.patch
 thorium/fixes/third_party__widevine__README.chromium.patch
 thorium/fixes/tools__clang__scripts__build.py.patch
 thorium/fixes/tools__pgo__generate_profile.py.patch

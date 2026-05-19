@@ -1,11 +1,5 @@
 --- a/content/browser/file_system_access/file_system_access_safe_move_helper.cc
 +++ b/content/browser/file_system_access/file_system_access_safe_move_helper.cc
-@@ -1,4 +1,4 @@
--// Copyright 2021 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -13,7 +13,6 @@
  #include "base/task/thread_pool.h"
  #include "base/thread_annotations.h"

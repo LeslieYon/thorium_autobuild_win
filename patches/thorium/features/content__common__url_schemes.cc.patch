@@ -1,11 +1,5 @@
 --- a/content/common/url_schemes.cc
 +++ b/content/common/url_schemes.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -24,13 +24,22 @@
  bool g_registered_url_schemes = false;
  

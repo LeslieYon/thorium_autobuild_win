@@ -1,13 +1,5 @@
 --- a/build/install-build-deps.py
 +++ b/build/install-build-deps.py
-@@ -1,6 +1,6 @@
- #!/usr/bin/env python3
- 
--# Copyright 2023 The Chromium Authors
-+# Copyright 2026 The Chromium Authors, Alex313031, and gz83
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
 @@ -210,6 +210,7 @@
  # Packages needed for development
  def dev_list():

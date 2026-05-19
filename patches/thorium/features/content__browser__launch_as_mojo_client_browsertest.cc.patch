@@ -1,11 +1,5 @@
 --- a/content/browser/launch_as_mojo_client_browsertest.cc
 +++ b/content/browser/launch_as_mojo_client_browsertest.cc
-@@ -1,4 +1,4 @@
--// Copyright 2020 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -37,9 +37,9 @@
  namespace {
  

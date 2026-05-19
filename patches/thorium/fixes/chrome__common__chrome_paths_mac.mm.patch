@@ -1,11 +1,5 @@
 --- a/chrome/common/chrome_paths_mac.mm
 +++ b/chrome/common/chrome_paths_mac.mm
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -61,7 +61,7 @@
  #elif BUILDFLAG(GOOGLE_CHROME_BRANDING)
        product_dir_name = "Google/Chrome";

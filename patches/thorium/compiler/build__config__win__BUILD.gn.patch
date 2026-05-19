@@ -152,12 +152,4 @@
      "WINVER=0x0A00",
    ]
  }
-@@ -647,7 +737,7 @@
-       # lld.
-       ldflags += [ "/OPT:NOREF" ]
- 
--      # TODO(crbug.com/40267564): Mixing incrememntal and icf produces an error
-+      # TODO(crbug.com/40267564): Mixing incremental and icf produces an error
-       # in lld-link.
-       ldflags += [ "/OPT:NOICF" ]
-     }
+

@@ -1,11 +1,5 @@
 --- a/media/filters/ffmpeg_video_decoder.cc
 +++ b/media/filters/ffmpeg_video_decoder.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors, Alex313031, and RobRich999
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -29,6 +29,7 @@
  #include "media/base/supported_types.h"
  #include "media/base/timestamp_constants.h"

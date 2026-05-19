@@ -1,11 +1,5 @@
 --- a/net/base/load_flags_list.h
 +++ b/net/base/load_flags_list.h
-@@ -1,4 +1,4 @@
--// Copyright 2011 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -115,3 +115,9 @@
  // This flag is used to bypass HSTS upgrades. This flag must be set for AIA,
  // CRL, and OCSP requests in order to prevent circular dependencies.

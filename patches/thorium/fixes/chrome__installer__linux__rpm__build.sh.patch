@@ -1,13 +1,5 @@
 --- a/chrome/installer/linux/rpm/build.sh
 +++ b/chrome/installer/linux/rpm/build.sh
-@@ -1,6 +1,6 @@
- #!/bin/bash
- #
--# Copyright 2012 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
 @@ -15,13 +15,13 @@
    # Different channels need to install to different locations so they
    # don't conflict with each other.

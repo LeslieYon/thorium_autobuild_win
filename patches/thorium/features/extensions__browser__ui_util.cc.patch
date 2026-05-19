@@ -1,11 +1,5 @@
 --- a/extensions/browser/ui_util.cc
 +++ b/extensions/browser/ui_util.cc
-@@ -1,4 +1,4 @@
--// Copyright 2020 The Chromium Authors
-+// Copyright 2026 The Chromium Authors, Alex313031, and not-lucky
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -33,7 +33,7 @@
    // background pages. See http://crbug.com/116134.
    if (!Manifest::IsUnpackedLocation(location) &&

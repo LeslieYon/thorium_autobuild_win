@@ -1,11 +1,5 @@
 --- a/components/download/public/common/download_features.cc
 +++ b/components/download/public/common/download_features.cc
-@@ -1,4 +1,4 @@
--// Copyright 2018 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -14,7 +14,7 @@
  #if BUILDFLAG(IS_ANDROID)
               base::FEATURE_ENABLED_BY_DEFAULT

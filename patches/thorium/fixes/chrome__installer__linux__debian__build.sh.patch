@@ -1,13 +1,5 @@
 --- a/chrome/installer/linux/debian/build.sh
 +++ b/chrome/installer/linux/debian/build.sh
-@@ -1,6 +1,6 @@
- #!/bin/bash
- #
--# Copyright 2012 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
 @@ -22,7 +22,7 @@
    process_template "${SCRIPTDIR}/changelog.template" "${DEB_CHANGELOG}"
    debchange -a --nomultimaint -m --changelog "${DEB_CHANGELOG}" \

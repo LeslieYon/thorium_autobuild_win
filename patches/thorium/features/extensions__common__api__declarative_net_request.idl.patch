@@ -1,11 +1,5 @@
 --- a/extensions/common/api/declarative_net_request.idl
 +++ b/extensions/common/api/declarative_net_request.idl
-@@ -1,4 +1,4 @@
--// Copyright 2017 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -815,28 +815,29 @@
          TestMatchOutcomeCallback callback);
    };

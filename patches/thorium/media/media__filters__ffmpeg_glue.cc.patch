@@ -1,11 +1,5 @@
 --- a/media/filters/ffmpeg_glue.cc
 +++ b/media/filters/ffmpeg_glue.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors, Alex313031, and RobRich999
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -84,6 +84,8 @@
                                                   "flac", "mp3",      "mov"};
  #if BUILDFLAG(USE_PROPRIETARY_CODECS)

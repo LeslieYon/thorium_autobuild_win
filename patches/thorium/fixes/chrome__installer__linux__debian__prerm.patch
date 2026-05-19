@@ -1,13 +1,5 @@
 --- a/chrome/installer/linux/debian/prerm
 +++ b/chrome/installer/linux/debian/prerm
-@@ -1,6 +1,6 @@
- #!/bin/sh
- #
--# Copyright 2009 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
 @@ -22,4 +22,4 @@
  update-alternatives --remove x-www-browser /usr/bin/@@USR_BIN_SYMLINK_NAME@@
  update-alternatives --remove gnome-www-browser /usr/bin/@@USR_BIN_SYMLINK_NAME@@

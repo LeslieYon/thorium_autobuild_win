@@ -1,16 +1,5 @@
 --- a/chrome/install_static/chromium_install_modes.cc
 +++ b/chrome/install_static/chromium_install_modes.cc
-@@ -1,8 +1,8 @@
--// Copyright 2016 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
--// Brand-specific constants and install modes for Chromium.
-+// Brand-specific constants and install modes for Thorium.
- 
- #include "chrome/install_static/chromium_install_modes.h"
- 
 @@ -14,10 +14,10 @@
  
  const wchar_t kCompanyPathName[] = L"";

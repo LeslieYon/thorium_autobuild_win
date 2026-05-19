@@ -1,11 +1,5 @@
 --- a/content/shell/BUILD.gn
 +++ b/content/shell/BUILD.gn
-@@ -1,4 +1,4 @@
--# Copyright 2014 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
 @@ -43,8 +43,8 @@
  shell_use_toolkit_views = toolkit_views && !is_castos
  

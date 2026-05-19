@@ -1,11 +1,5 @@
 --- a/chrome/browser/net/stub_resolver_config_reader.cc
 +++ b/chrome/browser/net/stub_resolver_config_reader.cc
-@@ -1,4 +1,4 @@
--// Copyright 2020 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -77,12 +77,6 @@
    kMaxValue = kSecureByEnterprisePolicy,
  };

@@ -1,11 +1,5 @@
 --- a/chrome/browser/memory_details_linux.cc
 +++ b/chrome/browser/memory_details_linux.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -119,7 +119,7 @@
    ProcessData current_browser =
        GetProcessDataMemoryInformation(GetAllChildren(process_map, getpid()));
