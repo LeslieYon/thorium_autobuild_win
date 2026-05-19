@@ -81,7 +81,6 @@ thorium/branding/chrome__app__settings_chromium_strings.grdp.patch
 thorium/branding/chrome__app__settings_strings.grdp.patch
 thorium/branding/chrome__app__shared_settings_strings.grdp.patch
 thorium/branding/chrome__app__theme__chromium__BRANDING.patch
-thorium/branding/chrome__app__theme__chromium__linux__product_logo_32.xpm.patch
 thorium/branding/chrome__app__theme__theme_resources.grd.patch
 thorium/branding/chrome__app__vector_icons__BUILD.gn.patch
 thorium/fixes/chrome__browser__about_flags.cc.patch

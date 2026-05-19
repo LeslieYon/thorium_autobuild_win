@@ -40,8 +40,8 @@ Desktop.ini
 node_modules/
 
 # =========== Chromium build tree (if cloned in-tree) ===========
-chromium/
-src/
+/chromium/
+/src/
 
 # =========== Submodule working copies (managed by .gitmodules) ===========
 # ungoogled-chromium is a submodule; its .git is outside our repo
