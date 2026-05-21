@@ -7,6 +7,10 @@ on:
         description: Python version for the build environment
         required: false
         default: '3.12'
+      extra-overlay-url:
+        description: URL to a compressed archive applied as extra overlay after the standard overlay/
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -14,6 +18,9 @@ permissions:
 concurrency:
   group: test-build-x64-avx2-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  THORIUM_EXTRA_OVERLAY_URL: ${{ inputs['extra-overlay-url'] }}
 
 jobs:
   prepare:
@@ -37,6 +44,8 @@ jobs:
         shell: pwsh
         run: python build.py --ci --prepare-only --simd avx2
         working-directory: C:\tbw
+        env:
+          THORIUM_EXTRA_OVERLAY_URL: ${{ inputs['extra-overlay-url'] }}
 
   build-avx2:
     needs: prepare
@@ -46,6 +55,7 @@ jobs:
       simd: avx2
       cache-key: thorium-src-test-x64-avx2-${{ github.sha }}
       artifact-name: thorium-test-x64-avx2
+      extra-overlay-url: ${{ inputs['extra-overlay-url'] }}
     secrets:
       GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
       GOOGLE_API_KEY_REMOTING: ${{ secrets['GOOGLE_API_KEY_REMOTING'] }}

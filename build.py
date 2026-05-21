@@ -34,6 +34,10 @@ import shutil
 import subprocess
 import ctypes
 import fnmatch
+import urllib.request
+import zipfile
+import tarfile
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -567,6 +571,116 @@ def _apply_source_overrides(source_tree):
                       overwrite_count, new_count)
 
 
+def _download_and_apply_extra_overlay(source_tree, overlay_url):
+    """
+    Download an extra overlay archive from a URL and apply it to the source tree.
+
+    This is applied after the standard overlay/ directory so that test builds
+    can inject additional files (e.g. experimental features, test branding)
+    without modifying the repository.
+
+    The archive format is auto-detected:
+      - .zip       → Python zipfile
+      - .tar.gz    → Python tarfile (gzip)
+      - .tar.bz2   → Python tarfile (bzip2)
+      - .tar.xz    → Python tarfile (lzma)
+      - .tar       → Python tarfile
+      - other      → 7z (must be in PATH)
+
+    Args:
+        source_tree: Root of the Chromium source tree.
+        overlay_url: URL of the compressed archive to download and apply.
+    """
+    get_logger().info('Downloading extra overlay from: %s', overlay_url)
+
+    with tempfile.TemporaryDirectory(prefix='thorium-extra-overlay-') as tmp_dir:
+        tmp_path = Path(tmp_dir)
+
+        # Download the archive
+        archive_path = tmp_path / 'overlay_archive'
+        try:
+            urllib.request.urlretrieve(overlay_url, archive_path)
+        except Exception as exc:
+            get_logger().error(
+                'Failed to download extra overlay from %s: %s', overlay_url, exc)
+            sys.exit(1)
+
+        # Determine archive size for logging
+        archive_size = archive_path.stat().st_size
+        get_logger().info('Downloaded %d bytes, extracting...', archive_size)
+
+        # Extract to a subdirectory
+        extract_dir = tmp_path / 'extracted'
+        extract_dir.mkdir()
+
+        archive_str = str(archive_path)
+
+        def _try_builtin_extract():
+            """Try Python built-in extractors. Returns True on success."""
+            if archive_str.endswith('.zip'):
+                with zipfile.ZipFile(archive_path) as zf:
+                    zf.extractall(extract_dir)
+                return True
+            if archive_str.endswith(('.tar.gz', '.tgz')):
+                with tarfile.open(archive_path, 'r:gz') as tf:
+                    tf.extractall(extract_dir)
+                return True
+            if archive_str.endswith(('.tar.bz2', '.tbz2')):
+                with tarfile.open(archive_path, 'r:bz2') as tf:
+                    tf.extractall(extract_dir)
+                return True
+            if archive_str.endswith(('.tar.xz', '.txz')):
+                with tarfile.open(archive_path, 'r:xz') as tf:
+                    tf.extractall(extract_dir)
+                return True
+            if archive_str.endswith('.tar'):
+                with tarfile.open(archive_path, 'r:') as tf:
+                    tf.extractall(extract_dir)
+                return True
+            return False
+
+        if not _try_builtin_extract():
+            # Fallback: try 7z for unknown formats (.7z, .rar, etc.)
+            get_logger().info('Falling back to 7z for extraction...')
+            try:
+                subprocess.run(
+                    ['7z', 'x', archive_str, '-o{}'.format(extract_dir), '-y'],
+                    check=True, capture_output=True)
+            except Exception as exc:
+                get_logger().error(
+                    'Failed to extract extra overlay with 7z: %s', exc)
+                sys.exit(1)
+
+        # Handle archives that wrap everything in a single top-level directory
+        overlay_root = extract_dir
+        children = sorted(extract_dir.iterdir())
+        if len(children) == 1 and children[0].is_dir():
+            overlay_root = children[0]
+            get_logger().info('Stripping single top-level directory: %s',
+                              overlay_root.name)
+
+        # Copy files to source tree (same logic as _apply_source_overrides)
+        get_logger().info('Applying extra overlay from: %s', overlay_root)
+        new_count = 0
+        overwrite_count = 0
+        for f in overlay_root.rglob('*'):
+            if not f.is_file() or f.name == '.gitkeep':
+                continue
+            rel = f.relative_to(overlay_root)
+            dst = source_tree / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            existed_before = dst.exists()
+            shutil.copy2(f, dst)
+            if existed_before:
+                overwrite_count += 1
+            else:
+                new_count += 1
+
+        get_logger().info(
+            'Extra overlay applied: %d overwritten, %d new files',
+            overwrite_count, new_count)
+
+
 def _apply_all_patches(source_tree, patch_bin_path):
     """Apply all Thorium-related patches and brand string sync.
 
@@ -756,6 +870,11 @@ def main():
         '--apply-patches-only', action='store_true',
         help=('Apply patches only (ungoogled + overlay + Thorium + brand '
               'strings); assumes source tree is already prepared'))
+    parser.add_argument(
+        '--extra-overlay-url', type=str, default='',
+        help=('URL to a compressed archive that will be downloaded and applied '
+              'as an additional overlay after the standard overlay/ directory. '
+              'Can also be set via THORIUM_EXTRA_OVERLAY_URL environment variable.'))
     args = parser.parse_args()
 
     # Read target Chromium version from chromium_version.txt
@@ -880,6 +999,16 @@ def main():
                 source_tree,
                 patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
             )
+
+    # Apply extra overlay if URL is provided (via THORIUM_EXTRA_OVERLAY_URL
+    # env var or --extra-overlay-url CLI argument).  This runs AFTER all
+    # patches and overlays are applied but BEFORE GN Gen and the final
+    # ninja build, so test builds can inject additional files as the very
+    # last source tree modification.
+    if args.extra_overlay_url:
+        _download_and_apply_extra_overlay(source_tree, args.extra_overlay_url)
+    elif os.environ.get('THORIUM_EXTRA_OVERLAY_URL'):
+        _download_and_apply_extra_overlay(source_tree, os.environ['THORIUM_EXTRA_OVERLAY_URL'])
 
     # ----- Stage: GN Gen -----
     if args.prepare_only:
