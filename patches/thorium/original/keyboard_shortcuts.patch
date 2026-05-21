@@ -2,12 +2,6 @@ diff --git a/ash/public/cpp/accelerators.h b/ash/public/cpp/accelerators.h
 index 988f7146ec9e3..07fafec4e835f 100644
 --- a/ash/public/cpp/accelerators.h
 +++ b/ash/public/cpp/accelerators.h
-@@ -1,4 +1,4 @@
--// Copyright 2018 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -244,15 +244,15 @@ ASH_PUBLIC_EXPORT inline constexpr auto kAcceleratorData = std::to_array<
      {true, ui::VKEY_9, ui::EF_ALT_DOWN, AcceleratorAction::kLaunchLastApp},
  

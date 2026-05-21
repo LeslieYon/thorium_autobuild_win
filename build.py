@@ -563,7 +563,7 @@ def _append_google_api_keys(gn_flags):
     
     Supports two sources (in priority order):
     1. Environment variables: GOOGLE_API_KEY, GOOGLE_DEFAULT_CLIENT_ID,
-       GOOGLE_DEFAULT_CLIENT_SECRET
+       GOOGLE_DEFAULT_CLIENT_SECRET, GOOGLE_API_KEY_SODA
     2. .env file in project root (KEY=VALUE format)
     
     These are required for Thorium to access Google services
@@ -585,8 +585,12 @@ def _append_google_api_keys(gn_flags):
     # Then check environment variables (they override .env)
     for env_key, gn_key in [
         ('GOOGLE_API_KEY', 'google_api_key'),
+        ('GOOGLE_API_KEY_REMOTING', 'google_api_key_remoting'),
         ('GOOGLE_DEFAULT_CLIENT_ID', 'google_default_client_id'),
+        ('GOOGLE_CLIENT_ID_REMOTING', 'google_client_id_remoting'),
         ('GOOGLE_DEFAULT_CLIENT_SECRET', 'google_default_client_secret'),
+        ('GOOGLE_CLIENT_SECRET_REMOTING', 'google_client_secret_remoting'),
+        ('GOOGLE_API_KEY_SODA', 'google_api_key_soda'),
     ]:
         value = os.environ.get(env_key) or env_vars.get(env_key, '')
         if value:

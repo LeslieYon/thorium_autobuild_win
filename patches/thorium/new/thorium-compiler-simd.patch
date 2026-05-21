@@ -1,0 +1,1182 @@
+# Android compiler flags and official build
+--- a/build/config/android/BUILD.gn
++++ b/build/config/android/BUILD.gn
+@@ -1,9 +1,10 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/android/rules.gni")
+ import("//build/config/c++/c++.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/compiler/compiler.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+ 
+@@ -73,6 +74,16 @@
+ 
+   cflags += [ "--target=$android_abi_target$android_ndk_api_level" ]
+   ldflags += [ "--target=$android_abi_target$android_ndk_api_level" ]
++
++  if (is_official_build) {
++    cflags += [ "-O3", ]
++    ldflags += [ "-Wl,-O3", ]
++  }
++
++  if (current_cpu == "x86" || current_cpu == "x64") {
++    cflags += [ "-msse3", "-mssse3", "-msse4.1" ]
++    ldflags += [ "-msse3", "-mssse3", "-msse4.1" ]
++  }
+ 
+   # Assign any flags set for the C compiler to asmflags so that they are sent
+   # to the assembler.
+# ARM FPU/NEON defaults removal
+--- a/build/config/arm.gni
++++ b/build/config/arm.gni
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031.
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -120,15 +120,42 @@
+   }
+ } else if (current_cpu == "arm64" || v8_current_cpu == "arm64" ||
+            current_cpu == "arm64e" || v8_current_cpu == "arm64e") {
+-  # arm64 supports only "hard".
+-  arm_float_abi = "hard"
+-  arm_use_neon = true
+   declare_args() {
+     # Enables the new Armv8 branch protection features. Valid strings are:
+     # - "pac": Enables Pointer Authentication Code (PAC, featured in Armv8.3)
+     # - "standard": Enables both PAC and Branch Target Identification (Armv8.5).
+     # - "none": No branch protection.
+     arm_control_flow_integrity = "none"
++    
++    # Version of the ARM processor when compiling on ARM. Ignored on non-ARM
++    # platforms.
++    arm_version = 8
++    
++    # arm64 supports only "hard".
++    arm_float_abi = "hard"
++
++    # The ARM64 architecture. This will be a string like "armv8-a" or "armv8.5-a.
++    # An empty string means to use the default for the arm_version.
++    arm_arch = "armv8-a"
++    
++    # The ARM variant-specific tuning mode. This will be a string like "armv6"
++    # or "cortex-a15". An empty string means to use the default for the
++    # arm_version.
++    arm_tune = "generic-armv8-a"
++
++    # The ARM64 floating point hardware. This will be a string like "neon" or
++    # "vfpv3-d16". An empty string means to use the default for the arm_version.
++    arm_fpu = "neon"
++
++    # Whether to use the neon FPU instruction set or not.
++    arm_use_neon = "true"
++
++    # Whether to enable optional NEON code paths.
++    arm_optionally_use_neon = false
++
++    # Thumb is a reduced instruction set available on some ARM processors that
++    # has increased code density.
++    arm_use_thumb = true
+ 
+     if ((is_android || is_linux) && target_cpu == "arm64") {
+       # Enable PAC and BTI on AArch64 Linux/Android systems.
+@@ -137,7 +164,6 @@
+       # use the arm64 simulator.
+       arm_control_flow_integrity = "standard"
+     }
+-
+     if (host_os == "mac" && host_cpu == "arm64") {
+       # Disable ARM integrity flow or build
+       # will fail because of this issue
+@@ -145,8 +171,13 @@
+       arm_control_flow_integrity = "none"
+     }
+   }
++  # Initial values from upstream. arm64 supports only "hard".
++  arm_version = 8
++  arm_float_abi = "hard"
++  arm_use_neon = true
++  
+   assert(arm_control_flow_integrity == "none" ||
+              arm_control_flow_integrity == "standard" ||
+              arm_control_flow_integrity == "pac",
+-         "Invalid branch protection option")
++         "Invalid ARM branch protection option.")
+ }
+# SIMD optimization config
+--- a/build/config/BUILDCONFIG.gn
++++ b/build/config/BUILDCONFIG.gn
+@@ -421,6 +421,9 @@
+   default_compiler_configs += [ "//build/config:release" ]
+ }
+ 
++# Make sure Thorium SIMD flags come last
++default_compiler_configs += [ "//build/config/compiler:thorium_simd_optimization", ]
++
+ # Static libraries and source sets use only the compiler ones.
+ set_defaults("static_library") {
+   configs = default_compiler_configs
+# Compiler build config
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -1,10 +1,11 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors, RobRich999, and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/buildflag_header.gni")
+ import("//build/config/android/config.gni")
+ import("//build/config/c++/c++.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/chrome_build.gni")
+ import("//build/config/chromeos/args.gni")
+ import("//build/config/clang/clang.gni")
+@@ -131,7 +132,7 @@
+   # Whether to enable thin lto incremental builds.
+   # See: https://clang.llvm.org/docs/ThinLTO.html#incremental
+   # The cache can lead to non-determinism: https://crbug.com/1486045
+-  thin_lto_enable_cache = true
++  thin_lto_enable_cache = false
+ 
+   # Initialize all local variables with a pattern. This flag will fill
+   # uninitialized floating-point types (and 32-bit pointers) with 0xFF and the
+@@ -407,6 +408,11 @@
+       }
+     }
+ 
++    # ADDED BY ALEX313031 FOR THORIUM
++    if (is_clang && is_android && !is_ubsan && !is_ubsan_security) {
++      cflags += [ "-fwrapv" ]
++    }
++
+     # Linker warnings.
+     if (fatal_linker_warnings && !is_apple && current_os != "aix" &&
+         current_os != "zos") {
+@@ -504,6 +510,18 @@
+     cflags += [ "-fPIC" ]
+     ldflags += [ "-fPIC" ]
+     rustflags += [ "-Crelocation-model=pic" ]
++    #if (current_cpu == "x86" || current_cpu == "x64") {
++      #asmflags += [ "-fno-emulated-tls", "-w", ]
++      #cflags += [ "-fno-emulated-tls", "-w", ]
++      #ldflags += [ "-Wl,-plugin-opt=-emulated-tls=0", "-w", ]
++      #rustflags += [ "-Awarnings", ]
++    #}
++
++    #if (is_clang && chrome_pgo_phase == 2 && !is_android) {
++      #asmflags += [ "-fbasic-block-sections=labels" ]
++      #cflags += [ "-fbasic-block-sections=labels" ]
++      #rustflags += [ "-Cllvm-args=-basic-block-sections=labels" ]
++    #}
+ 
+     if (!is_clang) {
+       # Use pipes for communicating between sub-processes. Faster.
+@@ -555,9 +573,17 @@
+ 
+     if (!use_sized_deallocation) {
+       if (is_win) {
+-        cflags += [ "/Zc:sizedDealloc-" ]
++        if (is_debug) {
++          cflags += [ "/Zc:sizedDealloc-" ]
++        } else {
++          cflags += [ "/Zc:sizedDealloc" ]
++        }
+       } else {
+-        cflags += [ "-fno-sized-deallocation" ]
++        if (is_debug) {
++          cflags += [ "-fno-sized-deallocation" ]
++        } else {
++          cflags += [ "-fsized-deallocation" ]
++        }
+       }
+     }
+   }
+@@ -622,11 +648,19 @@
+       }
+     }
+ 
+-    # TODO(crbug.com/40192287): Investigate why/if this should be needed.
+-    if (is_win) {
+-      cflags += [ "/clang:-ffp-contract=off" ]
++    if (use_avx2 || use_avx512 || use_fma || current_cpu == "arm64" || is_mac) {
++      if (is_win) {
++        cflags += [ "/clang:-ffp-contract=fast" ]
++      } else {
++        cflags += [ "-ffp-contract=fast" ]
++      }
+     } else {
+-      cflags += [ "-ffp-contract=off" ]
++      # TODO(crbug.com/40192287): Investigate why/if this should be needed.
++      if (is_win) {
++        cflags += [ "/clang:-ffp-contract=off" ]
++      } else {
++        cflags += [ "-ffp-contract=off" ]
++      }
+     }
+ 
+     # Enable ELF CREL (see crbug.com/357878242) for all platforms that use ELF
+@@ -801,7 +835,11 @@
+     # [0]: https://pinpoint-dot-chromeperf.appspot.com/job/16984a18be0000
+     # [1]: https://pinpoint-dot-chromeperf.appspot.com/job/11984a18be0000
+     # [2]: https://ci.chromium.org/ui/p/chromium/builders/try/android-binary-size/1848442
+-    import_instr_limit = 30
++    if (is_official_build) {
++      import_instr_limit = 100
++    } else {
++      import_instr_limit = 30
++    }
+ 
+     if (is_win) {
+       ldflags += [
+@@ -827,11 +865,11 @@
+         # bloat of ThinLTO to <10%, but that's potentially no longer true.
+         # FIXME(inglorion): maybe tune these?
+         # TODO(b/271459198): Revert limit on amd64 to 30 when fixed.
+-        import_instr_limit = 20
++        import_instr_limit = 100
+       } else if (is_android && optimize_for_size) {
+         # TODO(crbug.com/40219076): Investigate if we can get the > 6% perf win
+         # of import_instr_limit 30 with a binary size hit smaller than ~2 MiB.
+-        import_instr_limit = 5
++        import_instr_limit = 100
+       }
+ 
+       ldflags += [ "-Wl,-mllvm,-import-instr-limit=$import_instr_limit" ]
+@@ -862,6 +900,7 @@
+     # TODO(crbug.com/40182783): investigate why this isn't effective on
+     # arm32.
+     if (!is_android || current_cpu == "arm64") {
++      # Add "-fstrict-vtable-pointers",
+       cflags += [ "-fwhole-program-vtables" ]
+ 
+       if (toolchain_supports_rust_thin_lto) {
+@@ -880,6 +919,10 @@
+       if (!is_win) {
+         ldflags += [ "-fwhole-program-vtables" ]
+       }
++    }
++
++    if (is_win && target_cpu == "arm64") {
++      cflags += [ "-Wno-error", "-Wno-unreachable-code", ]
+     }
+ 
+     # This flag causes LTO to create an .ARM.attributes section with the correct
+@@ -1078,6 +1121,34 @@
+     "-Zexternal-clangrt",
+   ]
+ 
++  if (current_cpu == "arm64") {
++    rustflags += [ "-Cllvm-args=-fp-contract=fast", "-Ctarget-feature=+neon", ]
++  }
++
++  if (current_cpu == "x86" || current_cpu == "x64") {
++    if (use_sse2 && !use_sse3) {
++      rustflags += [ "-Ctarget-feature=+sse2", ]
++    }
++    if (use_sse3 && !use_sse41) {
++      rustflags += [ "-Ctarget-feature=+sse3", ]
++    }
++    if (use_sse41 && !use_sse42) {
++      rustflags += [ "-Ctarget-feature=+sse3,+ssse3,+sse4.1", ]
++    }
++    if (use_sse42 && !use_avx) {
++      rustflags += [ "-Ctarget-feature=+sse3,+ssse3,+sse4.1,+sse4.2", ]
++    }
++    if (use_avx && !use_avx2) {
++      rustflags += [ "-Ctarget-feature=+sse3,+ssse3,+sse4.1,+sse4.2,+pclmulqdq,+aes,+avx", ]
++    }
++    if (use_avx2 && !use_avx512) {
++      rustflags += [ "-Ctarget-feature=+sse3,+ssse3,+sse4.1,+sse4.2,+pclmulqdq,+aes,+avx,+avx2,+fma,+f16c,+lzcnt,+bmi2", "-Cllvm-args=-fp-contract=fast", ]
++    }
++    if (use_avx512) {
++      rustflags += [ "-Ctarget-feature=+sse3,+ssse3,+sse4.1,+sse4.2,+pclmulqdq,+aes,+avx,+avx2,+fma,+f16c,+lzcnt,+bmi2,+mavx512f", "-Cllvm-args=-fp-contract=fast", ]
++    }
++  }
++
+   if (!is_win || force_rustc_color_output) {
+     # Colorize error output. The analogous flag is passed for clang. This must
+     # be platform-gated since rustc will unconditionally output ANSI escape
+@@ -1097,7 +1168,7 @@
+     rustflags += [ "-Clto=no" ]
+   }
+   if (is_official_build) {
+-    rustflags += [ "-Ccodegen-units=1" ]
++    rustflags += [ "-Ccodegen-units=1", "-Copt-level=3", ]
+   }
+   if (!rust_prebuilt_stdlib) {
+     # When building against the Chromium Rust stdlib (which we compile) always
+@@ -1143,7 +1214,7 @@
+   # TODO(crbug.com/40511454): Move this back to the `runtime_library` config
+   # when NaCl is removed.
+   if (use_safe_libcxx) {
+-    defines = [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE" ]
++    defines = [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST" ]
+   } else {
+     defines = [ "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE" ]
+   }
+@@ -1159,12 +1230,16 @@
+ # building with ThinLTO, no optimization is performed in the link step.
+ config("thinlto_optimize_default") {
+   if (!is_debug && use_thin_lto && is_a_target_toolchain) {
+-    lto_opt_level = 0
++    lto_opt_level = 2
+ 
+     if (is_win) {
+       ldflags = [ "/opt:lldlto=" + lto_opt_level ]
++      ldflags += [ "-mllvm:-enable-pre=false", ]
++      ldflags += [ "-opt:lldltocgo=" + lto_opt_level ]
+     } else {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
++      ldflags += [ "-Wl,-mllvm,-enable-pre=false", ]
++      ldflags += [ "-Wl,--lto-CGO" + lto_opt_level ]
+     }
+ 
+     if (toolchain_supports_rust_thin_lto) {
+@@ -1192,13 +1267,18 @@
+     if (thin_lto_enable_optimizations) {
+       lto_opt_level = 2
+     } else {
+-      lto_opt_level = 0
++      # Alex313031 TODO: Set back to 3 when LLVM bug is fixed
++      lto_opt_level = 2
+     }
+ 
+     if (is_win) {
+       ldflags = [ "/opt:lldlto=" + lto_opt_level ]
++      ldflags += [ "-mllvm:-enable-pre=false", ]
++      ldflags += [ "-opt:lldltocgo=" + lto_opt_level ]
+     } else {
+       ldflags = [ "-Wl,--lto-O" + lto_opt_level ]
++      ldflags += [ "-Wl,-mllvm,-enable-pre=false", ]
++      ldflags += [ "-Wl,--lto-CGO" + lto_opt_level ]
+     }
+ 
+     if (toolchain_supports_rust_thin_lto) {
+@@ -1240,7 +1320,7 @@
+         cflags += [ "-m64" ]
+         ldflags += [ "-m64" ]
+       }
+-      cflags += [ "-msse3" ]
++      #cflags += [ "-msse3" ]
+     } else if (current_cpu == "x86") {
+       if (is_clang && !is_android && !is_nacl && !is_chromeos_device) {
+         cflags += [ "--target=i386-unknown-linux-gnu" ]
+@@ -1252,7 +1332,9 @@
+       if (!is_nacl) {
+         cflags += [
+           "-mfpmath=sse",
+-          "-msse3",
++          "-mmmx",
++          "-msse",
++          "-msse2",
+         ]
+       }
+     } else if (current_cpu == "arm") {
+@@ -2367,6 +2449,14 @@
+   cflags_cc = []
+   defines = []
+ 
++  if (is_official_build) {
++    if (is_win) {
++      cflags += [ "/O2" ]
++    } else {
++      cflags += [ "-O3" ]
++    }
++  }
++
+   if (is_win) {
+     if (is_clang) {
+       cflags += [ "/W3" ]  # Warning level 3.
+@@ -2389,6 +2479,9 @@
+       # third-party libraries.
+       "-Wno-c++11-narrowing",
+     ]
++    if (is_official_build && is_win) {
++      cflags += [ "-Xclang", "-O3" ]
++    }
+     if (!is_nacl) {
+       cflags += [
+         # Disabled for similar reasons as -Wunused-variable.
+@@ -2561,6 +2654,125 @@
+   }
+ }
+ 
++# Thorium SIMD optimizations
++config("thorium_simd_optimization") {
++  cflags = []
++  ldflags = []
++  if (current_cpu == "x86") {
++    if (is_win) {
++      if (use_sse2) {
++        cflags += [ "/arch:SSE2", "/clang:-msse2", ]
++      }
++      if (use_sse3) {
++        cflags += [ "/clang:-msse3", ]
++      }
++      if (use_sse41) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1", ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2", ]
++      }
++    } else {
++      if (use_sse2) {
++        cflags += [ "-msse2", ]
++        ldflags += [ "-msse2", ]
++      }
++      if (use_sse3) {
++        cflags += [ "-msse3", ]
++        ldflags += [ "-msse3", ]
++      }
++      if (use_sse41) {
++        cflags += [ "-mssse3", "-msse4.1", ]
++        ldflags += [ "-mssse3", "-msse4.1", ]
++      }
++      if (use_sse42) {
++        cflags += [ "-msse4", "-msse4.2", ]
++        ldflags += [ "-msse4.2", ]
++      }
++    }
++  } else if (current_cpu == "x64") {
++    if (is_win) {
++      if (use_sse3) {
++        cflags += [ "/clang:-msse3", ]
++      }
++      if (use_sse41) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1", ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2", ]
++      }
++      if (use_avx) {
++        cflags += [ "/clang:-mpclmul", "/clang:-maes", "/clang:-mavx", ]
++      }
++      if (use_fma) {
++        cflags += [ "/clang:-mfma", "/clang:-ffp-contract=fast", ]
++      }
++      if (use_avx2) {
++        cflags += [ "/clang:-mavx2", "/clang:-mf16c", "/clang:-mlzcnt", "/clang:-mbmi", "/clang:-mbmi2", ]
++        ldflags += [ "-mllvm:-march=haswell", ]
++      }
++      if (use_avx512) {
++        cflags += [ "/clang:-mavx512f", "/clang:-mavx512cd", "/clang:-mavx512vl", "/clang:-mavx512bw", "/clang:-mavx512dq", ]
++        ldflags += [ "-mllvm:-march=skylake-avx512", ]
++      }
++    } else if (is_mac) {
++      if (use_avx2) {
++        cflags += [ "-march=x86-64-v3", ]
++        ldflags += [ "-Wl,-mllvm,-march=x86-64-v3", ]
++      } else {
++        cflags += [ "-msse3", "-mssse3", "-msse4.1", ]
++      }
++    } else {
++      # Linux and ChromiumOS and Android
++      if (use_sse3) {
++        cflags += [ "-msse3", ]
++        ldflags += [ "-msse3", ]
++      }
++      if (use_sse41) {
++        cflags += [ "-mssse3", "-msse4.1", ]
++        ldflags += [ "-mssse3", "-msse4.1", ]
++      }
++      if (use_sse42) {
++        cflags += [ "-msse4", "-msse4.2", ]
++        ldflags += [ "-msse4.2", ]
++      }
++      if (use_avx) {
++        cflags += [ "-mpclmul", "-maes", "-mavx", ]
++        ldflags += [ "-mpclmul", "-maes", "-mavx", ]
++      }
++      if (use_fma) {
++        cflags += [ "-mfma", "-ffp-contract=fast", ]
++        ldflags += [ "-mfma", "-Wl,-mllvm,-fp-contract=fast", ]
++      }
++      if (use_avx2) {
++        cflags += [ "-mavx2", "-mf16c", "-mlzcnt", "-mbmi", "-mbmi2", ]
++        ldflags += [ "-mavx2", "-mf16c", "-mlzcnt", "-mbmi", "-mbmi2", "-Wl,-mllvm,-march=haswell", ]
++      }
++      if (use_avx512) {
++        cflags += [ "-mavx512f", "-mavx512cd", "-mavx512vl", "-mavx512bw", "-mavx512dq", ]
++        ldflags += [ "-mavx512f", "-mavx512cd", "-mavx512vl", "-mavx512bw", "-mavx512dq", "-Wl,-mllvm,-march=skylake-avx512", ]
++      }
++    }
++  } else if (current_cpu == "arm") {
++    if (is_android || is_linux) {
++    }
++  } else if (current_cpu == "arm64") {
++    if (is_win) {
++      cflags += [ "-march=armv8-a+simd", ]
++    } else if (is_mac) {
++      # Alex313031 TODO: Possibly use -mcpu here?
++      cflags += [ "-march=armv8.3-a+simd+crypto", "-mtune=apple-m1", ]
++      ldflags += [ "-march=armv8.3-a+simd+crypto", "-mtune=apple-m1", ]
++    } else {
++      # Linux and ChromiumOS and Android
++      cflags += [ "-march=armv8-a+simd", ]
++      if (is_raspi) {
++        cflags += [ "-mtune=cortex-a72", ]
++      }
++    }
++  }
++}
++
+ # Optimization -----------------------------------------------------------------
+ #
+ # The BUILDCONFIG file sets the "default_optimization" config on targets by
+@@ -2576,7 +2788,10 @@
+ # Shared settings for both "optimize" and "optimize_max" configs.
+ # IMPORTANT: On Windows "/O1" and "/O2" must go before the common flags.
+ if (is_win) {
+-  common_optimize_on_cflags = [
++  common_optimize_on_cflags = []
++  common_optimize_on_ldflags = []
++
++  common_optimize_on_cflags += [
+     "/Oy-",  # Disable omitting frame pointers, must be after /O2.
+     "/Zc:inline",  # Remove unreferenced COMDAT (faster links).
+   ]
+@@ -2590,7 +2805,23 @@
+       "/Gw",
+     ]
+   }
+-  common_optimize_on_ldflags = []
++
++  if (is_official_build) {
++    common_optimize_on_cflags += [
++      "-mllvm", "-aggressive-ext-opt",
++      "-mllvm", "-enable-gvn-hoist",
++      "/O2",
++      "/clang:-O3",
++      "-Xclang", "-O3",
++    ]
++  }
++
++  if (is_official_build) {
++    common_optimize_on_ldflags += [
++      "-mllvm:-aggressive-ext-opt",
++      "-mllvm:-enable-gvn-hoist",
++    ]
++  }
+ 
+   # /OPT:ICF is not desirable in Debug builds, since code-folding can result in
+   # misleading symbols in stack traces.
+@@ -2609,6 +2840,19 @@
+ } else {
+   common_optimize_on_cflags = []
+   common_optimize_on_ldflags = []
++
++  if (is_official_build) {
++    common_optimize_on_cflags += [
++      "-mllvm", "-aggressive-ext-opt",
++      "-mllvm", "-enable-gvn-hoist",
++      "-O3",
++    ]
++    common_optimize_on_ldflags += [
++      "-Wl,-mllvm,-aggressive-ext-opt",
++      "-Wl,-mllvm,-enable-gvn-hoist",
++      "-Wl,-O3",
++    ]
++  }
+ 
+   if (is_android) {
+     # TODO(jdduke) Re-enable on mips after resolving linking
+@@ -2641,9 +2885,7 @@
+       "-ffunction-sections",
+     ]
+     if ((!is_nacl || is_nacl_saigo) && is_clang) {
+-      # We don't care about unique section names, this makes object files a bit
+-      # smaller.
+-      common_optimize_on_cflags += [ "-fno-unique-section-names" ]
++      common_optimize_on_cflags += [ "-funique-section-names" ]
+     }
+ 
+     if (is_official_build) {
+@@ -2651,7 +2893,7 @@
+         # Specifically tell the linker to perform optimizations.
+         # See http://lwn.net/Articles/192624/.
+         # -O2 enables string tail merge optimization in lld.
+-        "-Wl,-O2",
++        "-Wl,-O3",
+       ]
+     }
+ 
+@@ -2665,6 +2907,72 @@
+   # implies -fno-math-errno), which also allows a number of unsafe
+   # optimizations.
+   common_optimize_on_cflags += [ "-fno-math-errno" ]
++}
++
++config("march_crc") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8-a+crc" ]
++    asmflags = cflags
++  }
++}
++
++config("march_dotprod") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8.2-a+dotprod" ]
++    asmflags = cflags
++  }
++}
++
++config("march_fp16") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8.2-a+fp16" ]
++    asmflags = cflags
++  }
++}
++
++config("march_dotprod_fp16") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8.2-a+fp16+dotprod" ]
++    asmflags = cflags
++  }
++}
++
++config("march_dotprod_i8mm") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8-a+dotprod+i8mm" ]
++    asmflags = cflags
++  }
++}
++
++config("march_dotprod_i8mm_sve") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8.2-a+dotprod+i8mm+sve" ]
++    asmflags = cflags
++  }
++}
++
++config("march_i8mm") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8.2-a+i8mm" ]
++    asmflags = cflags
++  }
++}
++
++config("march_i8mm_f16") {
++  if (!is_win || is_clang) {
++    cflags = [ "-march=armv8.2-a+i8mm+fp16" ]
++    asmflags = cflags
++  }
++}
++
++config("march_sve2") {
++  cflags = [ "-march=armv9-a+sve2" ]
++  asmflags = cflags
++}
++
++config("march_sme") {
++  cflags = [ "-march=armv9-a+sme" ]
++  asmflags = cflags
+ }
+ 
+ config("default_stack_frames") {
+@@ -2714,7 +3022,8 @@
+     # consistency with the other platforms.
+     cflags = [
+                "/O2",
+-               "/clang:-O2",
++               "/clang:-O3",
++               "-Xclang", "-O3",
+              ] + common_optimize_on_cflags
+ 
+     # The `-O3` for clang turns on extra optimizations compared to the standard
+@@ -2727,9 +3036,9 @@
+     # (AKA -Oz).
+ 
+     if (is_fuchsia) {
+-      cflags = [ "-Oz" ] + common_optimize_on_cflags
++      cflags = [ "-O3" ] + common_optimize_on_cflags
+     } else {
+-      cflags = [ "-Os" ] + common_optimize_on_cflags
++      cflags = [ "-O3" ] + common_optimize_on_cflags
+     }
+ 
+     if (is_clang && use_ml_inliner && is_a_target_toolchain && !is_chromeos &&
+@@ -2744,9 +3053,9 @@
+ 
+     # Similar to clang, we optimize with `-Copt-level=s` to keep loop
+     # vectorization while otherwise optimizing for size.
+-    rustflags = [ "-Copt-level=s" ]
++    rustflags = [ "-Copt-level=3" ]
+   } else {
+-    cflags = [ "-O2" ] + common_optimize_on_cflags
++    cflags = [ "-O3" ] + common_optimize_on_cflags
+ 
+     # The `-O3` for clang turns on extra optimizations compared to the standard
+     # `-O2`. But for rust, `-Copt-level=3` is the default and is thus reliable
+@@ -2808,11 +3117,14 @@
+     if (is_win) {
+       # Favor speed over size, /O2 must be before the common flags.
+       # /O2 implies /Ot, /Oi, and /GF.
+-      cflags = [ "/O2" ] + common_optimize_on_cflags
++      cflags = [ "/O2", ] + common_optimize_on_cflags
++      if (is_clang) {
++        cflags += [ "/clang:-O3", "-Xclang", "-O3", ]
++      }
+     } else if (optimize_for_fuzzing) {
+       cflags = [ "-O1" ] + common_optimize_on_cflags
+     } else {
+-      cflags = [ "-O2" ] + common_optimize_on_cflags
++      cflags = [ "-O3" ] + common_optimize_on_cflags
+     }
+     rustflags = [ "-Copt-level=3" ]
+   }
+@@ -2841,12 +3153,12 @@
+     if (is_win) {
+       # Favor speed over size, /O2 must be before the common flags.
+       # /O2 implies /Ot, /Oi, and /GF.
+-      cflags = [ "/O2" ] + common_optimize_on_cflags
++      cflags = [ "/O2", ] + common_optimize_on_cflags
+       if (is_clang) {
+-        cflags += [ "/clang:-O3" ]
++        cflags += [ "/clang:-O3", "-Xclang", "-O3", ]
+       }
+     } else if (optimize_for_fuzzing) {
+-      cflags = [ "-O1" ] + common_optimize_on_cflags
++      cflags = [ "-O2" ] + common_optimize_on_cflags
+     } else {
+       cflags = [ "-O3" ] + common_optimize_on_cflags
+     }
+@@ -2881,6 +3193,41 @@
+     configs = [ ":optimize_fuzzing" ]
+   } else {
+     configs = [ ":optimize" ]
++  }
++}
++
++# Emit relocations for BOLT
++config("emit-relocs") {
++  if (!using_sanitizer && use_bolt) {
++    if (is_win) {
++      ldflags = [ "-mllvm:--emit-relocs", ]
++    } else {
++      ldflags = [ "-Wl,--emit-relocs", ]
++    }
++  }
++}
++
++# Use LLVM's Polly optimizer
++config("polly") {
++  if (use_polly == true) {
++    ldflags = common_optimize_on_ldflags
++    if (is_win) {
++      ldflags += [
++        "-mllvm:-polly",
++        "-mllvm:-polly-detect-profitability-min-per-loop-insts=40",
++        #"-mllvm:-polly-invariant-load-hoisting",
++        "-mllvm:-polly-run-dce",
++        "-mllvm:-polly-vectorizer=stripmine",
++      ]
++    } else {
++      ldflags += [
++        "-Wl,-mllvm,-polly",
++        "-Wl,-mllvm,-polly-detect-profitability-min-per-loop-insts=40",
++        #"-Wl,-mllvm,-polly-invariant-load-hoisting",
++        "-Wl,-mllvm,-polly-run-dce",
++        "-Wl,-mllvm,-polly-vectorizer=stripmine",
++      ]
++    }
+   }
+ }
+ 
+@@ -3238,7 +3585,7 @@
+ 
+     asmflags = cflags
+   }
+-  rustflags += [ "-Cdebuginfo=1" ]
++  rustflags += [ "-Cdebuginfo=1", "-Copt-level=3", ]
+ }
+ 
+ # This configuration contains function names only. That is, the compiler is
+# macOS compiler cflags/ldflags
+--- a/build/config/mac/BUILD.gn
++++ b/build/config/mac/BUILD.gn
+@@ -1,9 +1,10 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/apple/symbols.gni")
+ import("//build/config/c++/c++.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/mac/mac_sdk.gni")
+ import("//build/config/sysroot.gni")
+ import("//build/toolchain/rbe.gni")
+@@ -14,6 +15,8 @@
+ config("compiler") {
+   # These flags are shared between the C compiler and linker.
+   common_mac_flags = []
++  common_mac_cflags = []
++  common_mac_ldflags = []
+ 
+   # CPU architecture.
+   if (current_cpu == "x64") {
+@@ -27,15 +30,28 @@
+   }
+   common_mac_flags += [ "--target=$clang_arch-apple-macos" ]
+ 
++  if (is_official_build) {
++    common_mac_cflags += [ "-O3", ]
++    common_mac_ldflags += [ "-Wl,-O3", ]
++  }
++
+   # This is here so that all files get recompiled after an Xcode update.
+   # (defines are passed via the command line, and build system rebuild things
+   # when their commandline changes). Nothing should ever read this define.
+   defines = [ "CR_XCODE_VERSION=$xcode_version" ]
+ 
+   asmflags = common_mac_flags
+-  cflags = common_mac_flags
++  cflags = common_mac_flags + common_mac_cflags
+ 
+-  ldflags = common_mac_flags
++  ldflags = common_mac_flags + common_mac_ldflags
++
++  if (is_official_build) {
++    cflags += [ "-ffp-contract=fast", ]
++    ldflags += [
++      "-Wl,-mllvm,-fp-contract=fast",
++      "-Wl,-mllvm,-import-instr-limit=100",
++    ]
++  }
+ 
+   if (save_unstripped_output) {
+     ldflags += [ "-Wcrl,unstripped," + rebase_path(root_out_dir) ]
+# Windows SSE/MMX/AVX flags
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -1,8 +1,9 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/c++/c++.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/chrome_build.gni")
+ import("//build/config/clang/clang.gni")
+ import("//build/config/compiler/compiler.gni")
+@@ -120,8 +121,85 @@
+     # Chrome currently requires SSE3. Clang supports targeting any Intel
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
++    if (current_cpu == "x86") {
++      cflags += [ "-mmmx", "-msse", "-msse2", "/clang:-msse2", ]
++      if (use_sse2) {
++        cflags += [ "/arch:SSE2", ]
++      }
++      if (use_sse3) {
++        cflags += [ "-msse3", "/clang:-msse3", ]
++      }
++    } else if (current_cpu == "x64") {
++      cflags += [ "-msse3", "/clang:-msse3", ]
++    }
++    
+     if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
++      if (is_official_build) {
++        cflags += [
++          "/clang:-O3",
++          "-Xclang", "-O3",
++        ]
++      }
++      if (use_sse41) {
++        cflags += [
++          "-mssse3",
++          "-msse4.1",
++          "/clang:-mssse3",
++          "/clang:-msse4.1",
++        ]
++      }
++      if (use_sse42) {
++        cflags += [
++          "-msse4.2",
++          "/clang:-msse4.2",
++          # "/arch:SSE4.2",
++        ]
++      }
++      if (use_avx) {
++        cflags += [
++          "-mpclmul",
++          "-maes",
++          "-mavx",
++          "/clang:-mpclmul",
++          "/clang:-maes",
++          "/clang:-mavx",
++          # "/arch:AVX",
++        ]
++      }
++      if (use_avx2) {
++        cflags += [
++          "-mavx2",
++          "-mfma",
++          "-mf16c",
++          "-mlzcnt",
++          "-mbmi",
++          "-mbmi2",
++          "/clang:-mavx2",
++          "/clang:-mfma",
++          "/clang:-mf16c",
++          "/clang:-mlzcnt",
++          "/clang:-mbmi",
++          "/clang:-mbmi2",
++          "/clang:-ffp-contract=fast",
++          # "/arch:AVX2",
++          # "/fp:fast",
++        ]
++      }
++      if (use_avx512) {
++        cflags += [
++          "-mavx512f",
++          "-mavx512cd",
++          "-mavx512vl",
++          "-mavx512bw",
++          "-mavx512dq",
++          "/clang:-mavx2",
++          "/clang:-mavx512f",
++          "/clang:-mavx512cd",
++          "/clang:-mavx512vl",
++          "/clang:-mavx512bw",
++          "/clang:-mavx512dq",
++        ]
++      }
+     }
+ 
+     # Enable ANSI escape codes if something emulating them is around (cmd.exe
+@@ -160,6 +238,9 @@
+ 
+     # Don't look for libpaths in %LIB%, similar to /X in cflags above.
+     ldflags += [ "/lldignoreenv" ]
++    if (is_official_build) {
++      ldflags += [ "/OPT:lldlto=3", ]
++    }
+   }
+ 
+   # Some binaries create PDBs larger than 4 GiB. Increasing the PDB page size
+@@ -187,11 +268,18 @@
+       "/INCREMENTAL:NO",
+       "/FIXED:NO",
+     ]
++    if (use_avx2) {
++      ldflags += [ "-mllvm:-march=haswell", ]
++    }
++    if (use_avx512) {
++      ldflags += [ "-mllvm:-march=skylake-avx512", ]
++    }
+ 
+     if (use_lld) {
+       # String tail merging leads to smaller binaries, but they don't compress
+       # as well, leading to increased mini_installer size (crbug.com/838449).
+-      ldflags += [ "/OPT:NOLLDTAILMERGE" ]
++      # ldflags += [ "/OPT:NOLLDTAILMERGE" ]
++      ldflags += [ "/OPT:LLDTAILMERGE" ]
+     }
+ 
+     # TODO(siggi): Is this of any use anymore?
+@@ -199,7 +287,7 @@
+     # PDB file by about 5%) but does not otherwise alter the output binary. It
+     # is enabled opportunistically for builds where it is not prohibited (not
+     # supported when incrementally linking, or using /debug:fastlink).
+-    ldflags += [ "/PROFILE" ]
++    # ldflags += [ "/PROFILE" ]
+   }
+ 
+   # arflags apply only to static_libraries. The normal linker configs are only
+@@ -289,12 +377,14 @@
+ # manually override this config for their compiles.
+ config("winver") {
+   defines = [
++    # 0x0A000010
+     "NTDDI_VERSION=NTDDI_WIN11_GE",
+ 
+     # We can't say `=_WIN32_WINNT_WIN10` here because some files do
+     # `#if WINVER < 0x0600` without including windows.h before,
+     # and then _WIN32_WINNT_WIN10 isn't yet known to be 0x0A00.
+     "_WIN32_WINNT=0x0A00",
++    "_WIN64_WINNT=0x0A00",
+     "WINVER=0x0A00",
+   ]
+ }
+
+# V8 SSE2/SSE3/AVX flags
+--- a/v8/BUILD.gn
++++ b/v8/BUILD.gn
+@@ -1,9 +1,10 @@
+-# Copyright 2014 The Chromium Authors. All rights reserved.
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/android/config.gni")
+ import("//build/config/arm.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/coverage/coverage.gni")
+ import("//build/config/dcheck_always_on.gni")
+ import("//build/config/host_byteorder.gni")
+@@ -1627,7 +1628,31 @@ config("toolchain") {
+     defines += [ "V8_TARGET_ARCH_IA32" ]
+     if (is_win) {
+       # Ensure no surprising artifacts from 80bit double math with x86.
+-      cflags += [ "/arch:SSE2" ]
++      if (use_sse2 && !use_sse3) {
++        cflags += [ "/arch:SSE2", ]
++      }
++      if (use_sse3 && !use_sse41) {
++        cflags += [ "/clang:-msse3", ]
++      }
++      if (use_sse41 && !use_sse42) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1", ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2", ]
++      }
++    } else {
++      if (use_sse2 && !use_sse3) {
++        cflags += [ "-msse2", ]
++      }
++      if (use_sse3 && !use_sse41) {
++        cflags += [ "-msse3", ]
++      }
++      if (use_sse41 && !use_sse42) {
++        cflags += [ "-mssse3", "-msse4.1", ]
++      }
++      if (use_sse42) {
++        cflags += [ "-msse4.2", ]
++      }
+     }
+   }
+   if (v8_current_cpu == "x64") {
+@@ -1636,9 +1661,65 @@ config("toolchain") {
+       # Increase the initial stack size. The default is 1MB, this is 2MB. This
+       # applies only to executables and shared libraries produced by V8 since
+       # ldflags are not pushed to dependants.
++      cflags += [ "/clang:-msse3", ]
+       ldflags += [ "/STACK:2097152" ]
++      if (use_sse41) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1", ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2", ]
++      }
++      if (use_avx) {
++        cflags += [ "/clang:-mpclmul", "/clang:-maes", "/clang:-mavx", ]
++      }
++      if (use_avx2) {
++        cflags += [ "/clang:-mfma", "/clang:-ffp-contract=fast", "/clang:-mavx2", "/clang:-mf16c", "/clang:-mlzcnt", "/clang:-mbmi", "/clang:-mbmi2", ]
++      }
++      if (use_fma) {
++        cflags += [ "/clang:-ffp-contract=fast", ]
++      }
++      if (use_avx512) {
++        cflags += [
++          "/clang:-mavx512f", "/clang:-mavx512cd", "/clang:-mavx512vl", "/clang:-mavx512bw", "/clang:-mavx512dq",
++        ]
++      }
++    } else {
++      if (current_cpu == "x64") {
++        # Non-Windows SIMD flags
++        cflags += [ "-msse3", ]
++        if (use_sse41) {
++          cflags += [ "-mssse3", "-msse4.1", ]
++        }
++        if (use_sse42) {
++          cflags += [ "-msse4.2", ]
++        }
++        if (use_avx) {
++          cflags += [ "-mpclmul", "-maes", "-mavx", ]
++        }
++        if (use_avx2) {
++          cflags += [ "-mavx2", "-mf16c", "-mlzcnt", "-mbmi", "-mbmi2", ]
++        }
++        if (use_fma) {
++          cflags += [ "-mfma", "-ffp-contract=fast", ]
++        }
++        if (use_avx512) {
++          cflags += [ "-mavx512f", "-mavx512cd", "-mavx512vl", "-mavx512bw", "-mavx512dq", ]
++        }
++      }
+     }
+   }
++  if (is_linux || is_chromeos || is_android || is_mac || is_win) {
++    # Full optimization for V8.
++    if (is_official_build) {
++      if (is_win) {
++        cflags += [ "/O2", "-Xclang", "-O3",  ]
++      } else {
++        cflags += [ "-O3", ]
++        ldflags += [ "-Wl,-O3", ]
++      }
++    }
++  }
++
+   if (is_android && v8_android_log_stdout) {
+     defines += [ "V8_ANDROID_LOG_STDOUT" ]
+   }
+@@ -2590,9 +2671,9 @@ template("run_mksnapshot") {
+         "--turbo-profiling-input",
+         rebase_path(v8_builtins_profiling_log_file, root_build_dir),
+ 
+-        # Replace this with --warn-about-builtin-profile-data to see the full
+-        # list of builtins with incompatible profiles.
+-        "--abort-on-bad-builtin-profile-data",
++        # TODO(crbug.com/v8/13647): Do not fail for invalid profiles
++        # "--abort-on-bad-builtin-profile-data",
++        "--warn-about-builtin-profile-data",
+       ]
+ 
+       if (!v8_enable_builtins_profiling && v8_enable_builtins_reordering) {
+# LLVM/clang AVX/AES/Polly flags
+--- a/tools/clang/scripts/build.py
++++ b/tools/clang/scripts/build.py
+@@ -384,6 +384,9 @@
+           '-DLIBXML2_WITH_XPATH=OFF',
+           '-DLIBXML2_WITH_XPTR=OFF',
+           '-DLIBXML2_WITH_ZLIB=OFF',
++          '-DCMAKE_ASM_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++          '-DCMAKE_C_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++          '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
+           '..',
+       ],
+       setenv=True)
+@@ -830,11 +833,9 @@
+   ldflags = []
+ 
+   targets = 'AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;WebAssembly;X86'
+-  projects = 'clang;lld'
++  projects = 'clang;lld;polly;bolt'
+   if not args.no_tools:
+     projects += ';clang-tools-extra'
+-  if args.bolt:
+-    projects += ';bolt'
+ 
+   runtimes = ''
+   # On macOS, we always need to build compiler-rt because dsymutil's link needs
+@@ -871,6 +872,9 @@
+       '-DLLVM_ENABLE_CURL=OFF',
+       # Build libclang.a as well as libclang.so
+       '-DLIBCLANG_BUILD_STATIC=ON',
++      '-DCMAKE_ASM_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++      '-DCMAKE_C_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
++      '-DCMAKE_CXX_FLAGS_RELEASE=-O3 -w -mavx -maes -DNDEBUG',
+       # The Rust build (on Mac ARM at least if not others) depends on the
+       # FileCheck tool which is built but not installed by default, this
+       # puts it in the path for the Rust build to find and matches the
+@@ -1133,7 +1137,7 @@
+       with open(training_source, 'wb') as f:
+         DownloadUrl(CDS_URL + '/' + training_source, f)
+       train_cmd = [os.path.join(LLVM_INSTRUMENTED_DIR, 'bin', 'clang++'),
+-                  '-target', 'x86_64-unknown-unknown', '-O2', '-g', '-std=c++14',
++                  '-target', 'x86_64-unknown-unknown', '-O3', '-g', '-std=c++14',
+                    '-fno-exceptions', '-fno-rtti', '-w', '-c', training_source]
+       if sys.platform == 'darwin':
+         train_cmd.extend(['-isysroot', isysroot])
