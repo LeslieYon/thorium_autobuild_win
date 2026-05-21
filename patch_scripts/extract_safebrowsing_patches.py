@@ -24,12 +24,12 @@ The output is written to
 The output file is cleared before each run.
 
 Usage (standalone):
-  python devutils/extract_safebrowsing_patches.py
-  python devutils/extract_safebrowsing_patches.py --source-patch <path>
+  python3 patch_scripts/extract_safebrowsing_patches.py
+  python3 patch_scripts/extract_safebrowsing_patches.py --source-patch <path>
 
 Integration with build.py:
-  from devutils.extract_safebrowsing_patches import run_extraction
-  run_extraction()
+  from patch_scripts import extract_safebrowsing_patches
+  extract_safebrowsing_patches.run_extraction()
 
 To extend with new rules:
   - Add a new rule function matching the (_check_fn) signature.
@@ -37,10 +37,14 @@ To extend with new rules:
 """
 
 import argparse
+import logging
 import re
 import sys
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
+
+# Use ungoogled-chromium's logger hierarchy so build.py's handler applies.
+logger = logging.getLogger('ungoogled.extract_safebrowsing_patches')
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -132,11 +136,11 @@ def parse_patch_file(filepath: Path) -> List[FileSection]:
             while i < len(lines):
                 next_line = lines[i]
 
-                # Next file section → stop.
+                # Next file section -> stop.
                 if next_line.startswith('--- a/'):
                     break
 
-                # Comment at top level (between hunks) → skip.
+                # Comment at top level (between hunks) -> skip.
                 if next_line.startswith('#') and not current_hunk:
                     i += 1
                     continue
@@ -202,7 +206,7 @@ def _rule_safe_browsing_keywords(_file_path: str, hunk: str) -> bool:
 # Core extraction logic
 # ---------------------------------------------------------------------------
 
-# Default set of rules — extend by appending to this list.
+# Default set of rules -- extend by appending to this list.
 _DEFAULT_RULES: List[_CheckFn] = [
     _rule_safe_browsing_path,
     _rule_safe_browsing_keywords,
@@ -232,7 +236,7 @@ def _extract_relevant_hunks(
             if fn is not _rule_safe_browsing_keywords
         )
         if path_matches:
-            # Rule 1 — keep all hunks for this file.
+            # Rule 1 -- keep all hunks for this file.
             result.append((file_path, hunks))
             continue
 
@@ -290,7 +294,7 @@ def run_extraction(
 
     Returns ``True`` if at least one hunk was written (output non-empty).
 
-    This function is safe to call from ``build.py`` — it always starts from
+    This function is safe to call from ``build.py`` -- it always starts from
     a clean slate.
     """
     if source_patch is None:
@@ -301,12 +305,12 @@ def run_extraction(
     # 1. Clear output.
     output_file.parent.mkdir(parents=True, exist_ok=True)
     # Note: use write_bytes() throughout to avoid Windows text-mode
-    # \n → \r\n auto-conversion, which would double our explicit CRLF.
+    # \n -> \r\n auto-conversion, which would double our explicit CRLF.
     output_file.write_bytes(b'')
 
     # 2. Parse source patch file.
     if not source_patch.exists():
-        print(f'extract_safebrowsing: source patch not found: {source_patch}')
+        logger.warning('source patch not found: %s', source_patch)
         return False
 
     sections = parse_patch_file(source_patch)
@@ -317,20 +321,20 @@ def run_extraction(
     all_extracted.extend(relevant)
 
     if not all_extracted:
-        print('extract_safebrowsing: no relevant patches found.')
+        logger.warning('no relevant patches found in %s', source_patch)
         return False
 
     # 5. Write output.
     patch_text = _assemble_patch(all_extracted)
     # Write with CRLF line endings (required by patch.exe on Windows).
-    # Use write_bytes() to bypass text-mode \n → \r\n auto-conversion;
+    # Use write_bytes() to bypass text-mode \n -> \r\n auto-conversion;
     # otherwise we get \r\r\n on Windows CMD.
     patch_bytes = patch_text.replace('\n', '\r\n').encode('utf-8')
     output_file.write_bytes(patch_bytes)
 
     hunk_count = sum(len(hunks) for _, hunks in all_extracted)
-    print(f'extract_safebrowsing: {len(all_extracted)} file sections, '
-          f'{hunk_count} hunks -> {output_file}')
+    logger.info('%d file sections, %d hunks -> %s',
+                len(all_extracted), hunk_count, output_file)
     return True
 
 
@@ -373,7 +377,7 @@ def ensure_in_series(series_file: Optional[Path] = None) -> bool:
 
     lines.insert(insert_idx, f'{entry}\n')
     series_file.write_text(''.join(lines), encoding='utf-8')
-    print(f'extract_safebrowsing: added {entry} to {series_file}')
+    logger.info('added %s to %s', entry, series_file)
     return True
 
 
@@ -405,6 +409,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         help='Also ensure the output patch is registered in patches/series',
     )
     args = parser.parse_args(argv)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname)s %(message)s',
+        stream=sys.stderr,
+    )
 
     ok = run_extraction(
         source_patch=args.source_patch,

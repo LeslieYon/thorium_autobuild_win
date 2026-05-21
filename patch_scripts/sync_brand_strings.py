@@ -55,7 +55,7 @@ from patch_scripts.brand_string_ids import BRAND_STRING_IDS
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
-logger = logging.getLogger('sync_brand_strings')
+logger = logging.getLogger('ungoogled.sync_brand_strings')
 
 # ---------------------------------------------------------------------------
 # Configuration -- GRD/GRDP -> XTB mapping

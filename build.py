@@ -55,12 +55,14 @@ import patches as _uc_patches  # type: ignore[import-not-found]
 from _common import ENCODING, USE_REGISTRY, ExtractorEnum, get_logger  # type: ignore[import-not-found]
 sys.path.pop(0)
 
-# Import brand string sync script (runs after Thorium patches to update XTB)
-try:
-    from patch_scripts.sync_brand_strings import sync_brand_strings
-    _HAS_SYNC_BRAND_STRINGS = True
-except ImportError:
-    _HAS_SYNC_BRAND_STRINGS = False
+# patch_scripts/ — Thorium build helper modules (brand sync, safe-browsing
+# extraction, etc.).  Ensure the project root is on sys.path so the
+# patch_scripts package is importable regardless of CWD.
+if str(_ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(_ROOT_DIR))
+
+from patch_scripts import sync_brand_strings
+from patch_scripts import extract_safebrowsing_patches
 
 uc_patches: Any = _uc_patches
 
@@ -492,25 +494,13 @@ def _run_safe_browsing_patch_extraction(source_tree):
     auto-generated patch (listed first in patches/series) is always up to
     date.
     """
-    import subprocess
-
-    script = _ROOT_DIR / 'devutils' / 'extract_safebrowsing_patches.py'
-    if not script.exists():
-        get_logger().warning(
-            'Safe browsing extraction script not found: %s', script)
-        return
-
     get_logger().info('Running safe_browsing patch extraction...')
-    result = subprocess.run(
-        [sys.executable, str(script)],
-        capture_output=True, text=True, cwd=_ROOT_DIR)
-
-    if result.returncode != 0:
+    try:
+        extract_safebrowsing_patches.run_extraction()
+        get_logger().info('Safe browsing patch extraction completed.')
+    except Exception as exc:
         get_logger().warning(
-            'Safe browsing extraction failed (rc=%d): %s',
-            result.returncode, result.stderr.strip())
-    elif result.stdout.strip():
-        get_logger().info(result.stdout.strip())
+            'Safe browsing extraction failed (non-fatal): %s', exc)
 
 
 def _apply_source_overrides(source_tree):
@@ -835,17 +825,12 @@ def main():
         # Phase 1: apply brand substitutions directly to GRD/GRDP files.
         # Phase 2: update XTB translation files with new translation IDs.
         # See patch_scripts/sync_brand_strings.md for details.
-        if _HAS_SYNC_BRAND_STRINGS:
-            get_logger().info('Syncing brand strings in GRD/GRDP -> XTB files...')
-            try:
-                sync_brand_strings(source_tree, dry_run=False)
-                get_logger().info('Brand string sync completed.')
-            except Exception as exc:
-                get_logger().warning('Brand string sync failed (non-fatal): %s', exc)
-        else:
-            get_logger().warning(
-                'sync_brand_strings module not found. Run this script from the '
-                'thorium_autobuild_win root directory.')
+        get_logger().info('Syncing brand strings in GRD/GRDP -> XTB files...')
+        try:
+            sync_brand_strings.sync_brand_strings(source_tree, dry_run=False)
+            get_logger().info('Brand string sync completed.')
+        except Exception as exc:
+            get_logger().warning('Brand string sync failed (non-fatal): %s', exc)
 
     # ----- Stage: GN Gen -----
     if args.prepare_only:

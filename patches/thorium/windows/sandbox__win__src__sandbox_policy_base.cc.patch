@@ -1,11 +1,5 @@
 --- a/sandbox/win/src/sandbox_policy_base.cc
 +++ b/sandbox/win/src/sandbox_policy_base.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -275,15 +275,6 @@
    // Signed intercept rules only supported on Windows 10 TH2 and above. This
    // must match the version checks in process_mitigations.cc for
