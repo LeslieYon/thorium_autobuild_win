@@ -503,6 +503,23 @@ def _run_safe_browsing_patch_extraction(source_tree):
             'Safe browsing extraction failed (non-fatal): %s', exc)
 
 
+def _sync_brand_strings(source_tree):
+    """Sync brand string substitutions in GRD/GRDP -> XTB translation files.
+
+    Phase 1: apply brand substitutions directly to GRD/GRDP files.
+    Phase 2: update XTB translation files with new translation IDs.
+
+    This runs after all patches have been applied so that Thorium's brand
+    strings (replacements in patches/thorium/branding/) take effect.
+    """
+    get_logger().info('Syncing brand strings in GRD/GRDP -> XTB files...')
+    try:
+        sync_brand_strings.sync_brand_strings(source_tree, dry_run=False)
+        get_logger().info('Brand string sync completed.')
+    except Exception as exc:
+        get_logger().warning('Brand string sync failed (non-fatal): %s', exc)
+
+
 def _apply_source_overrides(source_tree):
     """
     Apply ALL source overrides from overlay/ to the Chromium source tree.
@@ -548,6 +565,30 @@ def _apply_source_overrides(source_tree):
 
     get_logger().info('Source overrides applied: %d overwritten, %d new files',
                       overwrite_count, new_count)
+
+
+def _apply_all_patches(source_tree, patch_bin_path):
+    """Apply all Thorium-related patches and brand string sync.
+
+    This is the single call site for the complete patch chain:
+      1. ungoogled-chromium-windows patches (from series.ungoogled-windows)
+      2. Source overrides from overlay/
+      3. Safe browsing auto-extraction
+      4. Thorium-specific patches (from patches/series)
+      5. Brand string sync (GRD/GRDP -> XTB)
+
+    Used by both --apply-patches-only and the patching step of --prepare-only.
+    """
+    get_logger().info('Applying ungoogled-chromium-windows patches...')
+    _apply_ungoogled_windows_patches(source_tree, patch_bin_path=patch_bin_path)
+
+    _apply_source_overrides(source_tree)
+
+    _run_safe_browsing_patch_extraction(source_tree)
+
+    _apply_thorium_patches(source_tree, patch_bin_path=patch_bin_path)
+
+    _sync_brand_strings(source_tree)
 
 
 def _read_flags_file(filepath):
@@ -707,6 +748,14 @@ def main():
     parser.add_argument(
         '--build-only', action='store_true',
         help='Only run ninja build, skip source prep and GN gen')
+    parser.add_argument(
+        '--skip-patches', action='store_true',
+        help=('With --prepare-only: clone, download, prune, unpack only; '
+              'skip patch application'))
+    parser.add_argument(
+        '--apply-patches-only', action='store_true',
+        help=('Apply patches only (ungoogled + overlay + Thorium + brand '
+              'strings); assumes source tree is already prepared'))
     args = parser.parse_args()
 
     # Read target Chromium version from chromium_version.txt
@@ -720,9 +769,11 @@ def main():
     if chromium_version:
         get_logger().info('Target Chromium version: %s (from chromium_version.txt)', chromium_version)
     else:
-        get_logger().warning(
-            'chromium_version.txt not found. Build version will not be pinned.\n'
-            'Create this file with the Chromium version string (e.g. "138.0.7204.306").')
+        get_logger().error(
+            'chromium_version.txt not found or empty.\n'
+            'This file is required to pin the Chromium version that patches are designed for.\n'
+            'Create it with the version string (e.g. "138.0.7204.306") and retry.')
+        sys.exit(1)
 
     # Set common variables
     source_tree = _ROOT_DIR / 'build' / 'src'
@@ -748,7 +799,21 @@ def main():
         sys.exit(1)
 
     # ----- Stage: Prepare Source -----
-    if args.gn_only or args.build_only:
+    # --apply-patches-only: skip pre-patch, apply patches to existing source tree
+    if args.apply_patches_only:
+        if not (source_tree / 'BUILD.gn').exists():
+            get_logger().error(
+                '--apply-patches-only requires an existing source tree with '
+                'BUILD.gn. Run without --apply-patches-only first, or use '
+                '--prepare-only.')
+            sys.exit(1)
+        get_logger().info(
+            '--apply-patches-only: applying patches to existing source tree...')
+        _apply_all_patches(
+            source_tree,
+            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+        )
+    elif args.gn_only or args.build_only:
         # Skip source preparation when in stage mode
         pass
     elif not args.ci or not (source_tree / 'BUILD.gn').exists():
@@ -804,37 +869,17 @@ def main():
         downloads.unpack_downloads(download_info_win, downloads_cache, None,
                                    source_tree, extractors)
 
-        # Apply selected ungoogled-chromium-windows patches
-        # Uses the curated whitelist in patches/series.ungoogled-windows.
-        get_logger().info('Applying ungoogled-chromium-windows patches...')
-        _apply_ungoogled_windows_patches(
-            source_tree,
-            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
-        )
-
-        # Apply source overrides (overwrite + create new)
-        _apply_source_overrides(source_tree)
-
-        # Run safe_browsing patch extraction (regenerates auto-generated patch)
-        _run_safe_browsing_patch_extraction(source_tree)
-
-        # Apply Thorium-specific patches
-        _apply_thorium_patches(
-            source_tree,
-            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
-        )
-
-        # ----- Stage: Sync Brand Strings (GRD/GRDP -> XTB) -----
-        # Replaces string-replacement hunks in patches/thorium/branding/.
-        # Phase 1: apply brand substitutions directly to GRD/GRDP files.
-        # Phase 2: update XTB translation files with new translation IDs.
-        # See patch_scripts/sync_brand_strings.md for details.
-        get_logger().info('Syncing brand strings in GRD/GRDP -> XTB files...')
-        try:
-            sync_brand_strings.sync_brand_strings(source_tree, dry_run=False)
-            get_logger().info('Brand string sync completed.')
-        except Exception as exc:
-            get_logger().warning('Brand string sync failed (non-fatal): %s', exc)
+        # --skip-patches: stop here, skip all patch application
+        if args.skip_patches:
+            get_logger().info(
+                '--skip-patches: stopping after unpack. '
+                'Skipping ungoogled patches, overlay, Thorium patches, '
+                'and brand string sync.')
+        else:
+            _apply_all_patches(
+                source_tree,
+                patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+            )
 
     # ----- Stage: GN Gen -----
     if args.prepare_only:
