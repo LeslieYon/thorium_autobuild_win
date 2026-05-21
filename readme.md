@@ -93,6 +93,7 @@ Google API credentials are passed from repository secrets to the reusable build 
 - `GOOGLE_API_KEY`
 - `GOOGLE_DEFAULT_CLIENT_ID`
 - `GOOGLE_DEFAULT_CLIENT_SECRET`
+- ... and other keys
 
 ## Patch Inventory
 

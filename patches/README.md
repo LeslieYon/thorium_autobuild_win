@@ -74,7 +74,7 @@ Multi-file patches ported directly from the original Thorium build scripts
 | `keyboard_shortcuts.patch` | Custom keyboard shortcut mappings |
 | `disable-privacy-sandbox.patch` | Fully disable Privacy Sandbox / FLoC |
 | `partalloc.patch` | PartitionAlloc configuration (fewer memory regions on Linux) |
-| `thorium_branding.patch` | **Core branding** — product names, logos, desktop files, installer, package scripts, API keys, content shell renaming |
+| `thorium_branding.patch` | **Core branding** — product names, logos, desktop files, installer, package scripts, content shell renaming |
 | `thorium-build-output-1.patch` | Rename build output from `chrome` to `thorium` |
 
 #### Additional
