@@ -595,21 +595,6 @@ index 02197cea24527..459da7f1cb28a 100644
    // Finally check against the generic list of restricted ports for all
    // schemes.
    for (int restricted_port : kRestrictedPorts) {
-diff --git a/net/data/ftp/dir-listing-ls-17.expected b/net/data/ftp/dir-listing-ls-17.expected
-new file mode 100644
-index 0000000000000..e69de29bb2d1d
-diff --git a/net/data/ftp/dir-listing-ls-23.expected b/net/data/ftp/dir-listing-ls-23.expected
-new file mode 100644
-index 0000000000000..e69de29bb2d1d
-diff --git a/net/data/ftp/dir-listing-ls-8.expected b/net/data/ftp/dir-listing-ls-8.expected
-new file mode 100644
-index 0000000000000..e69de29bb2d1d
-diff --git a/net/data/ftp/dir-listing-vms-3.expected b/net/data/ftp/dir-listing-vms-3.expected
-new file mode 100644
-index 0000000000000..e69de29bb2d1d
-diff --git a/net/data/ftp/dir-listing-vms-7.expected b/net/data/ftp/dir-listing-vms-7.expected
-new file mode 100644
-index 0000000000000..e69de29bb2d1d
 diff --git a/net/docs/proxy.md b/net/docs/proxy.md
 index 645895e95a1ac..4442b4a4e6dc6 100644
 --- a/net/docs/proxy.md
