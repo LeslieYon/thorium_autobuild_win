@@ -358,48 +358,6 @@ index 29f1f59381..6fb0769ce7 100644
 +    &ff_ac3_demuxer,
 +    &ff_eac3_demuxer,
      NULL };
-
-# TODO: remove the patch after the issue is fixed.
-# temporary disable the patch, as it causes build failure on some platforms. will re-enable it after the issue is fixed.
-# diff --git a/third_party/ffmpeg/ffmpeg_generated.gni b/third_party/ffmpeg/ffmpeg_generated.gni
-# index c279607332..012c89422f 100644
-# --- a/third_party/ffmpeg/ffmpeg_generated.gni
-# +++ b/third_party/ffmpeg/ffmpeg_generated.gni
-# @@ -235,7 +235,19 @@ if ((is_apple && ffmpeg_branding == "Chrome") ||
-#      "libavcodec/hevc_sei.c",
-#      "libavcodec/hevcdec.c",
-#      "libavcodec/hevcdsp.c",
-# -    "libavcodec/hevcpred.c"
-# +    "libavcodec/hevcpred.c",
-# +    "libavcodec/x86/ac3dsp_init.c",
-# +    "libavcodec/ac3dsp.c",
-# +    "libavcodec/fmtconvert.c",
-# +    "libavcodec/ac3tab.c",
-# +    "libavcodec/ac3dec_float.c",
-# +    "libavcodec/ac3.c",
-# +    "libavcodec/x86/fmtconvert_init.c",
-# +    "libavcodec/ac3dec_data.c",
-# +    "libavcodec/eac3dec.c",
-# +    "libavcodec/eac3_data.c",
-# +    "libavcodec/ac3dec_fixed.c",
-# +    "libavformat/ac3dec.c",
-#    ]
-#  
-#    ffmpeg_c_sources += [
-# @@ -469,7 +481,10 @@ if ((is_apple && current_cpu == "x64" && ffmpeg_branding == "Chrome") ||
-#      "libavcodec/x86/hevc_mc.asm",
-#      "libavcodec/x86/hevc_sao.asm",
-#      "libavcodec/x86/hevc_sao_10bit.asm",
-# -    "libavcodec/x86/h26x/h2656_inter.asm"
-# +    "libavcodec/x86/h26x/h2656_inter.asm",
-# +    "libavcodec/x86/ac3dsp.asm",
-# +    "libavcodec/x86/ac3dsp_downmix.asm",
-# +    "libavcodec/x86/fmtconvert.asm"
-#    ]
-#  
-#    ffmpeg_c_sources += [
-# 
-
 # test solution for ac3 codec import
 --- a/third_party/ffmpeg/ffmpeg_generated.gni
 +++ b/third_party/ffmpeg/ffmpeg_generated.gni

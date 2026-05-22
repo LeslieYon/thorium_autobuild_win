@@ -138,7 +138,7 @@ def main():
     else:
         output_dir_name = 'thorium_avx2'
 
-    build_outputs = Path('build/src/out') / output_dir_name
+    build_outputs = _ROOT_DIR / 'build/src/out' / output_dir_name
     if not build_outputs.exists():
         print('Build output directory not found:', build_outputs)
         sys.exit(1)
@@ -155,7 +155,7 @@ def main():
     target_cpu = _get_target_cpu(build_outputs)
     simd_variant = args.simd.upper() if args.simd else _get_simd_variant(build_outputs)
 
-    dest_dir = Path('build')
+    dest_dir = _ROOT_DIR / 'build'
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     # Copy mini_installer
@@ -177,7 +177,8 @@ def main():
     # Get timestamp
     timestamp = None
     try:
-        with open('build/src/build/util/LASTCHANGE.committime', 'r') as ct:
+        lastchange_path = _ROOT_DIR / 'build/src/build/util/LASTCHANGE.committime'
+        with open(lastchange_path, 'r') as ct:
             timestamp = int(ct.read())
     except (FileNotFoundError, ValueError):
         pass
@@ -199,7 +200,7 @@ def main():
 
     try:
         files_generator = filescfg.filescfg_generator(
-            Path('build/src/chrome/tools/build/win/FILES.cfg'),
+            _ROOT_DIR / 'build/src/chrome/tools/build/win/FILES.cfg',
             build_outputs, args.cpu_arch, excluded_files)
         filescfg.create_archive(
             files_generator, tuple(), build_outputs, output_zip, timestamp)
