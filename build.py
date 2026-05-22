@@ -681,6 +681,80 @@ def _download_and_apply_extra_overlay(source_tree, overlay_url):
             overwrite_count, new_count)
 
 
+def _prepare_and_apply_api_keys_patch(source_tree, patch_bin_path):
+    """
+    Dynamically substitute Google API keys from environment variables into
+    the patch template (.prepatch) and write a real .patch file.
+
+    Reads API keys from environment variables (or .env file), replaces
+    @PLACEHOLDER@ tokens in
+    patches/thorium/new/thorium-set-api-keys.prepatch with actual values,
+    and writes the result to thorium-set-api-keys.patch.
+
+    This runs before _apply_all_patches() so the patch (referenced in
+    patches/series) contains real keys when applied by
+    _apply_thorium_patches().
+    """
+    template_path = _ROOT_DIR / 'patches' / 'thorium' / 'new' / 'thorium-set-api-keys.prepatch'
+    output_path = _ROOT_DIR / 'patches' / 'thorium' / 'new' / 'thorium-set-api-keys.patch'
+    if not template_path.exists():
+        get_logger().warning('API keys patch template not found: %s', template_path)
+        return
+
+    # Read API keys from .env file first
+    env_vars = {}
+    env_file = _ROOT_DIR / '.env'
+    if env_file.exists():
+        try:
+            for line in env_file.read_text(encoding=ENCODING).splitlines():
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    key, _, value = line.partition('=')
+                    env_vars[key.strip()] = value.strip()
+        except Exception:
+            pass
+
+    # Define placeholder -> (env_var_name, default_value) mapping
+    key_mappings = [
+        ('@GOOGLE_API_KEY@', 'GOOGLE_API_KEY', ''),
+        ('@GOOGLE_API_KEY_REMOTING@', 'GOOGLE_API_KEY_REMOTING', ''),
+        ('@GOOGLE_DEFAULT_CLIENT_ID@', 'GOOGLE_DEFAULT_CLIENT_ID', ''),
+        ('@GOOGLE_CLIENT_ID_REMOTING@', 'GOOGLE_CLIENT_ID_REMOTING', ''),
+        ('@GOOGLE_DEFAULT_CLIENT_SECRET@', 'GOOGLE_DEFAULT_CLIENT_SECRET', ''),
+        ('@GOOGLE_CLIENT_SECRET_REMOTING@', 'GOOGLE_CLIENT_SECRET_REMOTING', ''),
+        ('@GOOGLE_API_KEY_SODA@', 'GOOGLE_API_KEY_SODA', ''),
+    ]
+
+    # Read template as bytes to preserve CRLF line endings
+    patch_content = template_path.read_bytes()
+
+    has_any_key = False
+    for placeholder, env_key, default in key_mappings:
+        value = os.environ.get(env_key) or env_vars.get(env_key, default)
+        if value:
+            has_any_key = True
+            get_logger().info('Using Google API key: %s (from env)', env_key)
+        else:
+            get_logger().warning(
+                'Google API key %s not set. Online features may be limited.\n'
+                '  Set %s or create .env file.',
+                env_key, env_key)
+        # Replace placeholder with quoted C-string value
+        patch_content = patch_content.replace(
+            placeholder.encode(ENCODING),
+            b'"' + value.encode(ENCODING) + b'"'
+        )
+
+    if not has_any_key:
+        get_logger().warning(
+            'No Google API keys found. Patch entries will be empty;\n'
+            '  online features will be limited.')
+
+    # Write the substituted content to the output .patch file
+    output_path.write_bytes(patch_content)
+    get_logger().info('API keys patch generated: %s', output_path.name)
+
+
 def _apply_all_patches(source_tree, patch_bin_path):
     """Apply all Thorium-related patches and brand string sync.
 
@@ -712,52 +786,7 @@ def _read_flags_file(filepath):
     return ''
 
 
-def _append_google_api_keys(gn_flags):
-    """
-    Append Google API key GN flags from environment variables.
-    
-    Supports two sources (in priority order):
-    1. Environment variables: GOOGLE_API_KEY, GOOGLE_DEFAULT_CLIENT_ID,
-       GOOGLE_DEFAULT_CLIENT_SECRET, GOOGLE_API_KEY_SODA
-    2. .env file in project root (KEY=VALUE format)
-    
-    These are required for Thorium to access Google services
-    (syncing, geolocation, etc.).
-    """
-    # Try reading from .env file first
-    env_file = _ROOT_DIR / '.env'
-    env_vars = {}
-    if env_file.exists():
-        try:
-            for line in env_file.read_text(encoding=ENCODING).splitlines():
-                line = line.strip()
-                if line and not line.startswith('#'):
-                    key, _, value = line.partition('=')
-                    env_vars[key.strip()] = value.strip()
-        except Exception:
-            pass
 
-    # Then check environment variables (they override .env)
-    for env_key, gn_key in [
-        ('GOOGLE_API_KEY', 'google_api_key'),
-        ('GOOGLE_API_KEY_REMOTING', 'google_api_key_remoting'),
-        ('GOOGLE_DEFAULT_CLIENT_ID', 'google_default_client_id'),
-        ('GOOGLE_CLIENT_ID_REMOTING', 'google_client_id_remoting'),
-        ('GOOGLE_DEFAULT_CLIENT_SECRET', 'google_default_client_secret'),
-        ('GOOGLE_CLIENT_SECRET_REMOTING', 'google_client_secret_remoting'),
-        ('GOOGLE_API_KEY_SODA', 'google_api_key_soda'),
-    ]:
-        value = os.environ.get(env_key) or env_vars.get(env_key, '')
-        if value:
-            gn_flags.append('{0}="{1}"'.format(gn_key, value))
-            get_logger().info('Using Google API key: %s (from env)', env_key)
-        else:
-            get_logger().warning(
-                'Google API key %s not set. Online features may be limited.\n'
-                '  Set %s or create .env file.',
-                gn_key, env_key)
-
-    return gn_flags
 
 
 def _setup_rust_toolchain(source_tree):
@@ -928,6 +957,10 @@ def main():
             sys.exit(1)
         get_logger().info(
             '--apply-patches-only: applying patches to existing source tree...')
+        _prepare_and_apply_api_keys_patch(
+            source_tree,
+            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+        )
         _apply_all_patches(
             source_tree,
             patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
@@ -995,6 +1028,10 @@ def main():
                 'Skipping ungoogled patches, overlay, Thorium patches, '
                 'and brand string sync.')
         else:
+            _prepare_and_apply_api_keys_patch(
+                source_tree,
+                patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+            )
             _apply_all_patches(
                 source_tree,
                 patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
@@ -1041,11 +1078,6 @@ def main():
             if args.tarball:
                 windows_flags += '\nchrome_pgo_phase=0\n'
             gn_flags += windows_flags
-            
-            # Append Google API keys from environment variables
-            gn_flags_lines = gn_flags.split('\n')
-            gn_flags_lines = _append_google_api_keys(gn_flags_lines)
-            gn_flags = '\n'.join(gn_flags_lines)
             
             (output_dir / 'args.gn').write_text(gn_flags, encoding=ENCODING)
 

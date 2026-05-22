@@ -64,5 +64,8 @@ thorium/new/thorium-downloads.patch
 thorium/new/thorium-encryption-machineid.patch
 thorium/new/thorium-history-preferences.patch
 thorium/new/thorium-telemetry-flags.patch
+# google api keys in inject to this patch when build start
+# the template file is thorium/new/thorium-set-api-keys.prepatch
+thorium/new/thorium-set-api-keys.patch
 thorium/new/thorium-gpu-features.patch
 thorium/new/thorium-misc-fixes.patch
