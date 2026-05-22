@@ -34,3 +34,10 @@ chrome/browser/resources/media/mei_preload/preloaded_data.pb
 
 # other files protected
 components/privacy_sandbox/privacy_sandbox_attestations/preload/privacy-sandbox-attestations.dat
+
+# win_build_output/midl/ — .tlb binary files are pruned by ungoogled because
+# they don't need MIDL .tlb outputs. But Thorium's build runs midl.exe which
+# needs valid pre-existing .tlb files; if pruned, midl.py leaves 0-byte
+# placeholders and later overwrite_guids() crashes with:
+#   AssertionError: assert contents[0:8] == b'MSFT\x02\x00\x01\x00'
+third_party/win_build_output/midl/*.tlb
