@@ -601,9 +601,12 @@ def _download_and_apply_extra_overlay(source_tree, overlay_url):
         try:
             urllib.request.urlretrieve(overlay_url, archive_path)
         except Exception as exc:
-            get_logger().error(
-                'Failed to download extra overlay from %s: %s', overlay_url, exc)
-            sys.exit(1)
+            get_logger().warning(
+                'Failed to download extra overlay from %s: %s. ',
+                overlay_url, exc)
+            get_logger().warning(
+                'Continuing without extra overlay.')
+            return
 
         # Determine archive size for logging
         archive_size = archive_path.stat().st_size
@@ -647,9 +650,11 @@ def _download_and_apply_extra_overlay(source_tree, overlay_url):
                     ['7z', 'x', archive_str, '-o{}'.format(extract_dir), '-y'],
                     check=True, capture_output=True)
             except Exception as exc:
-                get_logger().error(
+                get_logger().warning(
                     'Failed to extract extra overlay with 7z: %s', exc)
-                sys.exit(1)
+                get_logger().warning(
+                    'Continuing without extra overlay.')
+                return
 
         # Handle archives that wrap everything in a single top-level directory
         overlay_root = extract_dir
@@ -784,9 +789,6 @@ def _read_flags_file(filepath):
     if filepath.exists():
         return filepath.read_text(encoding=ENCODING)
     return ''
-
-
-
 
 
 def _setup_rust_toolchain(source_tree):
@@ -1054,7 +1056,12 @@ def main():
         # Setup Rust toolchain (needed before GN gen)
         _setup_rust_toolchain(source_tree)
 
-        if not args.ci or not output_dir.exists():
+        # Enter source tree to run build commands
+        os.chdir(source_tree)
+
+        # GN gen — only if gn.exe or build.ninja (the main build file) is missing.
+        # This avoids redundant gn bootstrap + gn gen on repeated --build-only runs.
+        if not (output_dir / 'gn.exe').exists() or not (output_dir / 'build.ninja').exists():
             # Create output directory and args.gn
             output_dir.mkdir(parents=True, exist_ok=True)
             gn_flags = _read_flags_file(_UNGOOGLED_CHROMIUM_DIR / 'flags.gn')
@@ -1081,10 +1088,6 @@ def main():
             
             (output_dir / 'args.gn').write_text(gn_flags, encoding=ENCODING)
 
-        # Enter source tree to run build commands
-        os.chdir(source_tree)
-
-        if not args.ci or not (output_dir / 'gn.exe').exists():
             get_logger().info('Bootstrapping GN...')
             _run_build_process(
                 sys.executable, 'tools\\gn\\bootstrap\\bootstrap.py',
@@ -1095,7 +1098,8 @@ def main():
                                'gen', 'out\\%s' % output_dir_name,
                                '--fail-on-unused-args')
 
-        if not args.ci or not (source_tree / 'third_party' / 'rust-toolchain' / 'bin' / 'bindgen.exe').exists():
+        # Bindgen — only if bindgen.exe is missing (both CI and local).
+        if not (source_tree / 'third_party' / 'rust-toolchain' / 'bin' / 'bindgen.exe').exists():
             get_logger().info('Building bindgen...')
             _run_build_process(
                 sys.executable, 'tools\\rust\\build_bindgen.py', '--skip-test')
@@ -1121,7 +1125,7 @@ def main():
         get_logger().info('Starting Thorium build for SIMD variant: %s', args.simd)
         if args.ci:
             try:
-                _run_build_process_timeout(*ninja_commandline, timeout=3.5 * 60 * 60)
+                _run_build_process_timeout(*ninja_commandline, timeout=4.6 * 60 * 60)
             except KeyboardInterrupt:
                 get_logger().info('Build timed out, will resume in next stage.')
                 sys.exit(2)
