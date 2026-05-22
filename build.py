@@ -395,6 +395,7 @@ def _apply_ungoogled_windows_patches(source_tree, patch_bin_path):
     This allows prerequisite patches from the main ungoogled-chromium series to
     be referenced without ../ paths.
     """
+    get_logger().info('Applying ungoogled-chromium-windows patches...')
     series_file = _UNGOOGLED_WINDOWS_SERIES_FILE
     if not series_file.exists():
         get_logger().warning('No whitelist found at %s', series_file)
@@ -772,7 +773,7 @@ def _apply_all_patches(source_tree, patch_bin_path):
 
     Used by both --apply-patches-only and the patching step of --prepare-only.
     """
-    get_logger().info('Applying ungoogled-chromium-windows patches...')
+
     _apply_ungoogled_windows_patches(source_tree, patch_bin_path=patch_bin_path)
 
     _apply_source_overrides(source_tree)
@@ -1189,7 +1190,7 @@ def main():
         get_logger().info('Starting Thorium build for SIMD variant: %s', args.simd)
         if args.ci:
             try:
-                _run_build_process_timeout(*ninja_commandline, timeout=4.6 * 60 * 60)
+                _run_build_process_timeout(*ninja_commandline, timeout=4.35 * 60 * 60)
             except KeyboardInterrupt:
                 get_logger().info('Build timed out, will resume in next stage.')
                 sys.exit(2)
