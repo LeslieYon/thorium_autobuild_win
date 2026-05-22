@@ -791,6 +791,64 @@ def _read_flags_file(filepath):
     return ''
 
 
+def _copy_aux_file(src, dst, description):
+    """Copy an auxiliary file from source to destination if it exists.
+
+    Creates parent directories as needed. Logs a warning if the source is
+    missing, or an info message on success / if already present.
+
+    Returns True if the file was actually copied, False otherwise.
+    """
+    if not src.exists():
+        get_logger().warning('%s not found in source tree at %s', description, src)
+        return False
+    if dst.exists():
+        get_logger().info('%s already exists in %s', description, dst.parent)
+        return False
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(str(src), str(dst))
+    get_logger().info('Copied %s to %s', description, dst.parent)
+    return True
+
+
+def _prepare_installer_aux_files(source_tree, output_dir, simd, is_x86=False, is_arm=False):
+    """Generate auxiliary files needed by the Thorium installer in the output directory.
+
+    These files are listed in chrome.release and must exist in the build output
+    directory before the mini_installer archive action runs. If absent, setup.exe
+    will fail at install time.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # initial_preferences — empty JSON object, triggers Thorium welcome page on first start
+    (output_dir / 'initial_preferences').write_text('{}\n', encoding=ENCODING)
+    get_logger().info('Generated initial_preferences in %s', output_dir)
+
+    # thor_ver — platform and SIMD variant identifier used by Thorium-WinUpdater
+    if is_arm:
+        variant = 'ARM64'
+    elif is_x86:
+        variant = f'Win32_{simd.upper()}'
+    else:
+        variant = simd.upper()
+    (output_dir / 'thor_ver').write_text(f'Win\n{variant}\n', encoding=ENCODING)
+    get_logger().info('Generated thor_ver (variant: %s) in %s', variant, output_dir)
+
+    # Copy auxiliary files listed in chrome.release to the output directory.
+    aux_files = [
+        (source_tree / 'content' / 'shell' / 'app' / 'thorium_shell.ico',
+         output_dir / 'thorium_shell.ico'),
+        (source_tree / 'chrome' / 'app' / 'theme' / 'thorium' / 'thorium.ico',
+         output_dir / 'thorium.ico'),
+        (source_tree / 'chrome' / 'app' / 'theme' / 'thorium' / 'thorium.svg',
+         output_dir / 'thorium.svg'),
+        (source_tree / 'chrome' / 'browser' / 'extensions' / 'default_extensions' / 'external_extensions.json',
+         output_dir / 'default_apps' / 'external_extensions.json'),
+    ]
+    for src, dst in aux_files:
+        _copy_aux_file(src, dst, dst.name)
+
+
 def _setup_rust_toolchain(source_tree):
     """Setup Rust toolchain for building."""
     HOST_CPU_IS_64BIT = sys.maxsize > 2**32
@@ -1104,6 +1162,10 @@ def main():
             _run_build_process(
                 sys.executable, 'tools\\rust\\build_bindgen.py', '--skip-test')
 
+    # ----- Stage: Prepare Installer Aux Files -----
+    if not args.prepare_only and not args.build_only:
+        _prepare_installer_aux_files(source_tree, output_dir, args.simd, args.x86, args.arm)
+
     # ----- Stage: Ninja Build -----
     if args.gn_only or args.prepare_only:
         if args.gn_only:
@@ -1120,6 +1182,8 @@ def main():
         ninja_commandline.append('chrome')
         ninja_commandline.append('chromedriver')
         ninja_commandline.append('mini_installer')
+        # ninja_commandline.append('thorium_shell') # temparily disabled, not finised yet...
+        ninja_commandline.append('clear_key_cdm')
 
         # Run ninja build
         get_logger().info('Starting Thorium build for SIMD variant: %s', args.simd)

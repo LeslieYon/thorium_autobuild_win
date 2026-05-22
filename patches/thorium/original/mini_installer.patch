@@ -1,5 +1,3 @@
-diff --git a/chrome/installer/mini_installer/BUILD.gn b/chrome/installer/mini_installer/BUILD.gn
-index 7e49b4e449981..4a59d3e73940d 100644
 --- a/chrome/installer/mini_installer/BUILD.gn
 +++ b/chrome/installer/mini_installer/BUILD.gn
 @@ -1,7 +1,8 @@
@@ -219,8 +217,6 @@ index 7e49b4e449981..4a59d3e73940d 100644
        alternate_version_generator_target,
      ]
    }
-diff --git a/chrome/installer/mini_installer/configuration.cc b/chrome/installer/mini_installer/configuration.cc
-index a5fdecc832180..f55755e460dac 100644
 --- a/chrome/installer/mini_installer/configuration.cc
 +++ b/chrome/installer/mini_installer/configuration.cc
 @@ -65,6 +65,8 @@ void Configuration::Clear() {
@@ -267,8 +263,6 @@ index a5fdecc832180..f55755e460dac 100644
    }
  
    if (!is_system_level_)
-diff --git a/chrome/installer/mini_installer/configuration.h b/chrome/installer/mini_installer/configuration.h
-index b746f68cef51d..5b63aac683d12 100644
 --- a/chrome/installer/mini_installer/configuration.h
 +++ b/chrome/installer/mini_installer/configuration.h
 @@ -38,9 +38,16 @@ class Configuration {
@@ -297,8 +291,6 @@ index b746f68cef51d..5b63aac683d12 100644
    bool has_invalid_switch_;
    bool should_delete_extracted_files_;
    const wchar_t* previous_version_;
-diff --git a/chrome/installer/mini_installer/mini_installer.cc b/chrome/installer/mini_installer/mini_installer.cc
-index b24e4cbef109f..48140c8591991 100644
 --- a/chrome/installer/mini_installer/mini_installer.cc
 +++ b/chrome/installer/mini_installer/mini_installer.cc
 @@ -1,4 +1,4 @@
@@ -634,8 +626,6 @@ index b24e4cbef109f..48140c8591991 100644
 +}
 +
  }  // namespace mini_installer
-diff --git a/chrome/installer/mini_installer/mini_installer.h b/chrome/installer/mini_installer/mini_installer.h
-index 2b2d38313e429..d84dabc4a5ac9 100644
 --- a/chrome/installer/mini_installer/mini_installer.h
 +++ b/chrome/installer/mini_installer/mini_installer.h
 @@ -6,13 +6,28 @@
@@ -692,8 +682,6 @@ index 2b2d38313e429..d84dabc4a5ac9 100644
  
  }  // namespace mini_installer
  
-diff --git a/chrome/installer/mini_installer/mini_installer.rc b/chrome/installer/mini_installer/mini_installer.rc
-index fff6a53c69130..b0e8f30f9af4e 100644
 --- a/chrome/installer/mini_installer/mini_installer.rc
 +++ b/chrome/installer/mini_installer/mini_installer.rc
 @@ -30,6 +30,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -705,8 +693,6 @@ index fff6a53c69130..b0e8f30f9af4e 100644
  
  #ifdef APSTUDIO_INVOKED
  /////////////////////////////////////////////////////////////////////////////
-diff --git a/chrome/installer/mini_installer/mini_installer_constants.cc b/chrome/installer/mini_installer/mini_installer_constants.cc
-index cbcd4cf1a3ef2..13ea5306828ce 100644
 --- a/chrome/installer/mini_installer/mini_installer_constants.cc
 +++ b/chrome/installer/mini_installer/mini_installer_constants.cc
 @@ -1,4 +1,4 @@
@@ -740,8 +726,6 @@ index cbcd4cf1a3ef2..13ea5306828ce 100644
  #endif
  
  }  // namespace mini_installer
-diff --git a/chrome/installer/mini_installer/mini_installer_constants.h b/chrome/installer/mini_installer/mini_installer_constants.h
-index 23de845654342..71dfb9bbaced8 100644
 --- a/chrome/installer/mini_installer/mini_installer_constants.h
 +++ b/chrome/installer/mini_installer/mini_installer_constants.h
 @@ -5,8 +5,14 @@
@@ -759,8 +743,6 @@ index 23de845654342..71dfb9bbaced8 100644
  // Various filenames and prefixes.
  extern const wchar_t kSetupExe[];
  extern const wchar_t kChromeArchivePrefix[];
-diff --git a/chrome/installer/mini_installer/mini_installer_exe_main.cc b/chrome/installer/mini_installer/mini_installer_exe_main.cc
-index aff0370044046..c19a6c4d577d0 100644
 --- a/chrome/installer/mini_installer/mini_installer_exe_main.cc
 +++ b/chrome/installer/mini_installer/mini_installer_exe_main.cc
 @@ -1,4 +1,4 @@
@@ -827,8 +809,6 @@ index aff0370044046..c19a6c4d577d0 100644
 -}
 -#endif
  }  // extern "C"
-diff --git a/chrome/installer/mini_installer/mini_installer_exe_version.rc.version b/chrome/installer/mini_installer/mini_installer_exe_version.rc.version
-index 2862d6b50a550..567c2bb2d6caa 100644
 --- a/chrome/installer/mini_installer/mini_installer_exe_version.rc.version
 +++ b/chrome/installer/mini_installer/mini_installer_exe_version.rc.version
 @@ -27,7 +27,8 @@ BEGIN
@@ -849,8 +829,6 @@ index 2862d6b50a550..567c2bb2d6caa 100644
          END
      END
      BLOCK "VarFileInfo"
-diff --git a/chrome/installer/mini_installer/mini_installer_resource.h b/chrome/installer/mini_installer/mini_installer_resource.h
-index 9155eba56943f..a498f79a58128 100644
 --- a/chrome/installer/mini_installer/mini_installer_resource.h
 +++ b/chrome/installer/mini_installer/mini_installer_resource.h
 @@ -10,6 +10,19 @@
@@ -873,8 +851,6 @@ index 9155eba56943f..a498f79a58128 100644
  #define IDC_STATIC -1
  
  // The identifier of the RCDATA resource holding the version of Chrome on which
-diff --git a/chrome/installer/setup/install_worker.cc b/chrome/installer/setup/install_worker.cc
-index 011684089a29e..f39ba065eda38 100644
 --- a/chrome/installer/setup/install_worker.cc
 +++ b/chrome/installer/setup/install_worker.cc
 @@ -1,4 +1,4 @@
@@ -1036,8 +1012,6 @@ index 011684089a29e..f39ba065eda38 100644
  
    const std::wstring client_state_key = install_static::GetClientStateKeyPath();
  
-diff --git a/chrome/installer/setup/installer_state.cc b/chrome/installer/setup/installer_state.cc
-index f1e38c0efc160..7334cb587c48b 100644
 --- a/chrome/installer/setup/installer_state.cc
 +++ b/chrome/installer/setup/installer_state.cc
 @@ -44,14 +44,16 @@ InstallerState::InstallerState()
@@ -1085,8 +1059,6 @@ index f1e38c0efc160..7334cb587c48b 100644
  }
  
  void InstallerState::SetStage(InstallerStage stage) const {
-diff --git a/chrome/installer/setup/installer_state.h b/chrome/installer/setup/installer_state.h
-index d8d444e685734..7a92dbaa9f965 100644
 --- a/chrome/installer/setup/installer_state.h
 +++ b/chrome/installer/setup/installer_state.h
 @@ -72,7 +72,11 @@ class InstallerState {
@@ -1110,8 +1082,6 @@ index d8d444e685734..7a92dbaa9f965 100644
  };
  
  }  // namespace installer
-diff --git a/chrome/installer/setup/launch_chrome.cc b/chrome/installer/setup/launch_chrome.cc
-index 52dfb225ee49d..372b7358c71c7 100644
 --- a/chrome/installer/setup/launch_chrome.cc
 +++ b/chrome/installer/setup/launch_chrome.cc
 @@ -23,19 +23,30 @@ base::CommandLine GetPostInstallLaunchCommand(
@@ -1165,8 +1135,6 @@ index 52dfb225ee49d..372b7358c71c7 100644
      return false;
    }
    DCHECK_NE(ret, static_cast<int>(STILL_ACTIVE));
-diff --git a/chrome/installer/setup/setup_util.cc b/chrome/installer/setup/setup_util.cc
-index 7ea39a93b45e4..296651bcf4eec 100644
 --- a/chrome/installer/setup/setup_util.cc
 +++ b/chrome/installer/setup/setup_util.cc
 @@ -1,4 +1,4 @@
@@ -1203,8 +1171,6 @@ index 7ea39a93b45e4..296651bcf4eec 100644
  }
  
  int GetInstallAge(const InstallerState& installer_state) {
-diff --git a/chrome/installer/util/initial_preferences.cc b/chrome/installer/util/initial_preferences.cc
-index 48ae7b2d6c69e..1fa5f07604adf 100644
 --- a/chrome/installer/util/initial_preferences.cc
 +++ b/chrome/installer/util/initial_preferences.cc
 @@ -4,6 +4,10 @@
@@ -1253,8 +1219,6 @@ index 48ae7b2d6c69e..1fa5f07604adf 100644
 +#endif
 +
  }  // namespace installer
-diff --git a/chrome/installer/util/initial_preferences.h b/chrome/installer/util/initial_preferences.h
-index c03cb7d5f6c9c..fb0ecc5f3339d 100644
 --- a/chrome/installer/util/initial_preferences.h
 +++ b/chrome/installer/util/initial_preferences.h
 @@ -208,6 +208,9 @@ class InitialPreferences {
@@ -1267,8 +1231,6 @@ index c03cb7d5f6c9c..fb0ecc5f3339d 100644
  }  // namespace installer
  
  #endif  // CHROME_INSTALLER_UTIL_INITIAL_PREFERENCES_H_
-diff --git a/chrome/installer/util/initial_preferences_constants.cc b/chrome/installer/util/initial_preferences_constants.cc
-index 2bf39cf67b85a..a49721824410e 100644
 --- a/chrome/installer/util/initial_preferences_constants.cc
 +++ b/chrome/installer/util/initial_preferences_constants.cc
 @@ -31,6 +31,7 @@ const char kSystemLevel[] = "system_level";
@@ -1279,8 +1241,6 @@ index 2bf39cf67b85a..a49721824410e 100644
  
  }  // namespace initial_preferences
  }  // namespace installer
-diff --git a/chrome/installer/util/initial_preferences_constants.h b/chrome/installer/util/initial_preferences_constants.h
-index df8961eed4cd2..561e86eeecae4 100644
 --- a/chrome/installer/util/initial_preferences_constants.h
 +++ b/chrome/installer/util/initial_preferences_constants.h
 @@ -68,6 +68,8 @@ extern const char kVerboseLogging[];
@@ -1292,8 +1252,6 @@ index df8961eed4cd2..561e86eeecae4 100644
  
  }  // namespace initial_preferences
  }  // namespace installer
-diff --git a/chrome/installer/util/logging_installer.cc b/chrome/installer/util/logging_installer.cc
-index 8b606fa040a8f..d08bf6349f896 100644
 --- a/chrome/installer/util/logging_installer.cc
 +++ b/chrome/installer/util/logging_installer.cc
 @@ -10,6 +10,7 @@
@@ -1448,8 +1406,6 @@ index 8b606fa040a8f..d08bf6349f896 100644
    return tmp_path.Append(kLogFilename);
  }
  
-diff --git a/chrome/installer/util/logging_installer.h b/chrome/installer/util/logging_installer.h
-index 0e3845d610127..2fd12a4720483 100644
 --- a/chrome/installer/util/logging_installer.h
 +++ b/chrome/installer/util/logging_installer.h
 @@ -43,6 +43,9 @@ enum TruncateResult {
@@ -1462,8 +1418,6 @@ index 0e3845d610127..2fd12a4720483 100644
  // Call to initialize logging for Chrome installer.
  void InitInstallerLogging(const installer::InitialPreferences& prefs);
  
-diff --git a/chrome/installer/util/util_constants.cc b/chrome/installer/util/util_constants.cc
-index b0d485e0cc105..85acc9de89848 100644
 --- a/chrome/installer/util/util_constants.cc
 +++ b/chrome/installer/util/util_constants.cc
 @@ -1,4 +1,4 @@
@@ -1509,8 +1463,6 @@ index b0d485e0cc105..85acc9de89848 100644
  const wchar_t kChromeProxyExe[] = L"chrome_proxy.exe";
  const wchar_t kChromeProxyNewExe[] = L"new_chrome_proxy.exe";
  const wchar_t kChromeProxyOldExe[] = L"old_chrome_proxy.exe";
-diff --git a/chrome/installer/util/util_constants.h b/chrome/installer/util/util_constants.h
-index 042823db6161e..54a163b5e5858 100644
 --- a/chrome/installer/util/util_constants.h
 +++ b/chrome/installer/util/util_constants.h
 @@ -213,6 +213,7 @@ extern const char kUncompressedArchive[];
@@ -1520,4 +1472,94 @@ index 042823db6161e..54a163b5e5858 100644
 +extern const char kDebugMode[];
  
  }  // namespace switches
+ 
+--- a/chrome/installer/mini_installer/chrome.release
++++ b/chrome/installer/mini_installer/chrome.release
+@@ -6,8 +6,12 @@
+ #
+ # Chrome Application dir entries, sorted alphabetically.
+ #
+-chrome.exe: %(ChromeDir)s\
++thorium.exe: %(ChromeDir)s\
+ chrome_proxy.exe: %(ChromeDir)s\
++# initial_preferences file, to show Thorium welcome page on first start
++initial_preferences: %(ChromeDir)s\
++# thor_ver for Thorium-WinUpdater
++thor_ver: %(ChromeDir)s\
+ #
+ # Chrome version dir assembly manifest.
+ # The name of this file must match the name of the version dir, so we cannot
+@@ -20,10 +24,13 @@ chrome_proxy.exe: %(ChromeDir)s\
+ #
+ chrome.dll: %(VersionDir)s\
+ chrome_100_percent.pak: %(VersionDir)s\
++chromedriver.exe: %(VersionDir)s\
+ chrome_child.dll: %(VersionDir)s\
+ chrome_elf.dll: %(VersionDir)s\
+ chrome_pwa_launcher.exe: %(VersionDir)s\
+ chrome_wer.dll: %(VersionDir)s\
++content_resources.pak: %(VersionDir)s\
++content_shell.pak: %(VersionDir)s\
+ d3dcompiler_47.dll: %(VersionDir)s\
+ eventlog_provider.dll: %(VersionDir)s\
+ icudtl.dat: %(VersionDir)s\
+@@ -32,15 +39,48 @@ libGLESv2.dll: %(VersionDir)s\
+ notification_helper.exe: %(VersionDir)s\
+ optimization_guide_internal.dll: %(VersionDir)s\
+ resources.pak: %(VersionDir)s\
++shell_resources.pak: %(VersionDir)s\
++thorium_shell.exe: %(VersionDir)s\
++thorium_shell.ico: %(VersionDir)s\
++ui_resources_100_percent.pak: %(VersionDir)s\
++resources\inspector_overlay\*.*: %(VersionDir)s\resources\inspector_overlay\
+ vk_swiftshader.dll: %(VersionDir)s\
+ vk_swiftshader_icd.json: %(VersionDir)s\
+ vulkan-1.dll: %(VersionDir)s\
+ v8_context_snapshot.bin: %(VersionDir)s\
+ #
++# Add pak to Thorium.
++#
++pack.bat: %(VersionDir)s\
++unpack.bat: %(VersionDir)s\
++pak_mingw32.exe: %(VersionDir)s\
++pak_mingw64.exe: %(VersionDir)s\
++#
+ # Sub directories living in the version dir
+ #
+ Extensions\*.*: %(VersionDir)s\Extensions\
+ locales\*.pak: %(VersionDir)s\Locales
++default_apps\*.crx: %(VersionDir)s\default_apps\
++default_apps\external_extensions.json: %(VersionDir)s\default_apps\
++
++#
++# ClearKey CDM sub-dir
++#
++ClearKeyCdm\_platform_specific\win_x64\clearkeycdm.dll: %(VersionDir)s\ClearKeyCdm\_platform_specific\win_x64\
++ClearKeyCdm\_platform_specific\win_x86\clearkeycdm.dll: %(VersionDir)s\ClearKeyCdm\_platform_specific\win_x86\
++ClearKeyCdm\_platform_specific\win_arm64\clearkeycdm.dll: %(VersionDir)s\ClearKeyCdm\_platform_specific\win_arm64\
++
++#
++# Widevine CDM sub-dir
++#
++WidevineCdm\manifest.json: %(VersionDir)s\WidevineCdm\
++WidevineCdm\LICENSE: %(VersionDir)s\WidevineCdm\
++WidevineCdm\_platform_specific\win_x86\widevinecdm.dll: %(VersionDir)s\WidevineCdm\_platform_specific\win_x86\
++WidevineCdm\_platform_specific\win_x86\widevinecdm.dll.sig: %(VersionDir)s\WidevineCdm\_platform_specific\win_x86\
++WidevineCdm\_platform_specific\win_x64\widevinecdm.dll: %(VersionDir)s\WidevineCdm\_platform_specific\win_x64\
++WidevineCdm\_platform_specific\win_x64\widevinecdm.dll.sig: %(VersionDir)s\WidevineCdm\_platform_specific\win_x64\
++WidevineCdm\_platform_specific\win_arm64\widevinecdm.dll: %(VersionDir)s\WidevineCdm\_platform_specific\win_arm64\
++WidevineCdm\_platform_specific\win_arm64\widevinecdm.dll.sig: %(VersionDir)s\WidevineCdm\_platform_specific\win_arm64\
+ 
+ #
+ # VisualElements sub-dir.
+@@ -71,7 +111,10 @@ IwaKeyDistribution\manifest.json: %(VersionDir)s\IwaKeyDistribution\
+ 
+ [HIDPI]
+ chrome_200_percent.pak: %(VersionDir)s\
++thorium.ico: %(VersionDir)s\
++thorium.svg: %(VersionDir)s\
+ 
++# Add component ffmpeg to Thorium.
+ [FFMPEG]
+ ffmpeg.dll: %(VersionDir)s\
  

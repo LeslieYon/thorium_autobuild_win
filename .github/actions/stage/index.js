@@ -54,6 +54,7 @@ async function run() {
 
     // Build arguments: limit to 2 threads to avoid server overload
     const args = ['build.py', '--ci', '--simd', simd, '-j', '2'];
+    if (fromArtifact) args.push('--build-only');
     if (x86) args.push('--x86');
     if (arm) args.push('--arm');
 
