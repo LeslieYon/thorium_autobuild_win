@@ -6,12 +6,12 @@ Thorium Patching Simulation Tool (Refactored)
 Simulate the build.py patching process exactly — without touching the real source tree.
 
 How it works:
-1. Parse patches/series and patches/series.ungoogled-windows to discover all patches
+1. Parse patches/series and patches/series.external to discover all patches
    and the files each patch modifies (same approach as backup_patch_files.py)
 2. Copy ONLY the affected files from a pristine source tree (e.g. build/src_original/)
    to a temporary (or user-specified) working directory
 3. Apply all patches in the EXACT same order as build.py:
-   a. ungoogled-chromium-windows patches (from series.ungoogled-windows)
+   a. external patches (from series.external — ungoogled-windows, cromite, etc.)
    b. overlay/ files copied on top
    c. Thorium-specific patches (from patches/series)
 4. Record detailed error information per patch (return code, stdout, stderr)
@@ -56,7 +56,7 @@ UNGOOGLED_PATCH_DIR = UNGOOGLED_WINDOWS_DIR / "patches"
 UNGOOGLED_MAIN_PATCH_DIR = UNGOOGLED_CHROMIUM_DIR / "patches"
 THORIUM_PATCH_DIR = ROOT_DIR / "patches" / "thorium"
 THORIUM_SERIES_FILE = ROOT_DIR / "patches" / "series"
-UNGOOGLED_SERIES_FILE = ROOT_DIR / "patches" / "series.ungoogled-windows"
+EXTERNAL_SERIES_FILE = ROOT_DIR / "patches" / "series.external"
 OVERLAY_DIR = ROOT_DIR / "overlay"
 
 sys.path.insert(0, str(UNGOOGLED_UTILS_DIR))
@@ -213,23 +213,28 @@ def _extract_modified_files_from_patch(patch_path: Path) -> Set[str]:
     return files
 
 
-def _collect_ungoogled_windows_patches() -> List[Path]:
+def _collect_external_patches() -> List[Path]:
     """
-    Resolve patch paths from series.ungoogled-windows.
-    Same section-marker logic as build.py's _apply_ungoogled_windows_patches().
+    Resolve patch paths from series.external.
+    Same section-marker logic as build.py's _apply_external_patches().
+    Supports sections:
+      #[windows]  — relative to <ungoogled-submodule>/patches/
+      #[main]     — relative to <ungoogled-submodule>/ungoogled-chromium/patches/
+      #[cromite]  — relative to cromite/build/patches/
     """
-    if not UNGOOGLED_SERIES_FILE.exists():
+    if not EXTERNAL_SERIES_FILE.exists():
         return []
 
     base_dirs = {
         'windows': UNGOOGLED_PATCH_DIR,
         'main': UNGOOGLED_MAIN_PATCH_DIR,
+        'cromite': ROOT_DIR / 'cromite' / 'build' / 'patches',
     }
 
     patches: List[Path] = []
     current_base = base_dirs['windows']
 
-    with open(UNGOOGLED_SERIES_FILE, 'r', encoding=ENCODING) as f:
+    with open(EXTERNAL_SERIES_FILE, 'r', encoding=ENCODING) as f:
         for line in f:
             stripped = line.strip()
             if not stripped:
@@ -243,7 +248,7 @@ def _collect_ungoogled_windows_patches() -> List[Path]:
 
             patch_path = (current_base / stripped).resolve()
             if not patch_path.exists():
-                warn(f"Ungoogled patch not found (skipping): {patch_path}")
+                warn(f"External patch not found (skipping): {patch_path}")
                 continue
             patches.append(patch_path)
 
@@ -288,7 +293,7 @@ def discover_all_patches(patch_type: str = 'all') -> List[Tuple[Path, str]]:
     result: List[Tuple[Path, str]] = []
 
     if patch_type in ('all', 'ungoogled'):
-        for p in _collect_ungoogled_windows_patches():
+        for p in _collect_external_patches():
             result.append((p, 'ungoogled'))
 
     if patch_type in ('all', 'thorium'):

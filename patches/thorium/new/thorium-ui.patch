@@ -212,12 +212,6 @@
 # Home button default enabled
 --- a/chrome/browser/ui/browser_ui_prefs.cc
 +++ b/chrome/browser/ui/browser_ui_prefs.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -99,7 +99,7 @@
  
    registry->RegisterBooleanPref(prefs::kHomePageIsNewTabPage, true,

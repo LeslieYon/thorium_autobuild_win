@@ -20,7 +20,7 @@ Thorium Autobuild Win reorganizes Thorium's Chromium changes into a standard pat
 - `flags.windows.x86.gn` / `flags.windows.arm64.gn` — architecture flags
 - `overlay/` — direct source overrides and binary/resource replacements
 - `patches/series` — Thorium patch order
-- `patches/series.ungoogled-windows` — whitelisted ungoogled-windows patches
+- `patches/series.external` — external patches from multiple projects (ungoogled-windows, cromite, etc.)
 - `patches/README.md` — patch catalog with per-patch descriptions
 - `patches/thorium/` — patch files organized by group: `original/`, `new/`, `fixes/`, `fixes_upstream/`
 - `patch_scripts/` — build helper scripts (brand string sync, etc.)
@@ -46,7 +46,7 @@ Chromium source (tarball / git clone)
   → Apply ungoogled-chromium-windows/pruning.list
   → Apply root pruning.list
   → Unpack downloads (including libjxl → third_party/libjxl/src)
-  → Apply ungoogled-chromium-windows patches (whitelist only)
+  → Apply patches/series.external (external patches: ungoogled-windows, cromite, etc.)
   → Copy overlay/ into source tree
   → Apply patches/series (Thorium patches)
   → Sync Brand Strings (patch_scripts/sync_brand_strings.py)

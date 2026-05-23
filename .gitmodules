@@ -2,3 +2,7 @@
 	path = ungoogled-chromium-windows
 	url = https://github.com/ungoogled-software/ungoogled-chromium-windows.git
 	branch = master
+[submodule "cromite"]
+	path = cromite
+	url = https://github.com/uazo/cromite.git
+	branch = master

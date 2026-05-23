@@ -1,14 +1,13 @@
-# Ungoogled-Chromium-Windows patches selected for Thorium builds.
+# External patches selected for Thorium builds.
 #
-# This is a curated whitelist of Windows-specific compatibility patches from
-# the ungoogled-chromium-windows submodule, plus prerequisite patches from the
-# main ungoogled-chromium series that they depend on.
+# This file lists patches from multiple external projects. Section markers
+# control the base directory for path resolution:
+#   #[windows]  — relative to <ungoogled-submodule>/patches/          (default)
+#   #[main]     — relative to <ungoogled-submodule>/ungoogled-chromium/patches/
+#   #[cromite]  — relative to cromite/build/patches/
 #
-# Section markers control the base directory for path resolution:
-#   #[windows]  — relative to <submodule>/patches/                (default)
-#   #[main]     — relative to <submodule>/ungoogled-chromium/patches/
-#
-# The following patches from the submodule are intentionally omitted:
+# The following patches from the ungoogled-chromium-windows submodule are
+# intentionally omitted:
 #   windows-disable-encryption.patch — depends on ungoogled-only header
 #     (ungoogled_platform_flag_entries.h); Thorium has its own patches for the
 #     same C++ files (patches/thorium/fixes/components__os_crypt__*.cc.patch).
@@ -44,3 +43,8 @@ ungoogled-chromium/windows/windows-fix-licenses-gn-path.patch
 ungoogled-chromium/windows/windows-fix-building-with-rust.patch
 ungoogled-chromium/windows/windows-fix-remove-unused-preferences-fields.patch
 ungoogled-chromium/windows/windows-fix-missing-includes.patch
+
+# --- thorium picked cromite patches ---
+#[cromite]
+# temporary disabled bacause conflict
+# Enable-Global-Privacy-Control.patch

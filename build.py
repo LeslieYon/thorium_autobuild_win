@@ -75,7 +75,7 @@ _PATCH_BIN_RELPATH = Path('third_party/git/usr/bin/patch.exe')
 _THORIUM_PATCH_DIR = _ROOT_DIR / 'patches' / 'thorium'
 _THORIUM_SERIES_FILE = _ROOT_DIR / 'patches' / 'series'
 _UNGOOGLED_PATCH_DIR = _UNGOOGLED_WINDOWS_DIR / 'patches'
-_UNGOOGLED_WINDOWS_SERIES_FILE = _ROOT_DIR / 'patches' / 'series.ungoogled-windows'
+_EXTERNAL_SERIES_FILE = _ROOT_DIR / 'patches' / 'series.external'
 _OVERLAY_DIR = _ROOT_DIR / 'overlay'
 
 # Default Chromium version file
@@ -381,30 +381,32 @@ def _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_
     return 'git'
 
 
-def _apply_ungoogled_windows_patches(source_tree, patch_bin_path):
+def _apply_external_patches(source_tree, patch_bin_path):
     """
-    Apply selected ungoogled-chromium-windows patches from the submodule.
+    Apply external patches from the series.external file.
 
-    The list of patches to apply is specified in a curated whitelist file
-    (patches/series.ungoogled-windows). The whitelist supports section markers
+    The list of patches to apply is specified in a curated file
+    (patches/series.external). The file supports section markers
     to resolve patch paths against different base directories:
 
       #[windows]  (default) — resolve relative to <submodule>/patches/
       #[main]               — resolve relative to <submodule>/ungoogled-chromium/patches/
+      #[cromite]            — resolve relative to cromite/build/patches/
 
-    This allows prerequisite patches from the main ungoogled-chromium series to
-    be referenced without ../ paths.
+    This allows patches from multiple project sources (ungoogled-chromium-windows,
+    cromite, etc.) to be referenced in a single unified series file.
     """
-    get_logger().info('Applying ungoogled-chromium-windows patches...')
-    series_file = _UNGOOGLED_WINDOWS_SERIES_FILE
+    get_logger().info('Applying external patches from series.external...')
+    series_file = _EXTERNAL_SERIES_FILE
     if not series_file.exists():
-        get_logger().warning('No whitelist found at %s', series_file)
+        get_logger().warning('No series file found at %s', series_file)
         return
 
     # Base directories for each section
     _BASE_DIRS = {
         'windows': _UNGOOGLED_PATCH_DIR,
         'main': _UNGOOGLED_CHROMIUM_DIR / 'patches',
+        'cromite': _ROOT_DIR / 'cromite' / 'build' / 'patches',
     }
 
     # Parse entries with section markers
@@ -434,14 +436,14 @@ def _apply_ungoogled_windows_patches(source_tree, patch_bin_path):
         get_logger().warning('No ungoogled-chromium-windows patches to apply')
         return
 
-    get_logger().info('Applying %d ungoogled-chromium-windows patches (from %s)...',
+    get_logger().info('Applying %d external patches (from %s)...',
                       len(patch_paths), series_file.name)
     uc_patches.apply_patches(
         patch_paths,
         source_tree,
         patch_bin_path=patch_bin_path
     )
-    get_logger().info('ungoogled-chromium-windows patches applied successfully.')
+    get_logger().info('External patches applied successfully.')
 
 
 def _apply_thorium_patches(source_tree, patch_bin_path):
@@ -765,7 +767,7 @@ def _apply_all_patches(source_tree, patch_bin_path):
     """Apply all Thorium-related patches and brand string sync.
 
     This is the single call site for the complete patch chain:
-      1. ungoogled-chromium-windows patches (from series.ungoogled-windows)
+      1. External patches (from series.external — ungoogled-windows, cromite, etc.)
       2. Source overrides from overlay/
       3. Safe browsing auto-extraction
       4. Thorium-specific patches (from patches/series)
@@ -774,7 +776,7 @@ def _apply_all_patches(source_tree, patch_bin_path):
     Used by both --apply-patches-only and the patching step of --prepare-only.
     """
 
-    _apply_ungoogled_windows_patches(source_tree, patch_bin_path=patch_bin_path)
+    _apply_external_patches(source_tree, patch_bin_path=patch_bin_path)
 
     _apply_source_overrides(source_tree)
 

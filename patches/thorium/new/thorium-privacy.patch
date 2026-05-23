@@ -1,22 +1,17 @@
 # Enable DNT and IP Protection by default
 --- a/components/privacy_sandbox/tracking_protection_prefs.cc
 +++ b/components/privacy_sandbox/tracking_protection_prefs.cc
-@@ -12,13 +12,13 @@
- 
- void RegisterProfilePrefs(PrefRegistrySimple* registry) {
+@@ -14,4 +14,4 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
    registry->RegisterBooleanPref(
 -      prefs::kEnableDoNotTrack, false,
 +      prefs::kEnableDoNotTrack, true,
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
    registry->RegisterBooleanPref(
-       prefs::kFingerprintingProtectionEnabled, true,
-       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+@@ -20,3 +20,3 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
    registry->RegisterBooleanPref(
 -      prefs::kIpProtectionEnabled, false,
 +      prefs::kIpProtectionEnabled, true,
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
- 
-   // TODO(https://b/333527273): The following prefs should be deprecated.
 # Disable Ad-Auction-Signals
 --- a/third_party/blink/common/features.cc
 +++ b/third_party/blink/common/features.cc

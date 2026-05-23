@@ -27,12 +27,6 @@ diff --git a/chrome/browser/ui/cocoa/accelerators_cocoa.mm b/chrome/browser/ui/c
 index f7a207457997b..37a33c0e835db 100644
 --- a/chrome/browser/ui/cocoa/accelerators_cocoa.mm
 +++ b/chrome/browser/ui/cocoa/accelerators_cocoa.mm
-@@ -1,4 +1,4 @@
--// Copyright 2011 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -73,6 +73,11 @@ const struct AcceleratorMapping {
      // We used to define IDC_CLOSE_WINDOW here. Instead, see
      // AcceleratorForCloseWindow().
@@ -58,12 +52,6 @@ diff --git a/chrome/browser/ui/views/accelerator_table.cc b/chrome/browser/ui/vi
 index 9a52cf832f28e..67948411837ef 100644
 --- a/chrome/browser/ui/views/accelerator_table.cc
 +++ b/chrome/browser/ui/views/accelerator_table.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -53,7 +53,10 @@ const AcceleratorMapping kAcceleratorMap[] = {
  #if !BUILDFLAG(IS_MAC)
      {ui::VKEY_D, ui::EF_PLATFORM_ACCELERATOR, IDC_BOOKMARK_THIS_TAB},

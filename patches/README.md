@@ -9,7 +9,7 @@ Chromium source tree during the build. The application order is defined in
 | Path | Contents |
 |------|----------|
 | [`series`](./series) | Master patch list — all patches in apply order |
-| [`series.ungoogled-windows`](./series.ungoogled-windows) | Picked patches from ungoogled-chromium |
+| [`series.external`](./series.external) | External patches from multiple projects (ungoogled-windows, cromite, etc.) |
 | `thorium/fixes_upstream/` | Upstream crash fixes (can be removed once merged) |
 | `thorium/fixes/` | SafeBrowsing dependency patches + misc standalone fixes |
 | `thorium/original/` | Multi-file patches ported from the original Thorium project's `other/` directory |

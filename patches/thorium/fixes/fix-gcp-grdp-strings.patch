@@ -1,0 +1,23 @@
+# Enable-Global-Privacy-Control.patch use cromite's new grdp string resource file
+# we just place that to here
+--- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
++++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
+@@ -1138,6 +1138,18 @@ For more settings that use data to improve your Thorium experience, go to <ph na
+         Enabling “Do Not Track” means that a request will be included with your browsing traffic. Any effect depends on whether a website responds to the request, and how the request is interpreted.
+ 
+ For example, some websites may respond to this request by showing you ads that aren’t based on other websites you’ve visited. Many websites will still collect and use your browsing data — for example to improve security, to provide content, ads and recommendations, and to generate reporting statistics.
++      </message>
++      <message name="IDS_GPC_TITLE" desc="">
++        Global Privacy Control "Sec-GPC"
++      </message>
++      <message name="IDS_GPC_DESCRIPTION" desc="">
++        Enables support for Global Privacy Control signals.
++
++Right to opt-out of sale or sharing: You may request that businesses stop selling or sharing your personal information (“opt-out”).
++
++Businesses cannot sell or share your personal information after they receive your opt-out request unless you later authorize them to do so again.
++
++Please note that it only applies to the states of California (under CCPA and CPRA) and Colorado (under CoPA).
+       </message>
+       <message name="IDS_CAN_MAKE_PAYMENT_TITLE" desc="Title for preference to allow websites to know whether you have payment methods available through PaymentRequest.CanMakePayment interface">
+         Access payment methods

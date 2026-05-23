@@ -15,12 +15,6 @@ diff --git a/front_end/core/sdk/EmulationModel.ts b/front_end/core/sdk/Emulation
 index 613461adb5..135d5390b5 100644
 --- a/front_end/core/sdk/EmulationModel.ts
 +++ b/front_end/core/sdk/EmulationModel.ts
-@@ -1,4 +1,4 @@
--// Copyright 2017 The Chromium Authors. All rights reserved.
-+// Copyright 2023 The Chromium Authors, gz83, and Alex313031. All rights reserved.
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -159,6 +159,7 @@ export class EmulationModel extends SDKModel<void> {
      }
  
@@ -55,12 +49,6 @@ diff --git a/front_end/core/sdk/sdk-meta.ts b/front_end/core/sdk/sdk-meta.ts
 index 58fb2498c0..f585e30535 100644
 --- a/front_end/core/sdk/sdk-meta.ts
 +++ b/front_end/core/sdk/sdk-meta.ts
-@@ -1,4 +1,4 @@
--// Copyright 2020 The Chromium Authors. All rights reserved.
-+// Copyright 2023 The Chromium Authors, gz83, and Alex313031. All rights reserved.
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -281,6 +281,14 @@ const UIStrings = {
     *@description Title of a setting that enables AVIF format
     */
@@ -105,13 +93,6 @@ diff --git a/front_end/entrypoints/inspector_main/RenderingOptions.ts b/front_en
 index 439d4bbc37..427c65a13e 100644
 --- a/front_end/entrypoints/inspector_main/RenderingOptions.ts
 +++ b/front_end/entrypoints/inspector_main/RenderingOptions.ts
-@@ -1,5 +1,5 @@
- /*
-- * Copyright (C) 2013 Google Inc. All rights reserved.
-+ * Copyright (C) 2023 Google Inc, gz83, and Alex313031. All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without
-  * modification, are permitted provided that the following conditions are
 @@ -171,8 +171,13 @@ const UIStrings = {
     */
    disableAvifImageFormat: 'Disable `AVIF` image format',
@@ -161,12 +142,6 @@ diff --git a/front_end/generated/protocol.ts b/front_end/generated/protocol.ts
 index d8a5c1f42d..e76d6d1d41 100644
 --- a/front_end/generated/protocol.ts
 +++ b/front_end/generated/protocol.ts
-@@ -1,4 +1,4 @@
--// Copyright (c) 2020 The Chromium Authors. All rights reserved.
-+// Copyright 2023 The Chromium Authors, gz83, and Alex313031. All rights reserved.
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -5654,6 +5654,7 @@ export namespace Emulation {
     */
    export const enum DisabledImageType {
@@ -179,12 +154,6 @@ diff --git a/test/unittests/front_end/helpers/EnvironmentHelpers.ts b/test/unitt
 index b0d3017c1b..4956930759 100644
 --- a/test/unittests/front_end/helpers/EnvironmentHelpers.ts
 +++ b/test/unittests/front_end/helpers/EnvironmentHelpers.ts
-@@ -1,4 +1,4 @@
--// Copyright 2020 The Chromium Authors. All rights reserved.
-+// Copyright 2023 The Chromium Authors, gz83, and Alex313031. All rights reserved.
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -191,6 +191,7 @@ export async function initializeGlobalVars({reset = true} = {}) {
      createSettingValue(Common.Settings.SettingCategory.RENDERING, 'showScrollBottleneckRects', false),
      createSettingValue(Common.Settings.SettingCategory.RENDERING, 'showWebVitals', false),

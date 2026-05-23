@@ -19,7 +19,7 @@ Usage:
   python devutils/apply_all_patches.py --source-dir build/src
   python devutils/apply_all_patches.py --log-file apply_results.log
   python devutils/apply_all_patches.py --only-thorium
-  python devutils/apply_all_patches.py --only-ungoogled
+  python devutils/apply_all_patches.py --only-external
 """
 
 import sys
@@ -49,7 +49,7 @@ THORIUM_PATCH_BASE = ROOT_DIR / "patches"
 
 # Series files
 THORIUM_SERIES_FILE = ROOT_DIR / "patches" / "series"
-UNGOOGLED_SERIES_FILE = ROOT_DIR / "patches" / "series.ungoogled-windows"
+EXTERNAL_SERIES_FILE = ROOT_DIR / "patches" / "series.external"
 
 # Overlay directory (copied verbatim over the source tree)
 OVERLAY_DIR = ROOT_DIR / "overlay"
@@ -200,15 +200,17 @@ def read_list_file(filepath: Path) -> List[str]:
     return entries
 
 
-def parse_ungoogled_series(series_path: Path) -> List[Tuple[Path, str]]:
-    """Parse ungoogled-windows series with section markers.
+def parse_external_series(series_path: Path) -> List[Tuple[Path, str]]:
+    """Parse external series with section markers.
 
-    #[windows] -> UNGOOGLED_PATCH_DIR
-    #[main]    -> UNGOOGLED_MAIN_PATCH_DIR
+    #[windows]  -> UNGOOGLED_PATCH_DIR
+    #[main]     -> UNGOOGLED_MAIN_PATCH_DIR
+    #[cromite]  -> <root>/cromite/build/patches/
     """
     base_dirs = {
         "windows": UNGOOGLED_PATCH_DIR,
         "main": UNGOOGLED_MAIN_PATCH_DIR,
+        "cromite": ROOT_DIR / "cromite" / "build" / "patches",
     }
     patches: List[Tuple[Path, str]] = []
     if not series_path.exists():
@@ -522,7 +524,7 @@ def main():
 Examples:
   %(prog)s                               Apply all patches
   %(prog)s --only-thorium                Apply only Thorium patches
-  %(prog)s --only-ungoogled              Apply only ungoogled-windows patches
+  %(prog)s --only-external              Apply only external patches
   %(prog)s --source-dir ../chromium      Use different source tree
   %(prog)s --log-file results.log        Custom log file
   %(prog)s --verbose                     Show detailed progress
@@ -538,11 +540,11 @@ Examples:
     )
     parser.add_argument(
         "--only-thorium", action="store_true",
-        help="Only Thorium patches, skip ungoogled-windows",
+        help="Only Thorium patches, skip external patches",
     )
     parser.add_argument(
-        "--only-ungoogled", action="store_true",
-        help="Only ungoogled-windows patches, skip Thorium",
+        "--only-external", action="store_true",
+        help="Only external patches, skip Thorium",
     )
     parser.add_argument(
         "--no-overlay", action="store_true",
@@ -659,10 +661,10 @@ Examples:
     overlay_stats = {"copied_new": 0, "overwritten": 0}
 
     if not args.only_thorium:
-        up = parse_ungoogled_series(UNGOOGLED_SERIES_FILE)
+        up = parse_external_series(EXTERNAL_SERIES_FILE)
         if up:
             s = apply_patch_set(
-                "ungoogled-chromium-windows", up,
+                "external", up,
                 args.source_dir, git_bin, logger,
             )
             for k in overall:
@@ -670,7 +672,7 @@ Examples:
             all_failed_files.extend(s.get("failed_files", []))
         else:
             logger.warning(
-                f"No ungoogled-windows patches in {UNGOOGLED_SERIES_FILE}"
+                f"No external patches in {EXTERNAL_SERIES_FILE}"
             )
 
     # === Step 5: Apply overlay/ (copy verbatim) ===
@@ -679,7 +681,7 @@ Examples:
         overlay_stats = apply_overlay(args.source_dir, logger)
 
     # === Step 6: Apply Thorium-specific patches ===
-    if not args.only_ungoogled:
+    if not args.only_external:
         tp = parse_thorium_series(THORIUM_SERIES_FILE)
         if tp:
             s = apply_patch_set(
