@@ -831,6 +831,9 @@ Examples:
         work_dir = Path(temp_dir)
         print(f"  Created temp directory: {work_dir}")
     else:
+        if work_dir.exists():
+            shutil.rmtree(work_dir, ignore_errors=True)
+            print(f"  Removed existing directory: {work_dir}")
         work_dir.mkdir(parents=True, exist_ok=True)
         print(f"  Using specified directory: {work_dir}")
 
@@ -918,6 +921,9 @@ Examples:
     # Export JSON
     if args.export_json:
         export_path = Path(args.export_json).resolve()
+        if export_path.exists():
+            export_path.unlink()
+            print(f"  Removed existing export file: {export_path}")
         export_json(all_results, export_path)
 
     # Finish
@@ -945,6 +951,9 @@ def _finish_and_exit(args, all_results, work_dir, keep_work_dir, temp_dir):
 
     if args.export_json and all_results:
         export_path = Path(args.export_json).resolve()
+        if export_path.exists():
+            export_path.unlink()
+            print(f"  Removed existing export file: {export_path}")
         export_json(all_results, export_path)
 
     if keep_work_dir:

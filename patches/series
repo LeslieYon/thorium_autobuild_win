@@ -40,7 +40,7 @@ thorium/original/open_in_same_tab.patch
 thorium/original/thorium_webui.patch
 thorium/original/win_updater.patch
 thorium/original/keyboard_shortcuts.patch
-thorium/original/disable-privacy-sandbox.patch
+thorium/original/disable-privacy-sandbox-flag.patch
 thorium/original/partalloc.patch
 thorium/original/thorium_branding.patch
 thorium/original/thorium-build-output-1.patch

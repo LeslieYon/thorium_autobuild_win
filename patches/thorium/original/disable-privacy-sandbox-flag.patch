@@ -1,0 +1,37 @@
+# Description: Disable Privacy Sandbox flags by default
+--- a/components/privacy_sandbox/privacy_sandbox_features.cc
++++ b/components/privacy_sandbox/privacy_sandbox_features.cc
+@@ -21,7 +21,7 @@ const base::FeatureParam<std::string> kPrivacySandboxAdsNoticeCCTAppId{
+ 
+ BASE_FEATURE(kPrivacySandboxSettings4,
+              "PrivacySandboxSettings4",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const char kPrivacySandboxSettings4ConsentRequiredName[] = "consent-required";
+ const char kPrivacySandboxSettings4NoticeRequiredName[] = "notice-required";
+@@ -82,11 +82,11 @@ BASE_FEATURE(kDisablePrivacySandboxPrompts,
+ 
+ BASE_FEATURE(kEnforcePrivacySandboxAttestations,
+              "EnforcePrivacySandboxAttestations",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kDefaultAllowPrivacySandboxAttestations,
+              "DefaultAllowPrivacySandboxAttestations",
+-             base::FEATURE_ENABLED_BY_DEFAULT);
++             base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ const char kPrivacySandboxEnrollmentOverrides[] =
+     "privacy-sandbox-enrollment-overrides";
+--- a/components/privacy_sandbox/privacy_sandbox_prefs.cc
++++ b/components/privacy_sandbox/privacy_sandbox_prefs.cc
+@@ -49,7 +49,7 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
+       prefs::kPrivacySandboxRelatedWebsiteSetsDataAccessAllowedInitialized,
+       false);
+   registry->RegisterBooleanPref(
+-      prefs::kPrivacySandboxRelatedWebsiteSetsEnabled, true,
++      prefs::kPrivacySandboxRelatedWebsiteSetsEnabled, false,
+       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+   registry->RegisterTimePref(
+       prefs::kPrivacySandboxFakeNoticePromptShownTimeSync, base::Time(),

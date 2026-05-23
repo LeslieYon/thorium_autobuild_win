@@ -19,6 +19,7 @@
 core/inox-patchset/0001-fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-with-prunned-binaries.patch
+core/ungoogled-chromium/disable-privacy-sandbox.patch
 
 # ----- Windows-specific patches -----
 #[windows]
