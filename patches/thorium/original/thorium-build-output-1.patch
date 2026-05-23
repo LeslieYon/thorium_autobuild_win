@@ -22,4 +22,3 @@
        configs += [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
      }
  
-

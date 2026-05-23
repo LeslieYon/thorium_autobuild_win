@@ -1,0 +1,78 @@
+# All of hunks of this patch are picked from ungoogled-chromium's remove-uneeded-ui.patch
+
+# Removes Safety Check section and Privacy Guide from the settings page
+--- a/chrome/browser/resources/settings/basic_page/basic_page.html
++++ b/chrome/browser/resources/settings/basic_page/basic_page.html
+@@ -70,7 +70,7 @@
+         <!--  TODO(crbug.com/40267370): Add a test to basic_page_test.ts
+         to check that settings-safety-hub-entry-point is not visible
+         in the guest mode. -->
+-        <template is="dom-if" if="[[showPage_(pageVisibility.safetyHub)]]"
++        <template is="dom-if" if="[[false]]"
+             restamp>
+           <settings-section page-title="$i18n{safetyHub}"
+               section="safetyHubEntryPoint" nest-under-section="privacy"
+--- a/chrome/browser/resources/settings/basic_page/basic_page.ts
++++ b/chrome/browser/resources/settings/basic_page/basic_page.ts
+@@ -16,7 +16,6 @@ import '../ai_page/ai_page.js';
+ import '../glic_page/glic_page.js';
+ // </if>
+ import '../appearance_page/appearance_page.js';
+-import '../privacy_page/privacy_guide/privacy_guide_promo.js';
+ import '../privacy_page/privacy_page.js';
+ import '../safety_hub/safety_hub_entry_point.js';
+ import '../autofill_page/autofill_page.js';
+@@ -265,7 +264,6 @@ export class SettingsBasicPageElement ex
+       this.showPrivacyGuidePromo_ = false;
+       return;
+     }
+-    this.showPrivacyGuidePromo_ = true;
+     if (!this.privacyGuidePromoWasShown_) {
+       this.privacyGuideBrowserProxy_.incrementPromoImpressionCount();
+       this.privacyGuidePromoWasShown_ = true;
+--- a/chrome/browser/resources/settings/privacy_page/privacy_page.html
++++ b/chrome/browser/resources/settings/privacy_page/privacy_page.html
+@@ -51,15 +51,6 @@
+             label="$i18n{clearBrowsingData}"
+             sub-label="$i18n{clearBrowsingDataDescription}"
+             on-click="onClearBrowsingDataClick_"></cr-link-row>
+-        <template is="dom-if" if="[[isPrivacyGuideAvailable]]">
+-          <cr-link-row id="privacyGuideLinkRow" class="hr"
+-              start-icon="privacy20:signpost"
+-              label="$i18n{privacyGuideLabel}"
+-              sub-label="$i18n{privacyGuideSublabel}"
+-              on-click="onPrivacyGuideClick_"
+-              role-description="$i18n{subpageArrowRoleDescription}">
+-          </cr-link-row>
+-        </template>
+         <cr-link-row id="thirdPartyCookiesLinkRow"
+             start-icon="privacy:cookie"
+             class="hr" label="$i18n{thirdPartyCookiesLinkRowLabel}"
+# Remove the password leak detection toggle on the security settings page
+# Remove the Advanced Protection Program link on the security settings page
+--- a/chrome/browser/resources/settings/privacy_page/security_page.html
++++ b/chrome/browser/resources/settings/privacy_page/security_page.html
+@@ -113,13 +113,6 @@
+     <div class="cr-row first">
+       <h2 class="cr-title-text">$i18n{advancedPageTitle}</h2>
+     </div>
+-    <settings-toggle-button id="passwordsLeakToggle"
+-          label="$i18n{passwordsLeakDetectionLabel}"
+-          pref="{{prefs.generated.password_leak_detection}}"
+-          sub-label="[[getPasswordsLeakToggleSubLabel_(
+-                        prefs.profile.password_manager_leak_detection.*,
+-                        prefs.generated.password_leak_detection.*)]]">
+-    </settings-toggle-button>
+     <template is="dom-if" if="[[!enableHttpsFirstModeNewSettings_]]" restamp>
+       <settings-toggle-button id="httpsOnlyModeToggle"
+           pref="{{prefs.generated.https_first_mode_enabled}}"
+@@ -179,9 +172,3 @@
+         on-click="onManageCertificatesClick_" external>
+     </cr-link-row>
+ 
+-    <cr-link-row id="advanced-protection-program-link" class="hr"
+-        label="$i18n{advancedProtectionProgramTitle}"
+-        sub-label="$i18n{advancedProtectionProgramDesc}"
+-        on-click="onAdvancedProtectionProgramLinkClick_"
+-        external>
+-    </cr-link-row>
