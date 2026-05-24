@@ -1180,24 +1180,25 @@ def main():
             get_logger().info('--gn-only specified. Skipping ninja build.')
         os.chdir(_ROOT_DIR)
     else:
-        # Ninja commandline
-        ninja_commandline = ['third_party\\ninja\\ninja.exe']
+        # 2 stage build, ensure all artifacts build complete before mini_installer
+        _ninja_common = ['third_party\\ninja\\ninja.exe']
         if args.thread_count is not None:
-            ninja_commandline.append('-j')
-            ninja_commandline.append(str(args.thread_count))
-        ninja_commandline.append('-C')
-        ninja_commandline.append('out\\%s' % output_dir_name)
-        ninja_commandline.append('chrome')
-        ninja_commandline.append('chromedriver')
-        ninja_commandline.append('mini_installer')
-        # ninja_commandline.append('thorium_shell') # temparily disabled, not finised yet...
-        ninja_commandline.append('clear_key_cdm')
+            _ninja_common.append('-j')
+            _ninja_common.append(str(args.thread_count))
+        _ninja_common.append('-C')
+        _ninja_common.append('out\\%s' % output_dir_name)
 
-        # Run ninja build
+        ninja_phase1 = _ninja_common + ['chrome', 'chromedriver', 'clear_key_cdm']
+        ninja_phase2 = _ninja_common + ['mini_installer']
+        # ninja_phase2.append('thorium_shell') # temporarily disabled, not finished yet...
+        all_ninja_phases = [ninja_phase1, ninja_phase2]
+
+        # Run ninja build in phases
         get_logger().info('Starting Thorium build for SIMD variant: %s', args.simd)
         if args.ci:
             try:
-                _run_build_process_timeout(*ninja_commandline, timeout=4.35 * 60 * 60)
+                for phase_args in all_ninja_phases:
+                    _run_build_process_timeout(*phase_args, timeout=4.35 * 60 * 60)
             except KeyboardInterrupt:
                 get_logger().info('Build timed out, will resume in next stage.')
                 sys.exit(2)
@@ -1205,7 +1206,8 @@ def main():
             os.chdir(_ROOT_DIR)
             subprocess.run([sys.executable, 'package.py', '--simd', args.simd])
         else:
-            _run_build_process(*ninja_commandline)
+            for phase_args in all_ninja_phases:
+                _run_build_process(*phase_args)
         os.chdir(_ROOT_DIR)
 
     if not args.prepare_only:
