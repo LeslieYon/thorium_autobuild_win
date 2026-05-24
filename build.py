@@ -1047,9 +1047,14 @@ def main():
         _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_version, args)
 
         # Retrieve Windows-specific downloads
+        # Load both the upstream ungoogled-chromium-windows/downloads.ini and our
+        # own root downloads.ini.  The root file only contains Thorium-specific
+        # entries (libjxl, node_modules); common toolchain entries live upstream.
         get_logger().info('Downloading required files...')
-        download_info_win = downloads.DownloadInfo([
-            _config_file('downloads.ini', _UNGOOGLED_WINDOWS_DIR)])
+        download_ini_paths = [_UNGOOGLED_WINDOWS_DIR / 'downloads.ini']
+        if (_ROOT_DIR / 'downloads.ini').exists():
+            download_ini_paths.append(_ROOT_DIR / 'downloads.ini')
+        download_info_win = downloads.DownloadInfo(download_ini_paths)
         downloads.retrieve_downloads(download_info_win, downloads_cache, None, True,
                                      args.disable_ssl_verification)
         try:
