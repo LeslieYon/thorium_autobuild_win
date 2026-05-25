@@ -42,7 +42,6 @@ jobs:
       arm: true
       simd: sse3
       cache-key: thorium-src-arm64-${{ github.sha }}
-      artifact-name: thorium-arm64
     secrets:
       GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
       GOOGLE_API_KEY_REMOTING: ${{ secrets['GOOGLE_API_KEY_REMOTING'] }}

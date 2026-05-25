@@ -43,7 +43,6 @@ jobs:
       x86: true
       simd: sse3
       cache-key: thorium-src-x86-${{ github.sha }}
-      artifact-name: thorium-x86
     secrets:
       GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
       GOOGLE_API_KEY_REMOTING: ${{ secrets['GOOGLE_API_KEY_REMOTING'] }}

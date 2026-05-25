@@ -21,9 +21,6 @@ on:
       cache-key:
         type: string
         required: true
-      artifact-name:
-        type: string
-        required: true
       extra-overlay-url:
         type: string
         required: false

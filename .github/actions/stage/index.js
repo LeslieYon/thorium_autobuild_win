@@ -33,12 +33,21 @@ async function run() {
     }
 
     const artifact = new DefaultArtifactClient();
-    const artifactName = simd !== 'avx2'
-        ? `build-artifact-${simd}`
-        : (x86 ? 'build-artifact-x86' : (arm ? 'build-artifact-arm' : 'build-artifact'));
-    const finalArtifactName = simd !== 'avx2'
-        ? `thorium-${simd}`
-        : (x86 ? 'thorium-x86' : (arm ? 'thorium-arm' : 'thorium'));
+    // Intermediate artifact (for multi-stage resume) and final artifact names.
+    let artifactName, finalArtifactName;
+    if (x86) {
+        artifactName = 'build-artifact-x86';
+        finalArtifactName = 'thorium-x86';
+    } else if (arm) {
+        artifactName = 'build-artifact-arm';
+        finalArtifactName = 'thorium-arm';
+    } else if (simd === 'avx2') {
+        artifactName = 'build-artifact';
+        finalArtifactName = 'thorium-avx2';
+    } else {
+        artifactName = `build-artifact-${simd}`;
+        finalArtifactName = `thorium-${simd}`;
+    }
 
     // If resuming from artifact, restore the build state
     if (fromArtifact) {

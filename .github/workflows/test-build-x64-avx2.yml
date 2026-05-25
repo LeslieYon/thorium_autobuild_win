@@ -54,7 +54,6 @@ jobs:
       python-version: ${{ inputs['python-version'] }}
       simd: avx2
       cache-key: thorium-src-test-x64-avx2-${{ github.sha }}
-      artifact-name: thorium-test-x64-avx2
       extra-overlay-url: ${{ inputs['extra-overlay-url'] }}
     secrets:
       GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
