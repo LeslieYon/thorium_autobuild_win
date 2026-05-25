@@ -1189,8 +1189,9 @@ def main():
         _ninja_common.append('out\\%s' % output_dir_name)
 
         ninja_phase1 = _ninja_common + ['chrome', 'chromedriver', 'clear_key_cdm']
+        # thorium_shell will lead to a significant increase in build time.
+        # ninja_phase1.append('thorium_shell')
         ninja_phase2 = _ninja_common + ['mini_installer']
-        # ninja_phase2.append('thorium_shell') # temporarily disabled, not finished yet...
         all_ninja_phases = [ninja_phase1, ninja_phase2]
 
         # Run ninja build in phases
