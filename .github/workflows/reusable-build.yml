@@ -66,7 +66,7 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
       - name: Restore prepared source
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: C:\tbw\build\src
           key: ${{ inputs.cache-key }}
