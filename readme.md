@@ -2,14 +2,14 @@
 
 Thorium Autobuild Win reorganizes Thorium's Chromium changes into a standard patch-and-overlay layout and provides a Windows build pipeline on top of the `ungoogled-chromium-windows` submodule.
 
-**Pinned Chromium version**: `138.0.7204.306` (see `chromium_version.txt`)
+**Pinned Chromium version**: `138.0.7204.310` (see `chromium_version.txt`)
 **Submodule**: `ungoogled-chromium-windows` at `138.0.7204.168-1.1` (1 commit ahead)
 
 ## Layout
 
 - `build.py` — main Windows build driver (supports `--simd`, `--ci`, `--x86`, `--arm64`)
 - `build_all.py` — local multi-variant helper (builds all 4 SIMD variants)
-- `package.py` — installer and archive packager
+- `package.py` — installer packager (ZIP archive creation disabled by default, enable with `--zip`)
 - `chromium_version.txt` — pinned Chromium base version
 - `revision.txt` — release revision number
 - `downloads.ini` — extra download dependencies (e.g. libjxl source)
@@ -73,10 +73,9 @@ build/thorium_sse3_<version>-<release>.<pkg>_installer_x64.exe
 build/thorium_sse4_<version>-<release>.<pkg>_installer_x64.exe
 build/thorium_avx_<version>-<release>.<pkg>_installer_x64.exe
 build/thorium_avx2_<version>-<release>.<pkg>_installer_x64.exe
-build/thorium_<...>_windows_x64.zip
 ```
 
-`package.py` also generates corresponding packages for x86 and ARM64 targets.
+`package.py` only produces the installer (`.exe`) by default. Use `package.py --zip` to additionally create a ZIP archive.
 
 ## CI/CD Workflows
 

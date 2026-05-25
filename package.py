@@ -7,7 +7,8 @@
 """
 Thorium packaging script for Microsoft Windows
 
-Creates installer and zip archive from build output.
+Creates installer from build output. ZIP archive creation is disabled
+by default (enable with --zip).
 Supports SIMD variant naming (sse3, sse4, avx, avx2).
 """
 
@@ -128,6 +129,10 @@ def main():
         default=None,
         help='Build output directory (relative to build/src/out/). '
              'Auto-resolved from --simd if not specified.')
+    parser.add_argument(
+        '--zip',
+        action='store_true', default=False,
+        help='Enable ZIP archive creation (disabled by default).')
     args = parser.parse_args()
 
     # Resolve build output directory
@@ -174,39 +179,40 @@ def main():
     else:
         print('Warning: {} not found'.format(mini_installer_exe_name))
 
-    # Get timestamp
-    timestamp = None
-    try:
-        lastchange_path = _ROOT_DIR / 'build/src/build/util/LASTCHANGE.committime'
-        with open(lastchange_path, 'r') as ct:
-            timestamp = int(ct.read())
-    except (FileNotFoundError, ValueError):
-        pass
+    # Create zip archive (disabled by default, enable with --zip)
+    if args.zip:
+        # Get timestamp
+        timestamp = None
+        try:
+            lastchange_path = _ROOT_DIR / 'build/src/build/util/LASTCHANGE.committime'
+            with open(lastchange_path, 'r') as ct:
+                timestamp = int(ct.read())
+        except (FileNotFoundError, ValueError):
+            pass
 
-    # Create zip archive
-    output_zip = dest_dir / 'thorium_{simd}_{ver}-{rel}.{pkg}_windows_{cpu}.zip'.format(
-        simd=simd_variant.lower(),
-        ver=chromium_version,
-        rel=release_revision,
-        pkg=thorium_revision,
-        cpu=target_cpu)
+        output_zip = dest_dir / 'thorium_{simd}_{ver}-{rel}.{pkg}_windows_{cpu}.zip'.format(
+            simd=simd_variant.lower(),
+            ver=chromium_version,
+            rel=release_revision,
+            pkg=thorium_revision,
+            cpu=target_cpu)
 
-    excluded_files = set([
-        Path(mini_installer_exe_name),
-        Path('mini_installer_exe_version.rc'),
-        Path('setup.exe'),
-        Path('chrome.packed.7z'),
-    ])
+        excluded_files = set([
+            Path(mini_installer_exe_name),
+            Path('mini_installer_exe_version.rc'),
+            Path('setup.exe'),
+            Path('chrome.packed.7z'),
+        ])
 
-    try:
-        files_generator = filescfg.filescfg_generator(
-            _ROOT_DIR / 'build/src/chrome/tools/build/win/FILES.cfg',
-            build_outputs, args.cpu_arch, excluded_files)
-        filescfg.create_archive(
-            files_generator, tuple(), build_outputs, output_zip, timestamp)
-        print('Created archive:', output_zip)
-    except Exception as e:
-        print('Error creating archive:', e)
+        try:
+            files_generator = filescfg.filescfg_generator(
+                _ROOT_DIR / 'build/src/chrome/tools/build/win/FILES.cfg',
+                build_outputs, args.cpu_arch, excluded_files)
+            filescfg.create_archive(
+                files_generator, tuple(), build_outputs, output_zip, timestamp)
+            print('Created archive:', output_zip)
+        except Exception as e:
+            print('Error creating archive:', e)
 
     print('Packaging completed.')
 
