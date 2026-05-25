@@ -754,6 +754,12 @@ def _prepare_and_apply_api_keys_patch(source_tree, patch_bin_path):
         )
 
     if not has_any_key:
+        if output_path.exists():
+            get_logger().warning(
+                'No Google API keys found but %s already exists;\n'
+                '  skipping regeneration to preserve existing patch.',
+                output_path.name)
+            return
         get_logger().warning(
             'No Google API keys found. Patch entries will be empty;\n'
             '  online features will be limited.')

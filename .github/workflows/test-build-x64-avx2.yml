@@ -46,6 +46,13 @@ jobs:
         working-directory: C:\tbw
         env:
           THORIUM_EXTRA_OVERLAY_URL: ${{ inputs['extra-overlay-url'] }}
+          GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
+          GOOGLE_API_KEY_REMOTING: ${{ secrets['GOOGLE_API_KEY_REMOTING'] }}
+          GOOGLE_API_KEY_SODA: ${{ secrets['GOOGLE_API_KEY_SODA'] }}
+          GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}
+          GOOGLE_CLIENT_ID_REMOTING: ${{ secrets['GOOGLE_CLIENT_ID_REMOTING'] }}
+          GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets['GOOGLE_DEFAULT_CLIENT_SECRET'] }}
+          GOOGLE_CLIENT_SECRET_REMOTING: ${{ secrets['GOOGLE_CLIENT_SECRET_REMOTING'] }}
 
   build-avx2:
     needs: prepare
