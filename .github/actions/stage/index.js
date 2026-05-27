@@ -41,9 +41,6 @@ async function run() {
     } else if (arm) {
         artifactName = 'build-artifact-arm';
         finalArtifactName = 'thorium-arm';
-    } else if (simd === 'avx2') {
-        artifactName = 'build-artifact';
-        finalArtifactName = 'thorium-avx2';
     } else {
         artifactName = `build-artifact-${simd}`;
         finalArtifactName = `thorium-${simd}`;
