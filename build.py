@@ -769,20 +769,93 @@ def _prepare_and_apply_api_keys_patch(source_tree, patch_bin_path):
     get_logger().info('API keys patch generated: %s', output_path.name)
 
 
-def _apply_all_patches(source_tree, patch_bin_path):
+def _inject_widevine_version(is_x86=False, is_arm=False):
+    """
+    Inject the Widevine CDM version from manifest.json into widevine_cdm_version.h.
+
+    Reads the version string from the Widevine manifest.json for the target
+    architecture (x64, x86, arm64) and updates the overlay copy of
+    widevine_cdm_version.h so the version is baked into the build.
+
+    This runs BEFORE _apply_source_overrides so the modified header file
+    gets copied to the source tree along with the rest of the overlay.
+    """
+    # Determine architecture
+    if is_arm:
+        arch = 'arm64'
+    elif is_x86:
+        arch = 'x86'
+    else:
+        arch = 'x64'
+
+    # Path to manifest.json in overlay
+    manifest_path = (
+        _OVERLAY_DIR / 'third_party' / 'widevine' / 'cdm' / 'win' / arch / 'manifest.json'
+    )
+    if not manifest_path.exists():
+        get_logger().warning(
+            'Widevine manifest not found for %s at %s. '
+            'WIDEVINE_CDM_VERSION_STRING will remain as default.',
+            arch, manifest_path)
+        return
+
+    # Read version from manifest
+    try:
+        import json
+        manifest = json.loads(manifest_path.read_text(encoding=ENCODING))
+        version = manifest.get('version', '')
+        if not version:
+            get_logger().warning(
+                'Widevine manifest for %s has no version field.', arch)
+            return
+    except Exception as exc:
+        get_logger().warning(
+            'Failed to read Widevine manifest for %s: %s', arch, exc)
+        return
+
+    # Update the overlay header file
+    header_path = _OVERLAY_DIR / 'third_party' / 'widevine' / 'cdm' / 'widevine_cdm_version.h'
+    if not header_path.exists():
+        get_logger().warning(
+            'Widevine CDM version header not found at %s', header_path)
+        return
+
+    try:
+        content = header_path.read_text(encoding=ENCODING)
+        old_define = '#define WIDEVINE_CDM_VERSION_STRING "undefined"'
+        new_define = '#define WIDEVINE_CDM_VERSION_STRING "' + version + '"'
+        if old_define not in content:
+            get_logger().warning(
+                'Unexpected content in %s: expected default define not found.',
+                header_path)
+            return
+        content = content.replace(old_define, new_define)
+        header_path.write_text(content, encoding=ENCODING)
+        get_logger().info(
+            'Injected Widevine version %s (%s) into %s',
+            version, arch, header_path.relative_to(_ROOT_DIR))
+    except Exception as exc:
+        get_logger().warning(
+            'Failed to update Widevine CDM version header: %s', exc)
+
+
+def _apply_all_patches(source_tree, patch_bin_path, is_x86=False, is_arm=False):
     """Apply all Thorium-related patches and brand string sync.
 
     This is the single call site for the complete patch chain:
       1. External patches (from series.external — ungoogled-windows, cromite, etc.)
-      2. Source overrides from overlay/
-      3. Safe browsing auto-extraction
-      4. Thorium-specific patches (from patches/series)
-      5. Brand string sync (GRD/GRDP -> XTB)
+      2. Widevine CDM version injection (from overlay manifest)
+      3. Source overrides from overlay/
+      4. Safe browsing auto-extraction
+      5. Thorium-specific patches (from patches/series)
+      6. Brand string sync (GRD/GRDP -> XTB)
 
     Used by both --apply-patches-only and the patching step of --prepare-only.
     """
 
     _apply_external_patches(source_tree, patch_bin_path=patch_bin_path)
+
+    _inject_widevine_version(is_x86=is_x86, is_arm=is_arm)
 
     _apply_source_overrides(source_tree)
 
@@ -1032,7 +1105,9 @@ def main():
         )
         _apply_all_patches(
             source_tree,
-            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+            patch_bin_path=(source_tree / _PATCH_BIN_RELPATH),
+            is_x86=args.x86,
+            is_arm=args.arm,
         )
     elif args.gn_only or args.build_only:
         # Skip source preparation when in stage mode
@@ -1108,7 +1183,9 @@ def main():
             )
             _apply_all_patches(
                 source_tree,
-                patch_bin_path=(source_tree / _PATCH_BIN_RELPATH)
+                patch_bin_path=(source_tree / _PATCH_BIN_RELPATH),
+                is_x86=args.x86,
+                is_arm=args.arm,
             )
 
     # Apply extra overlay if URL is provided (via THORIUM_EXTRA_OVERLAY_URL
