@@ -1070,6 +1070,12 @@ def main():
     output_dir_name = 'thorium_' + args.simd
     output_dir = source_tree / 'out' / output_dir_name
 
+    # Track how the Chromium source was obtained ('tarball' or 'git'); used
+    # downstream in GN gen to decide PGO phase flags.  When source prep is
+    # skipped (--apply-patches-only / --gn-only / --build-only), falls back
+    # to args.tarball as a hint from the initial run.
+    source_method = None
+
     # Windows MAX_PATH safety check: the longest known generated file subpath
     # is 184 characters (e.g. the Blink v8_union_*_videoframe.cc path under
     # gen/). If output_dir + 184 would exceed 255 (leaving a 5-char margin
@@ -1123,8 +1129,8 @@ def main():
             ExtractorEnum.WINRAR: args.winrar_path,
         }
 
-        # Prepare source folder
-        _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_version, args)
+        # Prepare source folder — record how we obtained it ('tarball' or 'git')
+        source_method = _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_version, args)
 
         # Retrieve Windows-specific downloads
         # Load both the upstream ungoogled-chromium-windows/downloads.ini and our
@@ -1230,7 +1236,10 @@ def main():
                 windows_flags = re.sub(r'target_cpu="x64"', 'target_cpu="arm64"', windows_flags)
                 arm64_flags = _read_flags_file(_ROOT_DIR / 'flags.windows.arm64.gn')
                 windows_flags += '\n' + arm64_flags
-            if args.tarball:
+            # When source was obtained via tarball (or hinted by --tarball for
+            # incremental modes where source prep was skipped), disable PGO
+            # because profiling data is not bundled with the tarball.
+            if source_method == 'tarball' or (source_method is None and args.tarball):
                 windows_flags += '\nchrome_pgo_phase=0\n'
             gn_flags += windows_flags
             
