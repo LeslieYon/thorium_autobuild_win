@@ -40,7 +40,7 @@ The build scripts read the Chromium version from `chromium_version.txt` and use 
 ### Build Flow
 
 ```
-Chromium source (tarball / git clone)
+Chromium source (git clone)
   → Read & lock chromium_version.txt
   → Download Windows dependencies
   → Apply ungoogled-chromium-windows/pruning.list
@@ -54,8 +54,6 @@ Chromium source (tarball / git clone)
       • Phase 2: synchronise XTB translations with new IDs
   → GN gen + Ninja build
 ```
-
-In CI, `build.py --ci` tries the official Chromium source tarball first for speed. If that tarball is missing or cannot be retrieved for the pinned version, it automatically falls back to cloning the matching Chromium git tag.
 
 ### SIMD Variants (x64)
 

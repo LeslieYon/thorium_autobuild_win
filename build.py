@@ -339,46 +339,10 @@ def _clone_chromium_source(source_tree, chromium_version, args):
         _checkout_chromium_version(source_tree, chromium_version)
 
 
-def _download_chromium_tarball(source_tree, downloads_cache, extractors, chromium_version,
-                               disable_ssl_verification):
-    """Download and unpack the Chromium tarball into the source tree."""
-    get_logger().info('Downloading Chromium tarball...')
-    download_info = downloads.DownloadInfo([_UNGOOGLED_CHROMIUM_DIR / 'downloads.ini'])
-    downloads.retrieve_downloads(download_info, downloads_cache, None, True,
-                                 disable_ssl_verification)
-    downloads.check_downloads(download_info, downloads_cache, None)
-
-    get_logger().info('Unpacking Chromium tarball...')
-    downloads.unpack_downloads(download_info, downloads_cache, None,
-                               source_tree, extractors)
-    if chromium_version:
-        get_logger().info('Using tarball version. Expected Chromium version: %s', chromium_version)
-
-
-def _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_version, args):
-    """Prepare Chromium source using tarball first when appropriate, then fall back to git."""
-    use_tarball = args.tarball or (args.ci and chromium_version)
-
-    if use_tarball:
-        try:
-            _download_chromium_tarball(source_tree, downloads_cache, extractors, chromium_version,
-                                       args.disable_ssl_verification)
-            return 'tarball'
-        except downloads.HashMismatchError as exc:
-            if args.tarball:
-                get_logger().error('File checksum does not match: %s', exc)
-                sys.exit(1)
-            get_logger().warning('Chromium tarball checksum failed; falling back to git clone: %s', exc)
-        except Exception as exc:  # noqa: BLE001 - fall back to git clone in CI when tarball is unavailable
-            if args.tarball:
-                raise
-            get_logger().warning('Chromium tarball is unavailable; falling back to git clone: %s', exc)
-
-        _reset_source_tree(source_tree)
-
+def _prepare_chromium_source(source_tree, chromium_version, args):
+    """Clone Chromium source from git."""
     get_logger().info('Cloning Chromium source from git...')
     _clone_chromium_source(source_tree, chromium_version, args)
-    return 'git'
 
 
 def _apply_external_patches(source_tree, patch_bin_path):
@@ -1011,7 +975,7 @@ def main():
         help='Number of CPU threads to use for compiling')
     parser.add_argument(
         '--ci', action='store_true',
-        help='CI mode: prefer tarball source preparation, fall back to git clone when needed')
+        help='CI mode: use staged build with timeout handling, run packaging after build')
     parser.add_argument(
         '--x86', action='store_true',
         help='Build for 32-bit x86')
@@ -1021,9 +985,6 @@ def main():
     parser.add_argument(
         '--simd', choices=('sse3', 'sse4', 'avx', 'avx2'), default='avx2',
         help='SIMD instruction set variant to build for (default: avx2)')
-    parser.add_argument(
-        '--tarball', action='store_true',
-        help='Use Chromium tarball instead of git clone')
     parser.add_argument(
         '--prepare-only', action='store_true',
         help='Only prepare source (download, patch, etc.), skip build')
@@ -1124,8 +1085,8 @@ def main():
             ExtractorEnum.WINRAR: args.winrar_path,
         }
 
-        # Prepare source folder
-        _prepare_chromium_source(source_tree, downloads_cache, extractors, chromium_version, args)
+        # Prepare Chromium source from git
+        _prepare_chromium_source(source_tree, chromium_version, args)
 
         # Retrieve Windows-specific downloads
         # Load both the upstream ungoogled-chromium-windows/downloads.ini and our
@@ -1231,8 +1192,6 @@ def main():
                 windows_flags = re.sub(r'target_cpu="x64"', 'target_cpu="arm64"', windows_flags)
                 arm64_flags = _read_flags_file(_ROOT_DIR / 'flags.windows.arm64.gn')
                 windows_flags += '\n' + arm64_flags
-            if args.tarball:
-                windows_flags += '\nchrome_pgo_phase=0\n'
             gn_flags += windows_flags
             
             (output_dir / 'args.gn').write_text(gn_flags, encoding=ENCODING)
