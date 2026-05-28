@@ -118,9 +118,9 @@
  def dev_list():
    packages = [
 +      "advancecomp",
+       "autoconf",
        "binutils",
        "bison",
-       "bzip2",
 @@ -223,6 +224,7 @@
        "flex",
        "git-core",
@@ -129,7 +129,7 @@
        "libasound2-dev",
        "libatspi2.0-dev",
        "libbrlapi-dev",
-@@ -264,14 +266,17 @@
+@@ -264,15 +266,18 @@
        "lighttpd",
        "locales",
        "openbox",
@@ -139,6 +139,7 @@
        "perl",
        "pkgconf",
 +      "pngcrush",
+       "ripgrep",
        "rpm",
        "ruby",
        "uuid-dev",
@@ -194,17 +195,17 @@
                      self._compiler_driver_args.append(arg)
  
 # VS toolchain hash update
---- a/build/vs_toolchain.py
-+++ b/build/vs_toolchain.py
-@@ -59,7 +61,7 @@
- # * docs/windows_build_instructions.md
- #   Make sure any version numbers in the documentation match the code.
- #
--TOOLCHAIN_HASH = '68a20d6dee'
-+TOOLCHAIN_HASH = 'b3d793284e'
- SDK_VERSION = '10.0.26100.0'
- 
- # Visual Studio versions are listed in descending order of priority.
+# --- a/build/vs_toolchain.py
+# +++ b/build/vs_toolchain.py
+# @@ -59,7 +61,7 @@
+#  # * docs/windows_build_instructions.md
+#  #   Make sure any version numbers in the documentation match the code.
+#  #
+# -TOOLCHAIN_HASH = '68a20d6dee'
+# +TOOLCHAIN_HASH = 'b3d793284e'
+#  SDK_VERSION = '10.0.26100.0'
+#  
+#  # Visual Studio versions are listed in descending order of priority.
 # Thorium flag entries in browser build
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
@@ -220,18 +221,14 @@
 # Linux installer compiler_opt config
 --- a/chrome/installer/linux/BUILD.gn
 +++ b/chrome/installer/linux/BUILD.gn
-@@ -1,9 +1,10 @@
--# Copyright 2015 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
+@@ -4,6 +4,7 @@
  
  import("//build/config/c++/c++.gni")
  import("//build/config/chrome_build.gni")
 +import("//build/config/compiler_opt.gni")
- import("//build/config/features.gni")
  import("//build/config/sanitizers/sanitizers.gni")
  import("//build/config/sysroot.gni")
+ import("//build/linux/strip_binary.gni")
 @@ -24,13 +25,34 @@
  declare_args() {
    # Enables checks that ensure the packages are installable on all supported
@@ -269,7 +266,7 @@
    "$root_out_dir/chrome_crashpad_handler",
    "$root_out_dir/chrome_management_service",
    "$root_out_dir/chrome_sandbox",
-@@ -161,7 +183,7 @@
+@@ -170,7 +192,7 @@
  }
  
  strip_binary("strip_chrome_binary") {
@@ -278,7 +275,7 @@
    deps = [ "//chrome" ]
  }
  
-@@ -228,10 +250,7 @@
+@@ -237,10 +259,7 @@
  # is_component_build=false before building this target.
  group("linux") {
    deps = [
@@ -289,24 +286,16 @@
    ]
  }
  
-@@ -278,6 +297,7 @@
-     "debian/changelog.template",
-     "debian/control.template",
-     "debian/debian.menu",
-+    # "debian/manual_recommends",
-     "debian/postinst",
-     "debian/postrm",
-     "debian/prerm",
-@@ -334,7 +354,7 @@
+@@ -332,7 +351,7 @@
+ if (!is_chromeos) {
+   copy("rpm_packaging_files") {
      visibility = [ ":*" ]
-     sources = [
-       "rpm/build.sh",
--      "rpm/chrome.spec.template",
-+      "rpm/thorium.spec.template",
-     ]
+-    sources = [ "rpm/chrome.spec.template" ]
++    sources = [ "rpm/thorium.spec.template" ]
      outputs = [ "$root_out_dir/installer/rpm/{{source_file_part}}" ]
    }
-@@ -427,13 +447,11 @@
+ }
+@@ -424,13 +443,11 @@
  # channel:
  #   Name of the channel.
  template("linux_package") {
@@ -321,7 +310,7 @@
    }
  
    deb_target_name = "${target_name}_deb"
-@@ -461,8 +479,16 @@
+@@ -458,8 +475,16 @@
        assert(false, "Linux installer not configured for this architecture.")
      }
  
@@ -338,8 +327,8 @@
 +    outputs = [ "$root_out_dir/${package}_${chrome_version_full}${_deb_name_suffix}.deb" ]
  
      args = [
-       rebase_path("$root_out_dir/installer/debian/build.sh", root_build_dir),
-@@ -472,6 +498,8 @@
+       "-a",
+@@ -470,6 +495,8 @@
        invoker.channel,
        "-d",
        branding_path_component,
@@ -348,7 +337,7 @@
        "-o",
        rebase_path(root_out_dir, root_build_dir),
        "-s",
-@@ -501,7 +529,7 @@
+@@ -499,7 +526,7 @@
        } else if (current_cpu == "arm") {
          rpm_arch = "armhf"
        } else if (current_cpu == "arm64") {
@@ -357,7 +346,7 @@
        } else if (current_cpu == "mipsel") {
          rpm_arch = "mipsel"
        } else if (current_cpu == "mips64el") {
-@@ -514,8 +542,16 @@
+@@ -512,8 +539,16 @@
          assert(false, "Linux installer not configured for this architecture.")
        }
  
@@ -374,8 +363,8 @@
 +      outputs = [ "$root_out_dir/${package}_${chrome_version_full}${_rpm_name_suffix}.rpm" ]
  
        args = [
-         rebase_path("$root_out_dir/installer/rpm/build.sh", root_build_dir),
-@@ -525,6 +561,8 @@
+         "-a",
+@@ -524,6 +559,8 @@
          invoker.channel,
          "-d",
          branding_path_component,
@@ -384,7 +373,7 @@
          "-o",
          rebase_path(root_out_dir, root_build_dir),
          "-t",
-@@ -552,12 +590,3 @@
+@@ -551,12 +588,3 @@
  linux_package("stable") {
    channel = "stable"
  }
@@ -397,7 +386,6 @@
 -linux_package("canary") {
 -  channel = "canary"
 -}
-# Vector icons build config
 --- a/components/vector_icons/BUILD.gn
 +++ b/components/vector_icons/BUILD.gn
 @@ -1,8 +1,9 @@
@@ -419,15 +407,15 @@
        "business.icon",
        "business_chrome_refresh.icon",
        "call.icon",
-@@ -103,6 +105,7 @@
-       "fingerprint_off.icon",
+@@ -105,6 +107,7 @@
+       "flight.icon",
        "folder.icon",
        "folder_chrome_refresh.icon",
 +      "folder_managed.icon",
        "folder_managed_refresh.icon",
        "folder_open.icon",
        "font_download.icon",
-@@ -129,6 +132,7 @@
+@@ -131,6 +134,7 @@
        "image_search.icon",
        "info_outline.icon",
        "info_refresh.icon",
@@ -435,7 +423,7 @@
        "insert_drive_file_outline.icon",
        "install_desktop.icon",
        "install_desktop_off.icon",
-@@ -198,6 +202,7 @@
+@@ -204,6 +208,7 @@
        "receipt_long.icon",
        "reload.icon",
        "reload_chrome_refresh.icon",
@@ -443,7 +431,7 @@
        "replay.icon",
        "replay_10.icon",
        "router.icon",
-@@ -278,6 +283,14 @@
+@@ -289,6 +294,14 @@
        "work.icon",
      ]
  
@@ -458,7 +446,6 @@
      if (is_chromeos) {
        sources += [
          "notification_download.icon",
-# Linux sandbox PIE flags
 --- a/sandbox/linux/BUILD.gn
 +++ b/sandbox/linux/BUILD.gn
 @@ -295,6 +295,9 @@
@@ -560,16 +547,15 @@
 # Widevine version update
 --- a/third_party/widevine/README.chromium
 +++ b/third_party/widevine/README.chromium
-@@ -1,15 +1,18 @@
+@@ -1,16 +1,18 @@
  Name: Widevine Content Decryption Module
  Short Name: Widevine CDM
  URL: https://www.widevine.com
 -Version: N/A
--Revision: DEPS
++Version: 4.10.3050.0
+ Revision: c96f53fde16f37b1a6cc2b6c468af3c4a364f426
+ Update Mechanism: Manual
 -License: Commercial
-+Version: 4.10.2830.0
-+Date: 2024-11-13
-+Revision: 6ae793a606aeed0d0f1c6f688117653710137744
 +License: By exception only
  License File: LICENSE
  Security Critical: yes
@@ -583,3 +569,4 @@
 +
 +Local Modifications:
 +Prebuilt binaries for bundle_widevine_cdm = true
+

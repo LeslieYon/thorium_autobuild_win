@@ -8,9 +8,9 @@
  
 +import("//build/config/compiler_opt.gni")
  import("//build/config/compiler/compiler.gni")
- import("//build/config/features.gni")
  import("//build/config/python.gni")
-@@ -36,7 +37,33 @@ declare_args() {
+ import("//build/config/ui.gni")
+@@ -35,7 +36,33 @@
  
  config("mini_installer_compiler_flags") {
    # Disable buffer security checking.
@@ -45,7 +45,7 @@
  }
  
  source_set("lib") {
-@@ -69,13 +96,24 @@ source_set("lib") {
+@@ -68,7 +95,10 @@
      "write_to_disk.h",
    ]
  
@@ -57,7 +57,8 @@
  
    # Initialization may insert unexpected memset calls.
    configs -= [ "//build/config/compiler:default_init_stack_vars" ]
-   configs += [ ":mini_installer_compiler_flags" ]
+@@ -78,6 +108,14 @@
+   use_libcxx_modules = false
  }
  
 +process_version("mini_installer_version") {
@@ -71,7 +72,7 @@
  process_version_rc_template("version") {
    template_file = "mini_installer_exe_version.rc.version"
    output = "$root_out_dir/mini_installer_exe_version.rc"
-@@ -145,7 +183,7 @@ action("mini_installer_archive") {
+@@ -147,7 +185,7 @@
    inputs = [
      "$root_out_dir/chrome.dll",
      "$root_out_dir/chrome_elf.dll",
@@ -80,14 +81,8 @@
      "$root_out_dir/locales/en-US.pak",
      "$root_out_dir/setup.exe",
      "//chrome/tools/build/win/makecab.py",
-@@ -179,12 +217,12 @@ action("mini_installer_archive") {
+@@ -181,7 +219,7 @@
      build_timestamp,
- 
-     # Optional arguments to generate diff installer.
--    #'--last_chrome_installer=C:/Temp/base',
-+    #'--last_chrome_installer=C:/src/chromium/src/out/thorium',
-     #'--setup_exe_format=DIFF',
-     #'--diff_algorithm=ZUCCHINI',
  
      # Optional argument for verbose archiving output.
 -    #"--verbose",
@@ -95,7 +90,7 @@
    ]
  
    deps = [
-@@ -266,6 +304,11 @@ copy("copy_signing") {
+@@ -263,6 +301,11 @@
    outputs = [ "$root_out_dir/signing/mini_installer/{{source_file_part}}" ]
  }
  
@@ -107,7 +102,7 @@
  # Generates a mini_installer executable containing the resources provided in the
  # caller's `rc_file`.
  template("generate_mini_installer") {
-@@ -290,7 +333,7 @@ template("generate_mini_installer") {
+@@ -287,7 +330,7 @@
        "/NXCOMPAT",
      ]
  
@@ -116,7 +111,7 @@
  
      deps = [
        ":copy_signing",
-@@ -315,14 +358,73 @@ template("generate_mini_installer") {
+@@ -312,14 +355,73 @@
      # But in asan and clang profiling builds we need to link against a runtime
      # library, which in turn depends on the standard library and relies on it
      # to run initializers.
@@ -126,11 +121,10 @@
        ldflags += [ "/ENTRY:MainEntryPoint" ]
 +    } else {
 +      libs += [ "kernel32.lib", "user32.lib", "comctl32.lib", "shell32.lib", ]
-     }
-   }
- }
- 
--generate_mini_installer("mini_installer") {
++    }
++  }
++}
++
 +group("mini_installer") {
 +  deps = []
 +  if (use_sse2 && !use_sse3) {
@@ -140,7 +134,7 @@
 +      deps += [ ":thorium_WIN32_SSE3_mini_installer"  ]
 +    } else if (current_cpu == "x64") {
 +      deps += [ ":thorium_SSE3_mini_installer" ]
-+    }
+     }
 +  } else if (use_sse41 && !use_sse42) {
 +    deps += [ ":thorium_SSE4_mini_installer" ]
 +  } else if (use_sse42 && !use_avx) {
@@ -153,9 +147,10 @@
 +    deps += [ ":thorium_AVX512_mini_installer" ]
 +  } else {
 +    deps += [ ":thorium_mini_installer" ]
-+  }
-+}
-+
+   }
+ }
+ 
+-generate_mini_installer("mini_installer") {
 +generate_mini_installer("thorium_WIN32_SSE2_mini_installer") {
 +  rc_file = packed_files_rc_file
 +}
@@ -192,7 +187,7 @@
    rc_file = packed_files_rc_file
  }
  
-@@ -354,14 +456,14 @@ if (!(is_component_build && is_debug && target_cpu == "x86") &&
+@@ -351,14 +453,14 @@
              root_out_dir)
      inputs = [
        "$root_out_dir/" + alternate_version_generator_rel_path,
@@ -209,7 +204,7 @@
        "--out",
        "$target_name.exe",
        "--path_7za",
-@@ -369,6 +471,7 @@ if (!(is_component_build && is_debug && target_cpu == "x86") &&
+@@ -366,6 +468,7 @@
      ]
      deps = [
        ":mini_installer",
@@ -219,7 +214,7 @@
    }
 --- a/chrome/installer/mini_installer/configuration.cc
 +++ b/chrome/installer/mini_installer/configuration.cc
-@@ -65,6 +65,8 @@ void Configuration::Clear() {
+@@ -64,6 +64,8 @@
    command_line_ = nullptr;
    argument_count_ = 0;
    is_system_level_ = false;
@@ -227,8 +222,8 @@
 +  enable_logging_ = false;
    has_invalid_switch_ = false;
    should_delete_extracted_files_ = true;
-   previous_version_ = nullptr;
-@@ -80,20 +82,27 @@ bool Configuration::ParseCommandLine(const wchar_t* command_line) {
+ }
+@@ -78,20 +80,27 @@
      return false;
  
    for (int i = 1; i < argument_count_; ++i) {
@@ -265,7 +260,7 @@
    if (!is_system_level_)
 --- a/chrome/installer/mini_installer/configuration.h
 +++ b/chrome/installer/mini_installer/configuration.h
-@@ -38,9 +38,16 @@ class Configuration {
+@@ -36,9 +36,16 @@
    // GoogleUpdateIsMachine=1 is set in the process's environment.
    bool is_system_level() const { return is_system_level_; }
  
@@ -279,10 +274,10 @@
 +  // Whether to enable console logging in mini_installer (separate from base:logging in setup.exe)
 +  bool enable_logging() const { return enable_logging_; }
 +
-   // Returns the previous version contained in the image's resource.
-   const wchar_t* previous_version() const { return previous_version_; }
- 
-@@ -60,6 +67,8 @@ class Configuration {
+   // Returns true if extracted files should be deleted prior to exit.
+   bool should_delete_extracted_files() const {
+     return should_delete_extracted_files_;
+@@ -54,6 +61,8 @@
    const wchar_t* command_line_;
    int argument_count_;
    bool is_system_level_;
@@ -290,15 +285,9 @@
 +  bool enable_logging_;
    bool has_invalid_switch_;
    bool should_delete_extracted_files_;
-   const wchar_t* previous_version_;
+ 
 --- a/chrome/installer/mini_installer/mini_installer.cc
 +++ b/chrome/installer/mini_installer/mini_installer.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
 @@ -27,6 +27,8 @@
  #include "chrome/installer/mini_installer/mini_installer.h"
  
@@ -570,7 +559,7 @@
  
    // Parse configuration from the command line and resources.
 -  Configuration configuration;
--  if (!configuration.Initialize(module)) {
+-  if (!configuration.Initialize()) {
 +  if (!conf.Initialize(hModule)) {
      return ProcessExitResult(GENERIC_INITIALIZATION_FAILURE, ::GetLastError());
    }
@@ -695,21 +684,15 @@
  /////////////////////////////////////////////////////////////////////////////
 --- a/chrome/installer/mini_installer/mini_installer_constants.cc
 +++ b/chrome/installer/mini_installer/mini_installer_constants.cc
-@@ -1,4 +1,4 @@
--// Copyright 2014 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
-@@ -24,7 +24,7 @@ const wchar_t kCmdNewSetupExe[] = L"new-setup-exe";
- const wchar_t kCmdPreviousVersion[] = L"previous-version";
+@@ -21,7 +21,7 @@ const wchar_t kCmdInstallArchive[] = L"install-archive";
+ const wchar_t kCmdUncompressedArchive[] = L"uncompressed-archive";
  
  // Temp directory prefix that this process creates.
 -const wchar_t kTempPrefix[] = L"CR_";
 +const wchar_t kTempPrefix[] = L"TH_";
- // ap value suffix to force subsequent updates to use the full rather than
- // differential updater.
- const wchar_t kFullInstallerSuffix[] = L"-full";
+ 
+ // The resource types that would be unpacked from the mini installer.
+ // Uncompressed binary.
 @@ -80,12 +80,12 @@ const wchar_t kCleanupRegistryKey[] = L"Software\\Chrome for Testing";
  #else
  // The path to the key containing each app's Clients registry key.
@@ -876,7 +859,7 @@
  #include "chrome/install_static/buildflags.h"
  #include "chrome/install_static/install_details.h"
  #include "chrome/install_static/install_modes.h"
-@@ -79,6 +82,10 @@ namespace installer {
+@@ -79,6 +82,10 @@
  
  namespace {
  
@@ -887,7 +870,7 @@
  void AddInstallerCopyTasks(const InstallParams& install_params,
                             WorkItemList* install_list) {
    DCHECK(install_list);
-@@ -218,6 +225,46 @@ void AddDeleteUninstallEntryForMSIWorkItems(
+@@ -198,6 +205,46 @@
    delete_reg_key->set_best_effort(true);
  }
  
@@ -934,7 +917,7 @@
  // Adds Chrome specific install work items to |install_list|.
  void AddChromeWorkItems(const InstallParams& install_params,
                          WorkItemList* install_list) {
-@@ -230,6 +277,11 @@ void AddChromeWorkItems(const InstallParams& install_params,
+@@ -209,6 +256,11 @@
  
    const base::FilePath& target_path = installer_state.target_path();
  
@@ -944,9 +927,9 @@
 +    ClosePreviousChromeProcess(target_path);
 +
    if (current_version.IsValid()) {
+     // TODO(crbug.com/441478433): Delete this cleanup some time in 2027.
      // Delete the archive from an existing install to save some disk space.
-     base::FilePath old_installer_dir(
-@@ -259,6 +311,14 @@ void AddChromeWorkItems(const InstallParams& install_params,
+@@ -234,6 +286,14 @@
                                      temp_path, WorkItem::NEW_NAME_IF_IN_USE,
                                      new_chrome_exe);
  
@@ -961,7 +944,7 @@
    // Install kVisualElementsManifest if it is present in |src_path|. No need to
    // make this a conditional work item as if the file is not there now, it will
    // never be.
-@@ -297,6 +357,7 @@ void AddChromeWorkItems(const InstallParams& install_params,
+@@ -272,6 +332,7 @@
        ->set_best_effort(true);
  }
  
@@ -969,7 +952,7 @@
  // Adds work items to register the Elevation Service with Windows. Only for
  // system level installs.
  void AddElevationServiceWorkItems(const base::FilePath& elevation_service_path,
-@@ -382,7 +443,6 @@ void AddTracingServiceWorkItems(const InstallationState& original_state,
+@@ -356,7 +417,6 @@
    }
  }
  
@@ -977,16 +960,16 @@
  // Adds work items to add the "store-dmtoken" command to Chrome's version key.
  // This method is a no-op if this is anything other than system-level Chrome.
  // The command is used when enrolling Chrome browser instances into enterprise
-@@ -982,7 +1042,7 @@ void AddInstallWorkItems(const InstallParams& install_params,
-                                      install_list);
-   AddEnterpriseDeviceTrustWorkItems(installer_state, setup_path, new_version,
+@@ -980,7 +1040,7 @@
                                      install_list);
+   AddPlatformExperienceHelperWorkItems(installer_state, new_version,
+                                        install_list);
 -#endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING
 +#endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
    AddFirewallRulesWorkItems(installer_state, !current_version.IsValid(),
                              install_list);
  
-@@ -992,10 +1052,12 @@ void AddInstallWorkItems(const InstallParams& install_params,
+@@ -990,10 +1050,12 @@
        installer_state.root_key(),
        GetNotificationHelperPath(target_path, new_version), install_list);
  
@@ -999,7 +982,7 @@
  
    AddUpdateDowngradeVersionItem(installer_state.root_key(), current_version,
                                  new_version, install_list);
-@@ -1275,10 +1337,12 @@ void AddFinalizeUpdateWorkItems(const InstallationState& original_state,
+@@ -1273,10 +1335,12 @@
    AddWerHelperRegistration(installer_state.root_key(),
                             GetWerHelperPath(target_path, new_version), list);
  
@@ -1120,13 +1103,7 @@
  
    base::CommandLine cmd(application_path.Append(kChromeExe));
    cmd.AppendArguments(options, false);
-@@ -44,11 +55,13 @@ bool LaunchChromeAndWait(const base::FilePath& application_path,
-   if (!chrome_handle.IsValid()) {
-     PLOG(ERROR) << "Failed to launch: " << cmd.GetCommandLineString();
-     return false;
-+  } else {
-+    PLOG(ERROR) << "Successfully launched " << cmd.GetCommandLineString();
-   }
+@@ -62,7 +62,7 @@ bool LaunchChromeAndWait(const base::FilePath& application_path,
  
    int ret = STILL_ACTIVE;
    if (!chrome_handle.WaitForExit(&ret)) {
@@ -1137,12 +1114,6 @@
    DCHECK_NE(ret, static_cast<int>(STILL_ACTIVE));
 --- a/chrome/installer/setup/setup_util.cc
 +++ b/chrome/installer/setup/setup_util.cc
-@@ -1,4 +1,4 @@
--// Copyright 2012 The Chromium Authors
-+// Copyright 2026 The Chromium Authors, Alex313031, and Shane Fournier
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- //
 @@ -308,7 +308,7 @@ bool ContainsUnsupportedSwitch(const base::CommandLine& cmd_line) {
  
  bool IsProcessorSupported() {
@@ -1231,27 +1202,30 @@
  }  // namespace installer
  
  #endif  // CHROME_INSTALLER_UTIL_INITIAL_PREFERENCES_H_
---- a/chrome/installer/util/initial_preferences_constants.cc
-+++ b/chrome/installer/util/initial_preferences_constants.cc
-@@ -31,6 +31,7 @@ const char kSystemLevel[] = "system_level";
- const char kVerboseLogging[] = "verbose_logging";
- const char kExtensionsBlock[] = "extensions.settings";
- const char kAllowDowngrade[] = "allow_downgrade";
-+const char kDebugMode[] = "debug_mode";
+--- a/chrome/installer/util/util_constants.cc
++++ b/chrome/installer/util/util_constants.cc
+@@ -14,6 +14,9 @@ namespace switches {
+ // permissible.
+ const char kAllowDowngrade[] = "allow-downgrade";
  
- }  // namespace initial_preferences
- }  // namespace installer
++// Boolean. Whether to enable debug mode for logging.
++const char kDebugMode[] = "debug_mode";
++
+ // A channel name specified via administrative policy. This switch sets the
+ // channel both of the installer and of the version of Chrome being installed.
+ // This switch has no effect for secondary install modes (i.e., installs that
 --- a/chrome/installer/util/initial_preferences_constants.h
 +++ b/chrome/installer/util/initial_preferences_constants.h
-@@ -68,6 +68,8 @@ extern const char kVerboseLogging[];
- extern const char kExtensionsBlock[];
+@@ -83,7 +83,8 @@ inline constexpr char kInitialExtensionsList[] = "initial_extensions.list";
+ inline constexpr char kBookmarksBlock[] = "bookmarks";
  // Boolean. Allow Chrome to be downgraded to a previous version if true.
- extern const char kAllowDowngrade[];
+ inline constexpr char kAllowDowngrade[] = "allow_downgrade";
+-
 +// Boolean. Whether to enable debug mode for logging.
-+extern const char kDebugMode[];
- 
++inline constexpr char kDebugMode[];
  }  // namespace initial_preferences
  }  // namespace installer
+ 
 --- a/chrome/installer/util/logging_installer.cc
 +++ b/chrome/installer/util/logging_installer.cc
 @@ -10,6 +10,7 @@
@@ -1563,3 +1537,4 @@
  [FFMPEG]
  ffmpeg.dll: %(VersionDir)s\
  
+

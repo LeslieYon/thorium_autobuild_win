@@ -73,7 +73,7 @@ Multi-file patches ported directly from the original Thorium build scripts
 | `win_updater.patch` | Windows updater integration |
 | `keyboard_shortcuts.patch` | Custom keyboard shortcut mappings |
 | `disable-privacy-sandbox.patch` | Fully disable Privacy Sandbox / FLoC |
-| `partalloc.patch` | PartitionAlloc configuration (fewer memory regions on Linux) |
+| ~~`partalloc.patch`~~ | ~~PartitionAlloc configuration (fewer memory regions on Linux)~~ — Removed in 144 rebase: already in upstream `partition_alloc_config.h` |
 | `thorium_branding.patch` | **Core branding** — product names, logos, desktop files, installer, package scripts, content shell renaming |
 | `thorium-build-output-1.patch` | Rename build output from `chrome` to `thorium` |
 

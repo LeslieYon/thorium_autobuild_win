@@ -1,127 +1,76 @@
-# Enable DNT and IP Protection by default
---- a/components/privacy_sandbox/tracking_protection_prefs.cc
-+++ b/components/privacy_sandbox/tracking_protection_prefs.cc
-@@ -14,4 +14,4 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
+# Enable DNT by default
+--- a/chrome/browser/ui/browser_ui_prefs.cc
++++ b/chrome/browser/ui/browser_ui_prefs.cc
+@@ -137,7 +137,7 @@
+   registry->RegisterDictionaryPref(prefs::kBrowserWindowPlacementPopup);
+   registry->RegisterDictionaryPref(prefs::kAppWindowPlacement);
    registry->RegisterBooleanPref(
 -      prefs::kEnableDoNotTrack, false,
 +      prefs::kEnableDoNotTrack, true,
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
-   registry->RegisterBooleanPref(
-@@ -20,3 +20,3 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
-   registry->RegisterBooleanPref(
--      prefs::kIpProtectionEnabled, false,
-+      prefs::kIpProtectionEnabled, true,
-       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
-# Disable Ad-Auction-Signals
+   registry->RegisterBooleanPref(prefs::kEnableGPC, true);
+ #if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID)
 --- a/third_party/blink/common/features.cc
 +++ b/third_party/blink/common/features.cc
-@@ -32,9 +32,10 @@
+@@ -48,7 +48,7 @@ BASE_FEATURE(kAIPageContentMissingSubframesFailSilently,
  
  // Controls the capturing of the Ad-Auction-Signals header, and the maximum
  // allowed Ad-Auction-Signals header value.
-+// Disabled by Alex313031
- BASE_FEATURE(kAdAuctionSignals,
-              "AdAuctionSignals",
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kAdAuctionSignals, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kAdAuctionSignals, base::FEATURE_DISABLED_BY_DEFAULT);
  BASE_FEATURE_PARAM(int,
                     kAdAuctionSignalsMaxSizeBytes,
                     &kAdAuctionSignals,
-@@ -47,9 +48,10 @@
-              base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -78,7 +78,7 @@ BASE_FEATURE(kAsyncTouchMovesImmediatelyAfterScroll,
+ );
  
  // Block all MIDI access with the MIDI_SYSEX permission
-+// Allow MIDI for Thorium Legacy
- BASE_FEATURE(kBlockMidiByDefault,
-              "BlockMidiByDefault",
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kBlockMidiByDefault, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kBlockMidiByDefault, base::FEATURE_DISABLED_BY_DEFAULT);
  
  BASE_FEATURE(kComputePressureRateObfuscationMitigation,
-              "ComputePressureRateObfuscationMitigation",
-@@ -244,15 +246,17 @@
+              base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -215,11 +215,11 @@ BASE_FEATURE(kBrowsingTopicsBypassIPIsPubliclyRoutableCheck,
  // feature has to be enabled first (i.e. `kBrowsingTopics` is enabled, and,
  // either a valid Origin Trial token exists or `kPrivacySandboxAdsAPIsOverride`
  // is enabled.)
-+// Disabled by Alex313031
- BASE_FEATURE(kBrowsingTopicsDocumentAPI,
-              "BrowsingTopicsDocumentAPI",
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kBrowsingTopicsDocumentAPI, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kBrowsingTopicsDocumentAPI, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // Decoupled with the main `kBrowsingTopics` feature, so it allows us to
  // decouple the server side configs.
-+// Disabled by Alex313031
- BASE_FEATURE(kBrowsingTopicsParameters,
-              "BrowsingTopicsParameters",
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kBrowsingTopicsParameters, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kBrowsingTopicsParameters, base::FEATURE_DISABLED_BY_DEFAULT);
  // The periodic topics calculation interval.
  BASE_FEATURE_PARAM(base::TimeDelta,
                     kBrowsingTopicsTimePeriodPerEpoch,
-@@ -834,7 +838,7 @@
+@@ -730,7 +730,7 @@ BASE_FEATURE(kFetchDestinationJsonCssModules,
+ // File handling icons. https://crbug.com/1218213
+ BASE_FEATURE(kFileHandlingIcons, base::FEATURE_DISABLED_BY_DEFAULT);
  
- BASE_FEATURE(kFileSystemUrlNavigation,
-              "FileSystemUrlNavigation",
--             base::FEATURE_DISABLED_BY_DEFAULT);
-+             base::FEATURE_ENABLED_BY_DEFAULT);
+-BASE_FEATURE(kFileSystemUrlNavigation, base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE(kFileSystemUrlNavigation, base::FEATURE_ENABLED_BY_DEFAULT);
  
  BASE_FEATURE(kFileSystemUrlNavigationForChromeAppsOnly,
-              "FileSystemUrlNavigationForChromeAppsOnly",
-@@ -858,7 +862,8 @@
+              base::FEATURE_ENABLED_BY_DEFAULT);
+@@ -752,7 +752,7 @@ BASE_FEATURE_PARAM(std::string,
  
  // See https://github.com/WICG/turtledove/blob/main/FLEDGE.md
  // Enables FLEDGE implementation. See https://crbug.com/1186444.
--BASE_FEATURE(kFledge, "Fledge", base::FEATURE_ENABLED_BY_DEFAULT);
-+// Disabled in Thorium
-+BASE_FEATURE(kFledge, "Fledge", base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kFledge, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kFledge, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // See
  // https://github.com/WICG/turtledove/blob/main/FLEDGE_browser_bidding_and_auction_API.md
-@@ -2067,6 +2072,7 @@
-              "UseAncestorRenderFrameForWorker",
-              base::FEATURE_ENABLED_BY_DEFAULT);
- 
-+// TODO: Alex313031. Maybe re-enable?
- BASE_FEATURE(kPrecompileInlineScripts,
-              "PrecompileInlineScripts",
+@@ -1988,7 +1988,7 @@ BASE_FEATURE(kPrerender2EarlyDocumentLifecycleUpdate,
               base::FEATURE_DISABLED_BY_DEFAULT);
-@@ -2097,9 +2103,10 @@
- 
- // Prefetch request properties are updated to be privacy-preserving. See
- // crbug.com/988956.
-+// Enabled by Alex313031
- BASE_FEATURE(kPrefetchPrivacyChanges,
-              "PrefetchPrivacyChanges",
--             base::FEATURE_DISABLED_BY_DEFAULT);
-+             base::FEATURE_ENABLED_BY_DEFAULT);
- 
- BASE_FEATURE(kPreloadingHeuristicsMLModel,
-              "PreloadingHeuristicsMLModel",
-@@ -2203,9 +2210,10 @@
- #endif
  
  // Enables the Private Aggregation API.
-+// Disabled by Alex313031
- BASE_FEATURE(kPrivateAggregationApi,
-              "PrivateAggregationApi",
--             base::FEATURE_ENABLED_BY_DEFAULT);
-+             base::FEATURE_DISABLED_BY_DEFAULT);
+-BASE_FEATURE(kPrivateAggregationApi, base::FEATURE_ENABLED_BY_DEFAULT);
++BASE_FEATURE(kPrivateAggregationApi, base::FEATURE_DISABLED_BY_DEFAULT);
  
  // Selectively allows the JavaScript API to be disabled in just one of the
  // contexts. The Protected Audience param's name has not been updated (from
-@@ -2490,9 +2501,10 @@
- 
- // If enabled, force renderer process foregrounded from CommitNavigation to
- // DOMContentLoad (crbug/351953350).
-+// Enabled by Alex313031
- BASE_FEATURE(kBoostRenderProcessForLoading,
-              "BoostRenderProcessForLoading",
--             base::FEATURE_DISABLED_BY_DEFAULT);
-+             base::FEATURE_ENABLED_BY_DEFAULT);
- 
- // An empty json array means that this feature is applied unconditionally. If
- // specified, it means that the specified URLs will be the target of the new
 # Disable alternate error pages
 --- a/chrome/browser/net/profile_network_context_service.cc
 +++ b/chrome/browser/net/profile_network_context_service.cc
@@ -146,3 +95,4 @@
  }
  
  OfflinePageModel::OfflinePageModel() = default;
+

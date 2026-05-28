@@ -1,16 +1,18 @@
 # Add LOAD_MINIMAL_HEADERS flag
 --- a/net/base/load_flags_list.h
 +++ b/net/base/load_flags_list.h
-@@ -115,3 +115,9 @@
- // This flag is used to bypass HSTS upgrades. This flag must be set for AIA,
- // CRL, and OCSP requests in order to prevent circular dependencies.
- LOAD_FLAG(SHOULD_BYPASS_HSTS, 1 << 19)
+@@ -121,5 +121,11 @@
+ // net/http/http_cache_transaction.cc, it will be cleaned up after that so the
+ // compromised renderer concern is acceptable.
+ LOAD_FLAG(IS_MAIN_FRAME_ORIGIN_RECENTLY_ACCESSED, 1 << 19)
 +
 +// This load will not send Accept-Language or User-Agent headers, and not
 +// advertise brotli or zstd encoding.
 +// Used to comply with IETF (draft) DNS-over-HTTPS:
 +// "Implementors SHOULD NOT set non-essential HTTP headers in DoH client requests."
 +LOAD_FLAG(MINIMAL_HEADERS, 1 << 20)
+ 
+ // See note at top of file about why adding LoadFlags is often a bad idea.
 # Thorium DNS config override
 --- a/net/dns/dns_client.cc
 +++ b/net/dns/dns_client.cc
@@ -19,10 +21,10 @@
  #include <utility>
  
 +#include "base/command_line.h"
+ #include "base/feature_list.h"
  #include "base/functional/bind.h"
  #include "base/logging.h"
- #include "base/memory/raw_ptr.h"
-@@ -88,6 +89,8 @@
+@@ -145,6 +146,8 @@
  }
  
  class DnsClientImpl : public DnsClient {
@@ -31,7 +33,7 @@
   public:
    DnsClientImpl(NetLog* net_log, const RandIntCallback& rand_int_callback)
        : net_log_(net_log), rand_int_callback_(rand_int_callback) {}
-@@ -250,11 +253,14 @@
+@@ -307,11 +310,14 @@
   private:
    std::optional<DnsConfig> BuildEffectiveConfig() const {
      DnsConfig config;
@@ -48,9 +50,9 @@
  
        config = config_overrides_.ApplyOverrides(system_config_.value());
      }
-@@ -269,8 +275,10 @@
-     if (config.unhandled_options)
+@@ -327,8 +333,10 @@
        config.nameservers.clear();
+     }
  
 -    if (!config.IsValid())
 +    if (!config.IsValid()) {
@@ -60,7 +62,6 @@
  
      return config;
    }
-# LOAD_MINIMAL_HEADERS in DoH
 --- a/net/dns/dns_transaction.cc
 +++ b/net/dns/dns_transaction.cc
 @@ -484,7 +484,7 @@
@@ -69,7 +70,7 @@
      request_->SetLoadFlags(request_->load_flags() | LOAD_DISABLE_CACHE |
 -                           LOAD_BYPASS_PROXY);
 +                           LOAD_MINIMAL_HEADERS | LOAD_BYPASS_PROXY);
-     request_->set_allow_credentials(false);
+     request_->set_disallow_credentials();
      request_->set_isolation_info(isolation_info);
    }
 # Remove UA/Referer with MINIMAL_HEADERS
@@ -89,8 +90,8 @@
 -
 -  request_info_.extra_headers.SetHeaderIfMissing(
 -      HttpRequestHeaders::kUserAgent,
--      http_user_agent_settings_ ?
--          http_user_agent_settings_->GetUserAgent() : std::string());
+-      http_user_agent_settings_ ? http_user_agent_settings_->GetUserAgent()
+-                                : std::string());
 +  if (!(request_info_.load_flags & LOAD_MINIMAL_HEADERS)) {
 +    // Our consumer should have made sure that this is a safe referrer (e.g. via
 +    // URLRequestJob::ComputeReferrerForPolicy).
@@ -126,17 +127,18 @@
      // specified.
      std::string accept_language =
 # Increase RSA key length to 2048
---- a/net/cert/x509_util.cc
-+++ b/net/cert/x509_util.cc
-@@ -281,7 +281,7 @@
- }
- 
- // RSA keys created by CreateKeyAndSelfSignedCert will be of this length.
--static const uint16_t kRSAKeyLength = 1024;
-+static const uint16_t kRSAKeyLength = 2048;
- 
- // Certificates made by CreateKeyAndSelfSignedCert will be signed using this
- // digest algorithm.
+# removed in newer versions of Chromium
+# --- a/net/cert/x509_util.cc
+# +++ b/net/cert/x509_util.cc
+# @@ -281,7 +281,7 @@
+#  }
+#  
+#  // RSA keys created by CreateKeyAndSelfSignedCert will be of this length.
+# -static const uint16_t kRSAKeyLength = 1024;
+# +static const uint16_t kRSAKeyLength = 2048;
+#  
+#  // Certificates made by CreateKeyAndSelfSignedCert will be signed using this
+#  // digest algorithm.
 # Secure DoH by default
 --- a/chrome/browser/net/default_dns_over_https_config_source.cc
 +++ b/chrome/browser/net/default_dns_over_https_config_source.cc
@@ -152,20 +154,19 @@
 # Remove Windows parental DoH check
 --- a/chrome/browser/net/stub_resolver_config_reader.cc
 +++ b/chrome/browser/net/stub_resolver_config_reader.cc
-@@ -77,12 +77,6 @@
-   kMaxValue = kSecureByEnterprisePolicy,
- };
+@@ -54,11 +54,6 @@
+ 
+ namespace {
  
 -#if BUILDFLAG(IS_WIN)
 -bool ShouldDisableDohForWindowsParentalControls() {
 -  return GetWinParentalControls().web_filter;
 -}
--#endif  // BUILDFLAG(IS_WIN)
 -
- // Check the AsyncDns field trial and return true if it should be enabled. On
- // Android this includes checking the Android version in the field trial.
- bool ShouldEnableAsyncDns() {
-@@ -168,42 +162,11 @@
+ // Defines the base::Feature for controlling the ZTDNS check.
+ BASE_FEATURE(kZeroTrustDNS, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+@@ -213,42 +208,11 @@ void StubResolverConfigReader::UpdateNetworkService(bool record_metrics) {
  }
  
  bool StubResolverConfigReader::ShouldDisableDohForManaged() {
@@ -251,3 +252,4 @@
  }
  
  bool IsURLHandledByNetworkStack(const GURL& url) {
+

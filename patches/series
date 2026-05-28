@@ -6,15 +6,15 @@ thorium/external_temp/Enable-Global-Privacy-Control.patch
 
 # fixes from upstream
 # can be removed if upsteam merge these
-thorium/fixes_upstream/fix_profile_selector_crash.patch
-thorium/fixes_upstream/fix_getupdatesprocessor_crash.patch
+# thorium/fixes_upstream/fix_profile_selector_crash.patch
+# thorium/fixes_upstream/fix_getupdatesprocessor_crash.patch
 thorium/fixes_upstream/fix_dangling_pointer_tooltip.patch
 thorium/fixes_upstream/fix_disable_aero_crash.patch
-thorium/fixes_upstream/fix_file_dialog_crash.patch
-thorium/fixes_upstream/fix_wayland_scale_crash.patch
-thorium/fixes_upstream/fix_setting_popover_invoker_crash.patch
-thorium/fixes_upstream/fix_drag_and_drop_on_wayland.patch
-thorium/fixes_upstream/fix_touch_emulator_double_tap_zoom.patch
+# thorium/fixes_upstream/fix_file_dialog_crash.patch
+# thorium/fixes_upstream/fix_wayland_scale_crash.patch
+# thorium/fixes_upstream/fix_setting_popover_invoker_crash.patch
+# thorium/fixes_upstream/fix_drag_and_drop_on_wayland.patch
+# thorium/fixes_upstream/fix_touch_emulator_double_tap_zoom.patch
 
 # remove deps of fix-building-without-safebrowsing.patch,
 # this is (automatic) picked from ungoogled remove-unused-preferences-fields.patch
@@ -43,14 +43,15 @@ thorium/original/change-libavcodec-header.patch
 thorium/original/fix-policy-templates.patch
 thorium/original/ftp-support-thorium.patch
 thorium/original/thorium-2024-ui.patch
-thorium/original/restore_download_shelf.patch
+# download_shelf is completely removed in newer Chromium.
+# thorium/original/restore_download_shelf.patch
 thorium/original/mini_installer.patch
 thorium/original/open_in_same_tab.patch
 thorium/original/thorium_webui.patch
 thorium/original/win_updater.patch
 thorium/original/keyboard_shortcuts.patch
 thorium/original/disable-privacy-sandbox-flag.patch
-thorium/original/partalloc.patch
+# thorium/original/partalloc.patch  # Removed: kUseFewerMemoryRegions already correctly configured in partition_alloc_config.h in Chromium 144
 thorium/original/thorium_branding.patch
 thorium/original/thorium-build-output-1.patch
 #

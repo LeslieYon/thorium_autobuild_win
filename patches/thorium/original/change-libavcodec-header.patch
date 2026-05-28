@@ -20,8 +20,6 @@ configs, need to change the header manually to fix this.
  third_party/ffmpeg/libavcodec/hevc/sei.c           |  4 ++--
  12 files changed, 37 insertions(+), 37 deletions(-)
 
-diff --git a/third_party/ffmpeg/libavcodec/hevc/cabac.c b/third_party/ffmpeg/libavcodec/hevc/cabac.c
-index 892dd1c215..362dda6beb 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/cabac.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/cabac.c
 @@ -24,7 +24,7 @@
@@ -33,8 +31,6 @@ index 892dd1c215..362dda6beb 100644
  #include "data.h"
  #include "hevc.h"
  #include "hevcdec.h"
-diff --git a/third_party/ffmpeg/libavcodec/hevc/dsp_template.c b/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
-index a0f79c2673..b4f37237d7 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
 @@ -20,13 +20,13 @@
@@ -64,8 +60,6 @@ index a0f79c2673..b4f37237d7 100644
  
  static void FUNC(hevc_loop_filter_luma)(uint8_t *_pix,
                                          ptrdiff_t _xstride, ptrdiff_t _ystride,
-diff --git a/third_party/ffmpeg/libavcodec/hevc/filter.c b/third_party/ffmpeg/libavcodec/hevc/filter.c
-index 68ae0e9ef6..e897ad5d58 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/filter.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/filter.c
 @@ -26,7 +26,7 @@
@@ -77,12 +71,10 @@ index 68ae0e9ef6..e897ad5d58 100644
  
  #define LUMA 0
  #define CB 1
-diff --git a/third_party/ffmpeg/libavcodec/hevc/hevcdec.c b/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
-index 636c024b9a..cf63028fc4 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
-@@ -38,23 +38,23 @@
- #include "libavutil/stereo3d.h"
+@@ -39,24 +39,24 @@
+ #include "libavutil/tdrdi.h"
  #include "libavutil/timecode.h"
  
 -#include "aom_film_grain.h"
@@ -97,6 +89,7 @@ index 636c024b9a..cf63028fc4 100644
 +#include "libavcodec/codec_internal.h"
 +#include "libavcodec/decode.h"
 +#include "libavcodec/golomb.h"
+ #include "h274.h"
  #include "hevc.h"
  #include "parse.h"
  #include "hevcdec.h"
@@ -118,8 +111,6 @@ index 636c024b9a..cf63028fc4 100644
  
  static const uint8_t hevc_pel_weight[65] = { [2] = 0, [4] = 1, [6] = 2, [8] = 3, [12] = 4, [16] = 5, [24] = 6, [32] = 7, [48] = 8, [64] = 9 };
  
-diff --git a/third_party/ffmpeg/libavcodec/hevc/mvs.c b/third_party/ffmpeg/libavcodec/hevc/mvs.c
-index 55f115ad0c..61c9e4e086 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/mvs.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/mvs.c
 @@ -23,7 +23,7 @@
@@ -131,8 +122,6 @@ index 55f115ad0c..61c9e4e086 100644
  
  static const uint8_t l0_l1_cand_idx[12][2] = {
      { 0, 1, },
-diff --git a/third_party/ffmpeg/libavcodec/hevc/parse.c b/third_party/ffmpeg/libavcodec/hevc/parse.c
-index 29f21a5966..2f519380fb 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/parse.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/parse.c
 @@ -16,8 +16,8 @@
@@ -146,17 +135,16 @@ index 29f21a5966..2f519380fb 100644
  #include "hevc.h"
  #include "parse.h"
  
-diff --git a/third_party/ffmpeg/libavcodec/hevc/parser.c b/third_party/ffmpeg/libavcodec/hevc/parser.c
-index 16b40e2b10..e94b6905c9 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/parser.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/parser.c
-@@ -23,13 +23,13 @@
+@@ -23,14 +23,14 @@
  #include "libavutil/common.h"
  #include "libavutil/mem.h"
  
 -#include "golomb.h"
 +#include "libavcodec/golomb.h"
  #include "hevc.h"
+ #include "parser_internal.h"
  #include "parse.h"
  #include "ps.h"
  #include "sei.h"
@@ -167,8 +155,6 @@ index 16b40e2b10..e94b6905c9 100644
  
  #define START_CODE 0x000001 ///< start_code_prefix_one_3bytes
  
-diff --git a/third_party/ffmpeg/libavcodec/hevc/pred_template.c b/third_party/ffmpeg/libavcodec/hevc/pred_template.c
-index b4c2fcf506..d873c1c5b6 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/pred_template.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/pred_template.c
 @@ -22,7 +22,7 @@
@@ -180,8 +166,6 @@ index b4c2fcf506..d873c1c5b6 100644
  #include "pred.h"
  
  #define POS(x, y) src[(x) + stride * (y)]
-diff --git a/third_party/ffmpeg/libavcodec/hevc/ps.c b/third_party/ffmpeg/libavcodec/hevc/ps.c
-index 24f4218931..6713f42013 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/ps.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/ps.c
 @@ -25,11 +25,11 @@
@@ -199,8 +183,6 @@ index 24f4218931..6713f42013 100644
  #include "libavutil/refstruct.h"
  
  static const uint8_t default_scaling_list_intra[] = {
-diff --git a/third_party/ffmpeg/libavcodec/hevc/ps_enc.c b/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
-index 7fbcb3ba4e..4e44f849ba 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
 @@ -18,9 +18,9 @@
@@ -215,8 +197,6 @@ index 7fbcb3ba4e..4e44f849ba 100644
  
  static void write_ptl_layer(PutBitContext *pb, PTLCommon *ptl)
  {
-diff --git a/third_party/ffmpeg/libavcodec/hevc/refs.c b/third_party/ffmpeg/libavcodec/hevc/refs.c
-index ab2e075af0..404e45ecbb 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/refs.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/refs.c
 @@ -25,11 +25,11 @@
@@ -234,8 +214,6 @@ index ab2e075af0..404e45ecbb 100644
  #include "libavutil/refstruct.h"
  
  void ff_hevc_unref_frame(HEVCFrame *frame, int flags)
-diff --git a/third_party/ffmpeg/libavcodec/hevc/sei.c b/third_party/ffmpeg/libavcodec/hevc/sei.c
-index b8e98cde89..0a54c442d5 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/sei.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/sei.c
 @@ -22,8 +22,8 @@
@@ -251,4 +229,5 @@ index b8e98cde89..0a54c442d5 100644
  
 -- 
 2.45.2.windows.1
+
 

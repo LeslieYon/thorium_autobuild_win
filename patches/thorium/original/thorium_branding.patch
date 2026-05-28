@@ -118,9 +118,9 @@
      "trash_can.icon",
      "trash_can_refresh.icon",
 +    "trash_can_regular.icon",
+     "travel_explore.icon",
      "tv.icon",
      "ungroup_refresh.icon",
-     "user_account_avatar.icon",
 @@ -245,6 +248,24 @@
  
      # go/keep-sorted end
@@ -322,18 +322,18 @@
        "//content/test:mojo_web_test_bindings_js_data_deps",
        "//device/bluetooth/public/mojom:fake_bluetooth_interfaces_js_data_deps",
 @@ -1710,9 +1815,10 @@
- }
+ # modulemaps requires building targets on linux-x86
+ if (!running_modularize) {
+   # TODO(cassew): Add more OS's that don't support x86.
++  # 32 bit Linux builds enabled by Alex313031
+   is_valid_x86_target =
+-      target_os != "ios" && target_os != "mac" &&
+-      (target_os != "linux" || use_libfuzzer || !build_with_chromium)
++      target_os != "ios" && target_os != "mac" ||
++      (use_libfuzzer || !build_with_chromium)
  
- # TODO(cassew): Add more OS's that don't support x86.
-+# 32 bit Linux builds enabled by Alex313031
- is_valid_x86_target =
--    target_os != "ios" && target_os != "mac" &&
--    (target_os != "linux" || use_libfuzzer || !build_with_chromium)
-+    target_os != "ios" && target_os != "mac" ||
-+    (use_libfuzzer || !build_with_chromium)
- 
- # Note: v8_target_cpu == arm allows using the V8 arm simulator on x86 for fuzzing.
- assert(
+   # Note: v8_target_cpu == arm allows using the V8 arm simulator on x86 for fuzzing.
+   assert(
 @@ -1772,7 +1878,7 @@
      testonly = true
  
@@ -346,12 +346,12 @@
 # Remove branded drawable resources
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -164,8 +164,6 @@
+@@ -134,8 +134,6 @@ if (_is_default_toolchain) {
    android_resources("chrome_base_module_resources") {
      sources = [
        "java/res_base/anim/no_anim.xml",
--      "java/res_base/drawable-v26/ic_launcher.xml",
--      "java/res_base/drawable-v26/ic_launcher_round.xml",
+-      "java/res_base/drawable/ic_launcher.xml",
+-      "java/res_base/drawable/ic_launcher_round.xml",
        "java/res_base/font/chrome_google_sans.xml",
        "java/res_base/font/chrome_google_sans_bold.xml",
        "java/res_base/font/chrome_google_sans_medium.xml",
@@ -424,10 +424,10 @@
      deps = [
        ":chrome_unit_test_java",
        "//build/config/android/test/resource_overlay:unit_device_javatests",
-@@ -2338,7 +2324,7 @@
-     # TODO(wnwen): Re-enable when new lint failures are disabled for test targets.
-     #enable_lint = true
+@@ -2360,7 +2360,7 @@ if (_is_default_toolchain) {
  
+   # TODO(crbug.com/40193330): Rename to chrome_public_integration_test_apk
+   chrome_public_test_apk_tmpl("chrome_public_test_apk") {
 -    apk_name = "ChromePublicTest"
 +    apk_name = "ThoriumPublicTest"
      deps = [
@@ -459,7 +459,7 @@
 # Content Shell -> Thorium Shell
 --- a/components/BUILD.gn
 +++ b/components/BUILD.gn
-@@ -1095,8 +1095,8 @@
+@@ -1178,8 +1178,8 @@
      ]
  
      if (is_mac) {
@@ -469,8 +469,7 @@
 +      data += [ "$root_out_dir/Thorium Shell.app/" ]
      }
  
-     if (toolkit_views && !is_mac) {
-# thorium.exe output name
+     if (toolkit_views && !is_mac && !is_castos) {
 --- a/chrome/app/chrome_exe.vsprops
 +++ b/chrome/app/chrome_exe.vsprops
 @@ -12,7 +12,7 @@
@@ -513,7 +512,7 @@
 # Thorium install mode header
 --- a/chrome/install_static/chromium_install_modes.h
 +++ b/chrome/install_static/chromium_install_modes.h
-@@ -32,19 +32,17 @@
+@@ -32,17 +32,16 @@ inline constexpr auto kInstallModes = std::to_array<InstallConstants>({
          .install_suffix =
              L"",  // Empty install_suffix for the primary install mode.
          .logo_suffix = L"",  // No logo suffix for the primary install mode.
@@ -527,20 +526,17 @@
 +        .base_app_id = L"Thorium",                // A distinct base_app_id.
 +        .browser_prog_id_prefix = L"ThoriumHTM",  // Browser ProgID prefix.
          .browser_prog_id_description =
--            L"Chromium HTML Document",         // Browser ProgID description.
+-            L"Chromium HTML Document",  // Browser ProgID description.
++            L"Thorium HTML Document",  // Browser ProgID description.
+         .direct_launch_url_scheme = "chromium",
 -        .pdf_prog_id_prefix = L"ChromiumPDF",  // PDF ProgID prefix.
-+            L"Thorium HTML Document",         // Browser ProgID description.
 +        .pdf_prog_id_prefix = L"ThoriumPDF",  // PDF ProgID prefix.
          .pdf_prog_id_description =
 -            L"Chromium PDF Document",  // PDF ProgID description.
 +            L"Thorium PDF Document",  // PDF ProgID description.
          .active_setup_guid =
--            L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup
--                                                        // GUID.
-+            L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup GUID.
-         .legacy_command_execute_clsid =
-             L"{A2DF06F9-A21A-44A8-8A99-8B9C84F29160}",  // CommandExecuteImpl
-                                                         // CLSID.
+             L"{7D2B3E1D-D096-4594-9D8F-A6667F12E0AC}",  // Active Setup
+                                                         // GUID.
 # Thorium user data dir test
 --- a/chrome/install_static/user_data_dir_win_unittest.cc
 +++ b/chrome/install_static/user_data_dir_win_unittest.cc
@@ -982,8 +978,8 @@
 -RDN="org.chromium.Chromium"
 +RDN="org.chromium.Thorium"
 # Installer include branding
---- a/chrome/installer/linux/common/installer.include
-+++ b/chrome/installer/linux/common/installer.include
+--- a/remoting/host/installer/linux/installer.include
++++ b/remoting/host/installer/linux/installer.include
 @@ -90,7 +91,9 @@
      "${STAGEDIR}/usr/share/applications" \
      "${STAGEDIR}/usr/share/appdata" \
@@ -1759,195 +1755,199 @@
  libvulkan1
  
 # Debian build branding
---- a/chrome/installer/linux/debian/build.sh
-+++ b/chrome/installer/linux/debian/build.sh
-@@ -22,7 +22,7 @@
-   process_template "${SCRIPTDIR}/changelog.template" "${DEB_CHANGELOG}"
-   debchange -a --nomultimaint -m --changelog "${DEB_CHANGELOG}" \
-     "Release Notes: ${RELEASENOTES}"
--  GZLOG="${STAGEDIR}/usr/share/doc/${PACKAGE}-${CHANNEL}/changelog.gz"
-+  GZLOG="${STAGEDIR}/usr/share/doc/${PACKAGE}/changelog.gz"
-   mkdir -p "$(dirname "${GZLOG}")"
-   gzip -9 -c "${DEB_CHANGELOG}" > "${GZLOG}"
-   chmod 644 "${GZLOG}"
-@@ -31,7 +31,7 @@
- # Create the Debian control file needed by dpkg-deb.
- gen_control() {
-   dpkg-gencontrol -v"${VERSIONFULL}" -c"${DEB_CONTROL}" -l"${DEB_CHANGELOG}" \
--  -f"${DEB_FILES}" -p"${PACKAGE}-${CHANNEL}" -P"${STAGEDIR}" \
-+  -f"${DEB_FILES}" -p"${PACKAGE}" -P"${STAGEDIR}" \
-   -O > "${STAGEDIR}/DEBIAN/control"
-   rm -f "${DEB_CONTROL}"
- }
-@@ -50,23 +50,19 @@
-   # Always use a different name for /usr/bin symlink depending on channel.
-   # First, to avoid file collisions. Second, to make it possible to
-   # use update-alternatives for /usr/bin/google-chrome.
--  local USR_BIN_SYMLINK_NAME="${PACKAGE}-${CHANNEL}"
-+  local USR_BIN_SYMLINK_NAME="${PACKAGE}"
- 
-   local PACKAGE_ORIG="${PACKAGE}"
--  if [ "$CHANNEL" != "stable" ]; then
--    # Avoid file collisions between channels.
--    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
--
--    local PACKAGE="${PACKAGE}-${CHANNEL}"
--
--    # Make it possible to distinguish between menu entries
--    # for different channels.
--    local MENUNAME="${MENUNAME} (${CHANNEL})"
--
--    local RDN_DESKTOP="${RDN}.${CHANNEL}"
--  else
--    local RDN_DESKTOP="${RDN}"
--  fi
-+  # Avoid file collisions between channels.
-+  local INSTALLDIR="${INSTALLDIR}"
-+
-+  local PACKAGE="${PACKAGE}"
-+
-+  # Make it possible to distinguish between menu entries
-+  # for different channels.
-+  local MENUNAME="${MENUNAME}"
-+  local RDN_DESKTOP="${RDN}"
-+
-   prep_staging_debian
-   SHLIB_PERMS=644
-   stage_install_common
-@@ -97,17 +93,20 @@
-   local EXPECTED_DEPENDS="${TMPFILEDIR}/expected_deb_depends"
-   local ACTUAL_DEPENDS="${TMPFILEDIR}/actual_deb_depends"
-   echo ${DEPENDS} | sed 's/, /\n/g' | LANG=C sort > "${EXPECTED_DEPENDS}"
--  dpkg -I "${PACKAGE}-${CHANNEL}_${VERSIONFULL}_${ARCHITECTURE}.deb" | \
-+  dpkg -I "${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb" | \
-       grep '^ Depends: ' | sed 's/^ Depends: //' | sed 's/, /\n/g' | \
-       LANG=C sort > "${ACTUAL_DEPENDS}"
-   BAD_DIFF=0
-   diff -u "${EXPECTED_DEPENDS}" "${ACTUAL_DEPENDS}" || BAD_DIFF=1
-   if [ $BAD_DIFF -ne 0 ]; then
-     echo
--    echo "ERROR: bad dpkg dependencies!"
-+    echo "ERROR: Bad dpkg dependencies!"
-     echo
-     exit $BAD_DIFF
-   fi
-+
-+  # Rename package to match Thorium naming scheme
-+  mv -v "${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb" "${PACKAGE}_${DEBVERSIONNAME}${NAME_SUFFIX}.deb"
- }
- 
- # Actually generate the package file.
-@@ -115,6 +114,7 @@
-   log_cmd echo "Packaging ${ARCHITECTURE}..."
-   PREDEPENDS="$COMMON_PREDEPS"
-   DEPENDS="${COMMON_DEPS}"
-+  # RECOMMENDS="${COMMON_RECOMMENDS}"
-   PROVIDES="www-browser"
-   gen_changelog
-   process_template "${SCRIPTDIR}/control.template" "${DEB_CONTROL}"
-@@ -123,7 +123,7 @@
-     gen_control
-   fi
-   log_cmd fakeroot dpkg-deb -Znone -b "${STAGEDIR}" "${TMPFILEDIR}"
--  local PACKAGEFILE="${PACKAGE}-${CHANNEL}_${VERSIONFULL}_${ARCHITECTURE}.deb"
-+  local PACKAGEFILE="${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb"
-   if [ ${IS_OFFICIAL_BUILD} -ne 0 ]; then
-     (cd "${TMPFILEDIR}" && ar -x "${TMPFILEDIR}/${PACKAGEFILE}")
-     xz -z9 -T0 --lzma2='dict=256MiB' "${TMPFILEDIR}/data.tar"
-@@ -161,15 +161,15 @@
-   case $CHANNEL in
-     stable )
-       CHANNEL=stable
--      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Stable%20updates"
-+      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
-       ;;
-     beta|testing )
-       CHANNEL=beta
--      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Beta%20updates"
-+      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
-       ;;
-     dev|unstable|alpha )
-       CHANNEL=unstable
--      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Dev%20updates"
-+      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
-       ;;
-     # Canary is released twice a day automatically, so no release notes
-     # attached.
-@@ -187,7 +187,7 @@
- }
- 
- process_opts() {
--  while getopts ":a:b:c:d:fho:s:t:" OPTNAME
-+  while getopts ":a:b:c:d:fhn:o:s:t:" OPTNAME
-   do
-     case $OPTNAME in
-       a )
-@@ -206,6 +206,9 @@
-         usage
-         exit 0
-         ;;
-+      n )
-+        NAME_SUFFIX="$OPTARG"
-+        ;;
-       o )
-         OUTPUTDIR=$(readlink -f "${OPTARG}")
-         mkdir -p "${OUTPUTDIR}"
-@@ -236,15 +239,16 @@
- 
- SCRIPTDIR=$(readlink -f "$(dirname "$0")")
- OUTPUTDIR="${PWD}"
-+NAME_SUFFIX=""
- 
- # call cleanup() on exit
- trap cleanup 0
- process_opts "$@"
--IS_OFFICIAL_BUILD=${IS_OFFICIAL_BUILD:=0}
--
--STAGEDIR="${OUTPUTDIR}/deb-staging-${CHANNEL}"
-+IS_OFFICIAL_BUILD=1
-+
-+STAGEDIR="${OUTPUTDIR}/deb-staging"
- mkdir -p "${STAGEDIR}"
--TMPFILEDIR="${OUTPUTDIR}/deb-tmp-${CHANNEL}"
-+TMPFILEDIR="${OUTPUTDIR}/deb-tmp"
- mkdir -p "${TMPFILEDIR}"
- DEB_CHANGELOG="${TMPFILEDIR}/changelog"
- DEB_FILES="${TMPFILEDIR}/files"
-@@ -254,6 +258,7 @@
- 
- get_version_info
- VERSIONFULL="${VERSION}-${PACKAGE_RELEASE}"
-+DEBVERSIONNAME="${VERSION}"
- 
- if [ "$BRANDING" = "google_chrome" ]; then
-   source "${OUTPUTDIR}/installer/common/google-chrome.info"
-@@ -273,17 +278,23 @@
- DEB_COMMON_DEPS="${OUTPUTDIR}/deb_common.deps"
- COMMON_DEPS=$(sed ':a;N;$!ba;s/\n/, /g' "${DEB_COMMON_DEPS}")
- COMMON_PREDEPS="dpkg (>= 1.14.0)"
-+# MANUAL_RECOMMENDS="${SCRIPTDIR}/manual_recommends"
-+# COMMON_RECOMMENDS=$(grep -v ^$ "${MANUAL_RECOMMENDS}" | grep -v ^# |
-+#                       sed ':a;N;$!ba;s/\n/, /g')
- 
- # Make everything happen in the OUTPUTDIR.
- cd "${OUTPUTDIR}"
--BASEREPOCONFIG="dl.google.com/linux/chrome/deb/ stable main"
- # Only use the default REPOCONFIG if it's unset (e.g. verify_channel might have
- # set it to an empty string)
--REPOCONFIG="${REPOCONFIG-deb [arch=${ARCHITECTURE}] https://${BASEREPOCONFIG}}"
- # Allowed configs include optional HTTPS support and explicit multiarch
- # platforms.
-+
-+# Unset repoconfig for Thorium
-+#BASEREPOCONFIG="dl.google.com/linux/chrome/deb/ stable main"
-+REPOCONFIG=
- REPOCONFIGREGEX="deb (\\[arch=[^]]*\\b${ARCHITECTURE}\\b[^]]*\\]"
--REPOCONFIGREGEX+="[[:space:]]*) https?://${BASEREPOCONFIG}"
-+#REPOCONFIGREGEX+="[[:space:]]*) https?://${BASEREPOCONFIG}"
-+
- stage_install_debian
- 
- do_package
+# build.sh is refactored to build.py
+# we just focus on the Windows build, 
+# so we don't need to maintain the debian build script anymore, 
+# but we keep it here for reference and future use if needed.
+# --- a/chrome/installer/linux/debian/build.sh
+# +++ b/chrome/installer/linux/debian/build.sh
+# @@ -22,7 +22,7 @@
+#    process_template "${SCRIPTDIR}/changelog.template" "${DEB_CHANGELOG}"
+#    debchange -a --nomultimaint -m --changelog "${DEB_CHANGELOG}" \
+#      "Release Notes: ${RELEASENOTES}"
+# -  GZLOG="${STAGEDIR}/usr/share/doc/${PACKAGE}-${CHANNEL}/changelog.gz"
+# +  GZLOG="${STAGEDIR}/usr/share/doc/${PACKAGE}/changelog.gz"
+#    mkdir -p "$(dirname "${GZLOG}")"
+#    gzip -9 -c "${DEB_CHANGELOG}" > "${GZLOG}"
+#    chmod 644 "${GZLOG}"
+# @@ -31,7 +31,7 @@
+#  # Create the Debian control file needed by dpkg-deb.
+#  gen_control() {
+#    dpkg-gencontrol -v"${VERSIONFULL}" -c"${DEB_CONTROL}" -l"${DEB_CHANGELOG}" \
+# -  -f"${DEB_FILES}" -p"${PACKAGE}-${CHANNEL}" -P"${STAGEDIR}" \
+# +  -f"${DEB_FILES}" -p"${PACKAGE}" -P"${STAGEDIR}" \
+#    -O > "${STAGEDIR}/DEBIAN/control"
+#    rm -f "${DEB_CONTROL}"
+#  }
+# @@ -50,23 +50,19 @@
+#    # Always use a different name for /usr/bin symlink depending on channel.
+#    # First, to avoid file collisions. Second, to make it possible to
+#    # use update-alternatives for /usr/bin/google-chrome.
+# -  local USR_BIN_SYMLINK_NAME="${PACKAGE}-${CHANNEL}"
+# +  local USR_BIN_SYMLINK_NAME="${PACKAGE}"
+#  
+#    local PACKAGE_ORIG="${PACKAGE}"
+# -  if [ "$CHANNEL" != "stable" ]; then
+# -    # Avoid file collisions between channels.
+# -    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
+# -
+# -    local PACKAGE="${PACKAGE}-${CHANNEL}"
+# -
+# -    # Make it possible to distinguish between menu entries
+# -    # for different channels.
+# -    local MENUNAME="${MENUNAME} (${CHANNEL})"
+# -
+# -    local RDN_DESKTOP="${RDN}.${CHANNEL}"
+# -  else
+# -    local RDN_DESKTOP="${RDN}"
+# -  fi
+# +  # Avoid file collisions between channels.
+# +  local INSTALLDIR="${INSTALLDIR}"
+# +
+# +  local PACKAGE="${PACKAGE}"
+# +
+# +  # Make it possible to distinguish between menu entries
+# +  # for different channels.
+# +  local MENUNAME="${MENUNAME}"
+# +  local RDN_DESKTOP="${RDN}"
+# +
+#    prep_staging_debian
+#    SHLIB_PERMS=644
+#    stage_install_common
+# @@ -97,17 +93,20 @@
+#    local EXPECTED_DEPENDS="${TMPFILEDIR}/expected_deb_depends"
+#    local ACTUAL_DEPENDS="${TMPFILEDIR}/actual_deb_depends"
+#    echo ${DEPENDS} | sed 's/, /\n/g' | LANG=C sort > "${EXPECTED_DEPENDS}"
+# -  dpkg -I "${PACKAGE}-${CHANNEL}_${VERSIONFULL}_${ARCHITECTURE}.deb" | \
+# +  dpkg -I "${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb" | \
+#        grep '^ Depends: ' | sed 's/^ Depends: //' | sed 's/, /\n/g' | \
+#        LANG=C sort > "${ACTUAL_DEPENDS}"
+#    BAD_DIFF=0
+#    diff -u "${EXPECTED_DEPENDS}" "${ACTUAL_DEPENDS}" || BAD_DIFF=1
+#    if [ $BAD_DIFF -ne 0 ]; then
+#      echo
+# -    echo "ERROR: bad dpkg dependencies!"
+# +    echo "ERROR: Bad dpkg dependencies!"
+#      echo
+#      exit $BAD_DIFF
+#    fi
+# +
+# +  # Rename package to match Thorium naming scheme
+# +  mv -v "${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb" "${PACKAGE}_${DEBVERSIONNAME}${NAME_SUFFIX}.deb"
+#  }
+#  
+#  # Actually generate the package file.
+# @@ -115,6 +114,7 @@
+#    log_cmd echo "Packaging ${ARCHITECTURE}..."
+#    PREDEPENDS="$COMMON_PREDEPS"
+#    DEPENDS="${COMMON_DEPS}"
+# +  # RECOMMENDS="${COMMON_RECOMMENDS}"
+#    PROVIDES="www-browser"
+#    gen_changelog
+#    process_template "${SCRIPTDIR}/control.template" "${DEB_CONTROL}"
+# @@ -123,7 +123,7 @@
+#      gen_control
+#    fi
+#    log_cmd fakeroot dpkg-deb -Znone -b "${STAGEDIR}" "${TMPFILEDIR}"
+# -  local PACKAGEFILE="${PACKAGE}-${CHANNEL}_${VERSIONFULL}_${ARCHITECTURE}.deb"
+# +  local PACKAGEFILE="${PACKAGE}_${VERSIONFULL}_${ARCHITECTURE}.deb"
+#    if [ ${IS_OFFICIAL_BUILD} -ne 0 ]; then
+#      (cd "${TMPFILEDIR}" && ar -x "${TMPFILEDIR}/${PACKAGEFILE}")
+#      xz -z9 -T0 --lzma2='dict=256MiB' "${TMPFILEDIR}/data.tar"
+# @@ -161,15 +161,15 @@
+#    case $CHANNEL in
+#      stable )
+#        CHANNEL=stable
+# -      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Stable%20updates"
+# +      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
+#        ;;
+#      beta|testing )
+#        CHANNEL=beta
+# -      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Beta%20updates"
+# +      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
+#        ;;
+#      dev|unstable|alpha )
+#        CHANNEL=unstable
+# -      RELEASENOTES="https://chromereleases.googleblog.com/search/label/Dev%20updates"
+# +      RELEASENOTES="https://github.com/Alex313031/Thorium/releases"
+#        ;;
+#      # Canary is released twice a day automatically, so no release notes
+#      # attached.
+# @@ -187,7 +187,7 @@
+#  }
+#  
+#  process_opts() {
+# -  while getopts ":a:b:c:d:fho:s:t:" OPTNAME
+# +  while getopts ":a:b:c:d:fhn:o:s:t:" OPTNAME
+#    do
+#      case $OPTNAME in
+#        a )
+# @@ -206,6 +206,9 @@
+#          usage
+#          exit 0
+#          ;;
+# +      n )
+# +        NAME_SUFFIX="$OPTARG"
+# +        ;;
+#        o )
+#          OUTPUTDIR=$(readlink -f "${OPTARG}")
+#          mkdir -p "${OUTPUTDIR}"
+# @@ -236,15 +239,16 @@
+#  
+#  SCRIPTDIR=$(readlink -f "$(dirname "$0")")
+#  OUTPUTDIR="${PWD}"
+# +NAME_SUFFIX=""
+#  
+#  # call cleanup() on exit
+#  trap cleanup 0
+#  process_opts "$@"
+# -IS_OFFICIAL_BUILD=${IS_OFFICIAL_BUILD:=0}
+# -
+# -STAGEDIR="${OUTPUTDIR}/deb-staging-${CHANNEL}"
+# +IS_OFFICIAL_BUILD=1
+# +
+# +STAGEDIR="${OUTPUTDIR}/deb-staging"
+#  mkdir -p "${STAGEDIR}"
+# -TMPFILEDIR="${OUTPUTDIR}/deb-tmp-${CHANNEL}"
+# +TMPFILEDIR="${OUTPUTDIR}/deb-tmp"
+#  mkdir -p "${TMPFILEDIR}"
+#  DEB_CHANGELOG="${TMPFILEDIR}/changelog"
+#  DEB_FILES="${TMPFILEDIR}/files"
+# @@ -254,6 +258,7 @@
+#  
+#  get_version_info
+#  VERSIONFULL="${VERSION}-${PACKAGE_RELEASE}"
+# +DEBVERSIONNAME="${VERSION}"
+#  
+#  if [ "$BRANDING" = "google_chrome" ]; then
+#    source "${OUTPUTDIR}/installer/common/google-chrome.info"
+# @@ -273,17 +278,23 @@
+#  DEB_COMMON_DEPS="${OUTPUTDIR}/deb_common.deps"
+#  COMMON_DEPS=$(sed ':a;N;$!ba;s/\n/, /g' "${DEB_COMMON_DEPS}")
+#  COMMON_PREDEPS="dpkg (>= 1.14.0)"
+# +# MANUAL_RECOMMENDS="${SCRIPTDIR}/manual_recommends"
+# +# COMMON_RECOMMENDS=$(grep -v ^$ "${MANUAL_RECOMMENDS}" | grep -v ^# |
+# +#                       sed ':a;N;$!ba;s/\n/, /g')
+#  
+#  # Make everything happen in the OUTPUTDIR.
+#  cd "${OUTPUTDIR}"
+# -BASEREPOCONFIG="dl.google.com/linux/chrome/deb/ stable main"
+#  # Only use the default REPOCONFIG if it's unset (e.g. verify_channel might have
+#  # set it to an empty string)
+# -REPOCONFIG="${REPOCONFIG-deb [arch=${ARCHITECTURE}] https://${BASEREPOCONFIG}}"
+#  # Allowed configs include optional HTTPS support and explicit multiarch
+#  # platforms.
+# +
+# +# Unset repoconfig for Thorium
+# +#BASEREPOCONFIG="dl.google.com/linux/chrome/deb/ stable main"
+# +REPOCONFIG=
+#  REPOCONFIGREGEX="deb (\\[arch=[^]]*\\b${ARCHITECTURE}\\b[^]]*\\]"
+# -REPOCONFIGREGEX+="[[:space:]]*) https?://${BASEREPOCONFIG}"
+# +#REPOCONFIGREGEX+="[[:space:]]*) https?://${BASEREPOCONFIG}"
+# +
+#  stage_install_debian
+#  
+#  do_package
 # Debian postinst branding
 --- a/chrome/installer/linux/debian/postinst
 +++ b/chrome/installer/linux/debian/postinst
@@ -2003,177 +2003,181 @@
 -update-alternatives --remove @@PACKAGE_ORIG@@ /usr/bin/@@USR_BIN_SYMLINK_NAME@@
 +# End
 # RPM build branding
---- a/chrome/installer/linux/rpm/build.sh
-+++ b/chrome/installer/linux/rpm/build.sh
-@@ -15,13 +15,13 @@
-   # Different channels need to install to different locations so they
-   # don't conflict with each other.
-   local PACKAGE_ORIG="${PACKAGE}"
--  local PACKAGE_FILENAME="${PACKAGE}-${CHANNEL}"
-+  local PACKAGE_FILENAME="${PACKAGE}"
-   if [ "$CHANNEL" != "stable" ]; then
--    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
--    local PACKAGE="${PACKAGE}-${CHANNEL}"
--    local MENUNAME="${MENUNAME} (${CHANNEL})"
--  fi
--  process_template "${SCRIPTDIR}/chrome.spec.template" "${SPEC}"
-+    local INSTALLDIR="${INSTALLDIR}"
-+    local PACKAGE="${PACKAGE}"
-+    local MENUNAME="${MENUNAME}"
-+  fi
-+  process_template "${SCRIPTDIR}/thorium.spec.template" "${SPEC}"
- }
- 
- # Setup the installation directory hierarchy in the package staging area.
-@@ -38,12 +38,12 @@
-   local PACKAGE_ORIG="${PACKAGE}"
-   if [ "$CHANNEL" != "stable" ]; then
-     # Avoid file collisions between channels.
--    local PACKAGE="${PACKAGE}-${CHANNEL}"
--    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
-+    local PACKAGE="${PACKAGE}"
-+    local INSTALLDIR="${INSTALLDIR}"
- 
-     # Make it possible to distinguish between menu entries
-     # for different channels.
--    local MENUNAME="${MENUNAME} (${CHANNEL})"
-+    local MENUNAME="${MENUNAME}"
-   fi
-   prep_staging_rpm
-   SHLIB_PERMS=755
-@@ -71,13 +71,14 @@
-       sed 's/^ *//' | LANG=C sort | uniq > "${EXPECTED_DEPENDS}"
-   rpm -qpR "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm" | LANG=C sort | uniq \
-       > "${ACTUAL_DEPENDS}"
-+  cp -fv ${EXPECTED_DEPENDS} ${OUTPUTDIR}
-   BAD_DIFF=0
-   diff -u "${EXPECTED_DEPENDS}" "${ACTUAL_DEPENDS}" || BAD_DIFF=1
-   if [ $BAD_DIFF -ne 0 ] && [ -z "${IGNORE_DEPS_CHANGES:-}" ]; then
-     echo
--    echo "ERROR: bad rpm dependencies!"
-+    echo "NOTICE: bad rpm dependencies!"
-     echo
--    exit $BAD_DIFF
-+    echo $BAD_DIFF
-   fi
- }
- 
-@@ -109,7 +110,7 @@
-     --define "__os_install_post  %{nil}" \
-     --define "_build_id_links none" \
-     "${SPEC}"
--  PKGNAME="${PACKAGE}-${CHANNEL}-${VERSION}-${PACKAGE_RELEASE}"
-+  PKGNAME="${PACKAGE}-${VERSION}-${PACKAGE_RELEASE}"
-   mv "$RPMBUILD_DIR/RPMS/$ARCHITECTURE/${PKGNAME}.${ARCHITECTURE}.rpm" \
-      "${OUTPUTDIR}"
-   # Make sure the package is world-readable, otherwise it causes problems when
-@@ -117,6 +118,9 @@
-   chmod a+r "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm"
- 
-   verify_package "$DEPENDS"
-+  
-+  # Rename package to match Thorium naming scheme
-+  mv "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm" "${OUTPUTDIR}/${PACKAGE}_${VERSION}${NAME_SUFFIX}.rpm"
- }
- 
- # Remove temporary files and unwanted packaging output.
-@@ -138,32 +142,10 @@
-   echo "-t platform target platform"
- }
- 
--# Check that the channel name is one of the allowable ones.
--verify_channel() {
--  case $CHANNEL in
--    stable )
--      CHANNEL=stable
--      ;;
--    unstable|dev|alpha )
--      CHANNEL=unstable
--      ;;
--    testing|beta )
--      CHANNEL=beta
--      ;;
--    canary )
--      CHANNEL=canary
--      ;;
--    * )
--      echo
--      echo "ERROR: '$CHANNEL' is not a valid channel type."
--      echo
--      exit 1
--      ;;
--  esac
--}
-+CHANNEL=stable
- 
- process_opts() {
--  while getopts ":a:b:c:d:fho:t:" OPTNAME
-+  while getopts ":a:b:c:d:fhn:o:t:" OPTNAME
-   do
-     case $OPTNAME in
-       a )
-@@ -171,7 +153,6 @@
-         ;;
-       c )
-         CHANNEL="$OPTARG"
--        verify_channel
-         ;;
-       d )
-         BRANDING="$OPTARG"
-@@ -182,6 +163,9 @@
-       h )
-         usage
-         exit 0
-+        ;;
-+      n )
-+        NAME_SUFFIX="$OPTARG"
-         ;;
-       o )
-         OUTPUTDIR=$(readlink -f "${OPTARG}")
-@@ -210,18 +194,19 @@
- 
- SCRIPTDIR=$(readlink -f "$(dirname "$0")")
- OUTPUTDIR="${PWD}"
-+NAME_SUFFIX=""
- 
- # call cleanup() on exit
- trap cleanup 0
- process_opts "$@"
- export ARCHITECTURE="${ARCHITECTURE}"
--IS_OFFICIAL_BUILD=${IS_OFFICIAL_BUILD:=0}
--
--STAGEDIR="${OUTPUTDIR}/rpm-staging-${CHANNEL}"
-+IS_OFFICIAL_BUILD=1
-+
-+STAGEDIR="${OUTPUTDIR}/rpm-staging"
- mkdir -p "${STAGEDIR}"
--TMPFILEDIR="${OUTPUTDIR}/rpm-tmp-${CHANNEL}"
-+TMPFILEDIR="${OUTPUTDIR}/rpm-tmp"
- mkdir -p "${TMPFILEDIR}"
--RPMBUILD_DIR="${OUTPUTDIR}/rpm-build-${CHANNEL}"
-+RPMBUILD_DIR="${OUTPUTDIR}/rpm-build"
- mkdir -p "${RPMBUILD_DIR}"
- SPEC="${TMPFILEDIR}/chrome.spec"
- 
-@@ -239,13 +224,14 @@
- else
-   RDN_DESKTOP="${RDN}"
- fi
--eval $(sed -e "s/^\([^=]\+\)=\(.*\)$/\1='\2'/" \
-+eval $(sed -e "s/^\([^=]\+\)=\(.*\)$/export \1='\2'/" \
-   "${OUTPUTDIR}/installer/theme/BRANDING")
- 
--REPOCONFIG="https://dl.google.com/linux/${PACKAGE#google-}/rpm/stable"
-+# Unset repoconfig for Thorium
-+REPOCONFIG=
- REPOCONFIGREGEX=
--verify_channel
--USR_BIN_SYMLINK_NAME="${PACKAGE}-${CHANNEL}"
-+
-+USR_BIN_SYMLINK_NAME="thorium-browser"
- 
- stage_install_rpm
- do_package
+# build.sh is refactored to build.py
+# we just focus on the Windows build, 
+# so we don't need to maintain the RPM build script anymore, 
+# but we keep it here for reference and future use if needed.
+# --- a/chrome/installer/linux/rpm/build.sh
+# +++ b/chrome/installer/linux/rpm/build.sh
+# @@ -15,13 +15,13 @@
+#    # Different channels need to install to different locations so they
+#    # don't conflict with each other.
+#    local PACKAGE_ORIG="${PACKAGE}"
+# -  local PACKAGE_FILENAME="${PACKAGE}-${CHANNEL}"
+# +  local PACKAGE_FILENAME="${PACKAGE}"
+#    if [ "$CHANNEL" != "stable" ]; then
+# -    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
+# -    local PACKAGE="${PACKAGE}-${CHANNEL}"
+# -    local MENUNAME="${MENUNAME} (${CHANNEL})"
+# -  fi
+# -  process_template "${SCRIPTDIR}/chrome.spec.template" "${SPEC}"
+# +    local INSTALLDIR="${INSTALLDIR}"
+# +    local PACKAGE="${PACKAGE}"
+# +    local MENUNAME="${MENUNAME}"
+# +  fi
+# +  process_template "${SCRIPTDIR}/thorium.spec.template" "${SPEC}"
+#  }
+#  
+#  # Setup the installation directory hierarchy in the package staging area.
+# @@ -38,12 +38,12 @@
+#    local PACKAGE_ORIG="${PACKAGE}"
+#    if [ "$CHANNEL" != "stable" ]; then
+#      # Avoid file collisions between channels.
+# -    local PACKAGE="${PACKAGE}-${CHANNEL}"
+# -    local INSTALLDIR="${INSTALLDIR}-${CHANNEL}"
+# +    local PACKAGE="${PACKAGE}"
+# +    local INSTALLDIR="${INSTALLDIR}"
+#  
+#      # Make it possible to distinguish between menu entries
+#      # for different channels.
+# -    local MENUNAME="${MENUNAME} (${CHANNEL})"
+# +    local MENUNAME="${MENUNAME}"
+#    fi
+#    prep_staging_rpm
+#    SHLIB_PERMS=755
+# @@ -71,13 +71,14 @@
+#        sed 's/^ *//' | LANG=C sort | uniq > "${EXPECTED_DEPENDS}"
+#    rpm -qpR "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm" | LANG=C sort | uniq \
+#        > "${ACTUAL_DEPENDS}"
+# +  cp -fv ${EXPECTED_DEPENDS} ${OUTPUTDIR}
+#    BAD_DIFF=0
+#    diff -u "${EXPECTED_DEPENDS}" "${ACTUAL_DEPENDS}" || BAD_DIFF=1
+#    if [ $BAD_DIFF -ne 0 ] && [ -z "${IGNORE_DEPS_CHANGES:-}" ]; then
+#      echo
+# -    echo "ERROR: bad rpm dependencies!"
+# +    echo "NOTICE: bad rpm dependencies!"
+#      echo
+# -    exit $BAD_DIFF
+# +    echo $BAD_DIFF
+#    fi
+#  }
+#  
+# @@ -109,7 +110,7 @@
+#      --define "__os_install_post  %{nil}" \
+#      --define "_build_id_links none" \
+#      "${SPEC}"
+# -  PKGNAME="${PACKAGE}-${CHANNEL}-${VERSION}-${PACKAGE_RELEASE}"
+# +  PKGNAME="${PACKAGE}-${VERSION}-${PACKAGE_RELEASE}"
+#    mv "$RPMBUILD_DIR/RPMS/$ARCHITECTURE/${PKGNAME}.${ARCHITECTURE}.rpm" \
+#       "${OUTPUTDIR}"
+#    # Make sure the package is world-readable, otherwise it causes problems when
+# @@ -117,6 +118,9 @@
+#    chmod a+r "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm"
+#  
+#    verify_package "$DEPENDS"
+# +  
+# +  # Rename package to match Thorium naming scheme
+# +  mv "${OUTPUTDIR}/${PKGNAME}.${ARCHITECTURE}.rpm" "${OUTPUTDIR}/${PACKAGE}_${VERSION}${NAME_SUFFIX}.rpm"
+#  }
+#  
+#  # Remove temporary files and unwanted packaging output.
+# @@ -138,32 +142,10 @@
+#    echo "-t platform target platform"
+#  }
+#  
+# -# Check that the channel name is one of the allowable ones.
+# -verify_channel() {
+# -  case $CHANNEL in
+# -    stable )
+# -      CHANNEL=stable
+# -      ;;
+# -    unstable|dev|alpha )
+# -      CHANNEL=unstable
+# -      ;;
+# -    testing|beta )
+# -      CHANNEL=beta
+# -      ;;
+# -    canary )
+# -      CHANNEL=canary
+# -      ;;
+# -    * )
+# -      echo
+# -      echo "ERROR: '$CHANNEL' is not a valid channel type."
+# -      echo
+# -      exit 1
+# -      ;;
+# -  esac
+# -}
+# +CHANNEL=stable
+#  
+#  process_opts() {
+# -  while getopts ":a:b:c:d:fho:t:" OPTNAME
+# +  while getopts ":a:b:c:d:fhn:o:t:" OPTNAME
+#    do
+#      case $OPTNAME in
+#        a )
+# @@ -171,7 +153,6 @@
+#          ;;
+#        c )
+#          CHANNEL="$OPTARG"
+# -        verify_channel
+#          ;;
+#        d )
+#          BRANDING="$OPTARG"
+# @@ -182,6 +163,9 @@
+#        h )
+#          usage
+#          exit 0
+# +        ;;
+# +      n )
+# +        NAME_SUFFIX="$OPTARG"
+#          ;;
+#        o )
+#          OUTPUTDIR=$(readlink -f "${OPTARG}")
+# @@ -210,18 +194,19 @@
+#  
+#  SCRIPTDIR=$(readlink -f "$(dirname "$0")")
+#  OUTPUTDIR="${PWD}"
+# +NAME_SUFFIX=""
+#  
+#  # call cleanup() on exit
+#  trap cleanup 0
+#  process_opts "$@"
+#  export ARCHITECTURE="${ARCHITECTURE}"
+# -IS_OFFICIAL_BUILD=${IS_OFFICIAL_BUILD:=0}
+# -
+# -STAGEDIR="${OUTPUTDIR}/rpm-staging-${CHANNEL}"
+# +IS_OFFICIAL_BUILD=1
+# +
+# +STAGEDIR="${OUTPUTDIR}/rpm-staging"
+#  mkdir -p "${STAGEDIR}"
+# -TMPFILEDIR="${OUTPUTDIR}/rpm-tmp-${CHANNEL}"
+# +TMPFILEDIR="${OUTPUTDIR}/rpm-tmp"
+#  mkdir -p "${TMPFILEDIR}"
+# -RPMBUILD_DIR="${OUTPUTDIR}/rpm-build-${CHANNEL}"
+# +RPMBUILD_DIR="${OUTPUTDIR}/rpm-build"
+#  mkdir -p "${RPMBUILD_DIR}"
+#  SPEC="${TMPFILEDIR}/chrome.spec"
+#  
+# @@ -239,13 +224,14 @@
+#  else
+#    RDN_DESKTOP="${RDN}"
+#  fi
+# -eval $(sed -e "s/^\([^=]\+\)=\(.*\)$/\1='\2'/" \
+# +eval $(sed -e "s/^\([^=]\+\)=\(.*\)$/export \1='\2'/" \
+#    "${OUTPUTDIR}/installer/theme/BRANDING")
+#  
+# -REPOCONFIG="https://dl.google.com/linux/${PACKAGE#google-}/rpm/stable"
+# +# Unset repoconfig for Thorium
+# +REPOCONFIG=
+#  REPOCONFIGREGEX=
+# -verify_channel
+# -USR_BIN_SYMLINK_NAME="${PACKAGE}-${CHANNEL}"
+# +
+# +USR_BIN_SYMLINK_NAME="thorium-browser"
+#  
+#  stage_install_rpm
+#  do_package
 # Thorium Shell APK name
 --- a/content/shell/android/BUILD.gn
 +++ b/content/shell/android/BUILD.gn
@@ -2249,7 +2253,7 @@
 # Thorium Shell build product name
 --- a/content/shell/BUILD.gn
 +++ b/content/shell/BUILD.gn
-@@ -43,8 +43,8 @@
+@@ -46,8 +46,8 @@
  shell_use_toolkit_views = toolkit_views && !is_castos
  
  declare_args() {
@@ -2260,7 +2264,7 @@
    content_shell_major_version = "999"
  }
  
-@@ -603,7 +603,7 @@
+@@ -608,7 +608,7 @@
  }
  
  if (is_android) {
@@ -2269,7 +2273,7 @@
      testonly = true
      deps = [ "//content/shell/android:content_shell_apk" ]
    }
-@@ -617,7 +617,7 @@
+@@ -622,7 +622,7 @@
        content_shell_version,
      ]
    }
@@ -2278,8 +2282,8 @@
      testonly = true
      output_name = content_shell_product_name
      sources = [ "app/shell_main_mac.cc" ]
-@@ -728,7 +728,7 @@
-     bundle_identifier = ios_content_process_bundle_identifier
+@@ -740,7 +740,7 @@
+     }
    }
  } else {
 -  executable("content_shell") {
@@ -2287,7 +2291,7 @@
      testonly = true
  
      sources = [ "app/shell_main.cc" ]
-@@ -791,7 +791,7 @@
+@@ -802,7 +802,7 @@
      fuchsia_component("content_shell_component") {
        testonly = true
        manifest = "fuchsia/content_shell.cml"
@@ -2296,7 +2300,7 @@
        visibility = [ ":*" ]
      }
  
-@@ -1083,7 +1083,7 @@
+@@ -1071,7 +1071,7 @@
  group("content_shell_crash_test") {
    testonly = true
    data_deps = [
@@ -2305,10 +2309,9 @@
      "//testing:test_scripts_shared",
      "//third_party/angle:includes",
    ]
-# Thorium Shell test deps
 --- a/content/test/BUILD.gn
 +++ b/content/test/BUILD.gn
-@@ -2277,8 +2277,8 @@
+@@ -2356,8 +2356,8 @@
        "../renderer/render_view_browsertest_mac.mm",
      ]
      deps += [ "//third_party/ocmock" ]
@@ -2319,7 +2322,7 @@
      weak_frameworks = [ "ScreenCaptureKit.framework" ]  # macOS 12.3
    }
  
-@@ -2325,7 +2325,7 @@
+@@ -2404,7 +2404,7 @@
        "//mojo/public/cpp/platform",
        "//mojo/public/mojom/base",
      ]
@@ -2328,15 +2331,14 @@
      if (use_ozone) {
        deps += [ "//ui/ozone" ]
      }
-@@ -2883,7 +2883,6 @@
-     "../browser/tracing/tracing_scenario_unittest.cc",
+@@ -2970,7 +2970,6 @@
+     "../browser/url_loader_factory_params_helper_unittest.cc",
      "../browser/usb/web_usb_service_impl_unittest.cc",
      "../browser/web_contents/aura/gesture_nav_simple_unittest.cc",
 -    "../browser/web_contents/file_chooser_impl_unittest.cc",
      "../browser/web_contents/web_contents_delegate_unittest.cc",
      "../browser/web_contents/web_contents_impl_unittest.cc",
      "../browser/web_contents/web_contents_user_data_unittest.cc",
-# thorium.exe reorder-imports
 --- a/build/win/reorder-imports.py
 +++ b/build/win/reorder-imports.py
 @@ -24,8 +24,8 @@
@@ -2386,3 +2388,4 @@
  #endif
  
  base::FilePath GetCurrentDirectory() {
+

@@ -1,5 +1,3 @@
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config.h b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config.h
-index a98fdf201a..421b1cff30 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config.h
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config.h
 @@ -674,7 +674,7 @@
@@ -11,20 +9,18 @@ index a98fdf201a..421b1cff30 100644
  #define CONFIG_ADTS_HEADER 1
  #define CONFIG_ATSC_A53 1
  #define CONFIG_AUDIO_FRAME_QUEUE 0
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config_components.h b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config_components.h
-index 66c41749ef..cc3ded1a8b 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config_components.h
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/config_components.h
-@@ -10,7 +10,7 @@
- #define CONFIG_DCA_CORE_BSF 0
+@@ -13,7 +13,7 @@
+ #define CONFIG_DOVI_RPU_BSF 0
  #define CONFIG_DTS2PTS_BSF 0
  #define CONFIG_DV_ERROR_MARKER_BSF 0
 -#define CONFIG_EAC3_CORE_BSF 0
 +#define CONFIG_EAC3_CORE_BSF 1
+ #define CONFIG_EIA608_TO_SMPTE436M_BSF 0
  #define CONFIG_EVC_FRAME_MERGE_BSF 0
  #define CONFIG_EXTRACT_EXTRADATA_BSF 0
- #define CONFIG_FILTER_UNITS_BSF 0
-@@ -338,8 +338,8 @@
+@@ -346,8 +346,8 @@
  #define CONFIG_AAC_DECODER 1
  #define CONFIG_AAC_FIXED_DECODER 0
  #define CONFIG_AAC_LATM_DECODER 0
@@ -33,9 +29,9 @@ index 66c41749ef..cc3ded1a8b 100644
 +#define CONFIG_AC3_DECODER 1
 +#define CONFIG_AC3_FIXED_DECODER 1
  #define CONFIG_ACELP_KELVIN_DECODER 0
+ #define CONFIG_AHX_DECODER 0
  #define CONFIG_ALAC_DECODER 0
- #define CONFIG_ALS_DECODER 0
-@@ -370,7 +370,7 @@
+@@ -379,7 +379,7 @@
  #define CONFIG_DSICINAUDIO_DECODER 0
  #define CONFIG_DSS_SP_DECODER 0
  #define CONFIG_DST_DECODER 0
@@ -44,7 +40,7 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_EVRC_DECODER 0
  #define CONFIG_FASTAUDIO_DECODER 0
  #define CONFIG_FFWAVESYNTH_DECODER 0
-@@ -559,11 +559,11 @@
+@@ -579,11 +579,11 @@
  #define CONFIG_WEBVTT_DECODER 0
  #define CONFIG_XSUB_DECODER 0
  #define CONFIG_AAC_AT_DECODER 0
@@ -58,16 +54,16 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_GSM_MS_AT_DECODER 0
  #define CONFIG_ILBC_AT_DECODER 0
  #define CONFIG_MP1_AT_DECODER 0
-@@ -953,7 +953,7 @@
+@@ -1004,7 +1004,7 @@
  #define CONFIG_WMV3_VDPAU_HWACCEL 0
  #define CONFIG_AAC_PARSER 1
  #define CONFIG_AAC_LATM_PARSER 0
 -#define CONFIG_AC3_PARSER 0
 +#define CONFIG_AC3_PARSER 1
  #define CONFIG_ADX_PARSER 0
+ #define CONFIG_AHX_PARSER 0
  #define CONFIG_AMR_PARSER 0
- #define CONFIG_AV1_PARSER 0
-@@ -1621,7 +1621,7 @@
+@@ -1689,7 +1689,7 @@
  #define CONFIG_AA_DEMUXER 0
  #define CONFIG_AAC_DEMUXER 1
  #define CONFIG_AAX_DEMUXER 0
@@ -76,7 +72,7 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_AC4_DEMUXER 0
  #define CONFIG_ACE_DEMUXER 0
  #define CONFIG_ACM_DEMUXER 0
-@@ -1705,7 +1705,7 @@
+@@ -1772,7 +1772,7 @@
  #define CONFIG_DXA_DEMUXER 0
  #define CONFIG_EA_DEMUXER 0
  #define CONFIG_EA_CDATA_DEMUXER 0
@@ -85,8 +81,6 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_EPAF_DEMUXER 0
  #define CONFIG_EVC_DEMUXER 0
  #define CONFIG_FFMETADATA_DEMUXER 0
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/codec_list.c b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/codec_list.c
-index c9666ae199..75415127f1 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/codec_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/codec_list.c
 @@ -15,4 +15,7 @@ static const FFCodec * const codec_list[] = {
@@ -97,8 +91,6 @@ index c9666ae199..75415127f1 100644
 +    &ff_eac3_decoder,
 +    &ff_ac3_fixed_decoder,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/parser_list.c b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/parser_list.c
-index c85087a596..a9e086ef6d 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/parser_list.c
 @@ -7,4 +7,5 @@ static const AVCodecParser * const parser_list[] = {
@@ -107,8 +99,6 @@ index c85087a596..a9e086ef6d 100644
      &ff_hevc_parser,
 +    &ff_ac3_parser,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavformat/demuxer_list.c b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavformat/demuxer_list.c
-index 29f1f59381..6fb0769ce7 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavformat/demuxer_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavformat/demuxer_list.c
 @@ -6,4 +6,6 @@ static const FFInputFormat * const demuxer_list[] = {
@@ -118,8 +108,6 @@ index 29f1f59381..6fb0769ce7 100644
 +    &ff_ac3_demuxer,
 +    &ff_eac3_demuxer,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config.h b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config.h
-index 92151a92d2..69194a7959 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config.h
 +++ b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config.h
 @@ -674,7 +674,7 @@
@@ -131,20 +119,18 @@ index 92151a92d2..69194a7959 100644
  #define CONFIG_ADTS_HEADER 1
  #define CONFIG_ATSC_A53 1
  #define CONFIG_AUDIO_FRAME_QUEUE 0
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config_components.h b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config_components.h
-index 66c41749ef..cc3ded1a8b 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config_components.h
 +++ b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/config_components.h
-@@ -10,7 +10,7 @@
- #define CONFIG_DCA_CORE_BSF 0
+@@ -13,7 +13,7 @@
+ #define CONFIG_DOVI_RPU_BSF 0
  #define CONFIG_DTS2PTS_BSF 0
  #define CONFIG_DV_ERROR_MARKER_BSF 0
 -#define CONFIG_EAC3_CORE_BSF 0
 +#define CONFIG_EAC3_CORE_BSF 1
+ #define CONFIG_EIA608_TO_SMPTE436M_BSF 0
  #define CONFIG_EVC_FRAME_MERGE_BSF 0
  #define CONFIG_EXTRACT_EXTRADATA_BSF 0
- #define CONFIG_FILTER_UNITS_BSF 0
-@@ -338,8 +338,8 @@
+@@ -346,8 +346,8 @@
  #define CONFIG_AAC_DECODER 1
  #define CONFIG_AAC_FIXED_DECODER 0
  #define CONFIG_AAC_LATM_DECODER 0
@@ -153,9 +139,9 @@ index 66c41749ef..cc3ded1a8b 100644
 +#define CONFIG_AC3_DECODER 1
 +#define CONFIG_AC3_FIXED_DECODER 1
  #define CONFIG_ACELP_KELVIN_DECODER 0
+ #define CONFIG_AHX_DECODER 0
  #define CONFIG_ALAC_DECODER 0
- #define CONFIG_ALS_DECODER 0
-@@ -370,7 +370,7 @@
+@@ -379,7 +379,7 @@
  #define CONFIG_DSICINAUDIO_DECODER 0
  #define CONFIG_DSS_SP_DECODER 0
  #define CONFIG_DST_DECODER 0
@@ -164,7 +150,7 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_EVRC_DECODER 0
  #define CONFIG_FASTAUDIO_DECODER 0
  #define CONFIG_FFWAVESYNTH_DECODER 0
-@@ -559,11 +559,11 @@
+@@ -579,11 +579,11 @@
  #define CONFIG_WEBVTT_DECODER 0
  #define CONFIG_XSUB_DECODER 0
  #define CONFIG_AAC_AT_DECODER 0
@@ -178,16 +164,16 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_GSM_MS_AT_DECODER 0
  #define CONFIG_ILBC_AT_DECODER 0
  #define CONFIG_MP1_AT_DECODER 0
-@@ -953,7 +953,7 @@
+@@ -1004,7 +1004,7 @@
  #define CONFIG_WMV3_VDPAU_HWACCEL 0
  #define CONFIG_AAC_PARSER 1
  #define CONFIG_AAC_LATM_PARSER 0
 -#define CONFIG_AC3_PARSER 0
 +#define CONFIG_AC3_PARSER 1
  #define CONFIG_ADX_PARSER 0
+ #define CONFIG_AHX_PARSER 0
  #define CONFIG_AMR_PARSER 0
- #define CONFIG_AV1_PARSER 0
-@@ -1621,7 +1621,7 @@
+@@ -1689,7 +1689,7 @@
  #define CONFIG_AA_DEMUXER 0
  #define CONFIG_AAC_DEMUXER 1
  #define CONFIG_AAX_DEMUXER 0
@@ -196,7 +182,7 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_AC4_DEMUXER 0
  #define CONFIG_ACE_DEMUXER 0
  #define CONFIG_ACM_DEMUXER 0
-@@ -1705,7 +1705,7 @@
+@@ -1772,7 +1772,7 @@
  #define CONFIG_DXA_DEMUXER 0
  #define CONFIG_EA_DEMUXER 0
  #define CONFIG_EA_CDATA_DEMUXER 0
@@ -205,8 +191,6 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_EPAF_DEMUXER 0
  #define CONFIG_EVC_DEMUXER 0
  #define CONFIG_FFMETADATA_DEMUXER 0
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/codec_list.c b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/codec_list.c
-index c9666ae199..75415127f1 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/codec_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/codec_list.c
 @@ -15,4 +15,7 @@ static const FFCodec * const codec_list[] = {
@@ -217,8 +201,6 @@ index c9666ae199..75415127f1 100644
 +    &ff_eac3_decoder,
 +    &ff_ac3_fixed_decoder,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/parser_list.c b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/parser_list.c
-index c85087a596..a9e086ef6d 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/parser_list.c
 @@ -7,4 +7,5 @@ static const AVCodecParser * const parser_list[] = {
@@ -227,8 +209,6 @@ index c85087a596..a9e086ef6d 100644
      &ff_hevc_parser,
 +    &ff_ac3_parser,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavformat/demuxer_list.c b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavformat/demuxer_list.c
-index 29f1f59381..6fb0769ce7 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavformat/demuxer_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavformat/demuxer_list.c
 @@ -6,4 +6,6 @@ static const FFInputFormat * const demuxer_list[] = {
@@ -238,8 +218,6 @@ index 29f1f59381..6fb0769ce7 100644
 +    &ff_ac3_demuxer,
 +    &ff_eac3_demuxer,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/x64/config.h b/third_party/ffmpeg/chromium/config/Chrome/win/x64/config.h
-index 01114d6539..2bf150657a 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/x64/config.h
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/x64/config.h
 @@ -674,7 +674,7 @@
@@ -251,20 +229,18 @@ index 01114d6539..2bf150657a 100644
  #define CONFIG_ADTS_HEADER 1
  #define CONFIG_ATSC_A53 1
  #define CONFIG_AUDIO_FRAME_QUEUE 0
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/x64/config_components.h b/third_party/ffmpeg/chromium/config/Chrome/win/x64/config_components.h
-index 66c41749ef..cc3ded1a8b 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/x64/config_components.h
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/x64/config_components.h
-@@ -10,7 +10,7 @@
- #define CONFIG_DCA_CORE_BSF 0
+@@ -13,7 +13,7 @@
+ #define CONFIG_DOVI_RPU_BSF 0
  #define CONFIG_DTS2PTS_BSF 0
  #define CONFIG_DV_ERROR_MARKER_BSF 0
 -#define CONFIG_EAC3_CORE_BSF 0
 +#define CONFIG_EAC3_CORE_BSF 1
+ #define CONFIG_EIA608_TO_SMPTE436M_BSF 0
  #define CONFIG_EVC_FRAME_MERGE_BSF 0
  #define CONFIG_EXTRACT_EXTRADATA_BSF 0
- #define CONFIG_FILTER_UNITS_BSF 0
-@@ -338,8 +338,8 @@
+@@ -346,8 +346,8 @@
  #define CONFIG_AAC_DECODER 1
  #define CONFIG_AAC_FIXED_DECODER 0
  #define CONFIG_AAC_LATM_DECODER 0
@@ -273,9 +249,9 @@ index 66c41749ef..cc3ded1a8b 100644
 +#define CONFIG_AC3_DECODER 1
 +#define CONFIG_AC3_FIXED_DECODER 1
  #define CONFIG_ACELP_KELVIN_DECODER 0
+ #define CONFIG_AHX_DECODER 0
  #define CONFIG_ALAC_DECODER 0
- #define CONFIG_ALS_DECODER 0
-@@ -370,7 +370,7 @@
+@@ -379,7 +379,7 @@
  #define CONFIG_DSICINAUDIO_DECODER 0
  #define CONFIG_DSS_SP_DECODER 0
  #define CONFIG_DST_DECODER 0
@@ -284,7 +260,7 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_EVRC_DECODER 0
  #define CONFIG_FASTAUDIO_DECODER 0
  #define CONFIG_FFWAVESYNTH_DECODER 0
-@@ -559,11 +559,11 @@
+@@ -579,11 +579,11 @@
  #define CONFIG_WEBVTT_DECODER 0
  #define CONFIG_XSUB_DECODER 0
  #define CONFIG_AAC_AT_DECODER 0
@@ -298,16 +274,16 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_GSM_MS_AT_DECODER 0
  #define CONFIG_ILBC_AT_DECODER 0
  #define CONFIG_MP1_AT_DECODER 0
-@@ -953,7 +953,7 @@
+@@ -1004,7 +1004,7 @@
  #define CONFIG_WMV3_VDPAU_HWACCEL 0
  #define CONFIG_AAC_PARSER 1
  #define CONFIG_AAC_LATM_PARSER 0
 -#define CONFIG_AC3_PARSER 0
 +#define CONFIG_AC3_PARSER 1
  #define CONFIG_ADX_PARSER 0
+ #define CONFIG_AHX_PARSER 0
  #define CONFIG_AMR_PARSER 0
- #define CONFIG_AV1_PARSER 0
-@@ -1621,7 +1621,7 @@
+@@ -1689,7 +1689,7 @@
  #define CONFIG_AA_DEMUXER 0
  #define CONFIG_AAC_DEMUXER 1
  #define CONFIG_AAX_DEMUXER 0
@@ -316,7 +292,7 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_AC4_DEMUXER 0
  #define CONFIG_ACE_DEMUXER 0
  #define CONFIG_ACM_DEMUXER 0
-@@ -1705,7 +1705,7 @@
+@@ -1772,7 +1772,7 @@
  #define CONFIG_DXA_DEMUXER 0
  #define CONFIG_EA_DEMUXER 0
  #define CONFIG_EA_CDATA_DEMUXER 0
@@ -325,8 +301,6 @@ index 66c41749ef..cc3ded1a8b 100644
  #define CONFIG_EPAF_DEMUXER 0
  #define CONFIG_EVC_DEMUXER 0
  #define CONFIG_FFMETADATA_DEMUXER 0
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/codec_list.c b/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/codec_list.c
-index c9666ae199..75415127f1 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/codec_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/codec_list.c
 @@ -15,4 +15,7 @@ static const FFCodec * const codec_list[] = {
@@ -337,8 +311,6 @@ index c9666ae199..75415127f1 100644
 +    &ff_eac3_decoder,
 +    &ff_ac3_fixed_decoder,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/parser_list.c b/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
-index c85087a596..a9e086ef6d 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
 @@ -7,4 +7,5 @@ static const AVCodecParser * const parser_list[] = {
@@ -347,8 +319,6 @@ index c85087a596..a9e086ef6d 100644
      &ff_hevc_parser,
 +    &ff_ac3_parser,
      NULL };
-diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavformat/demuxer_list.c b/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavformat/demuxer_list.c
-index 29f1f59381..6fb0769ce7 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavformat/demuxer_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavformat/demuxer_list.c
 @@ -6,4 +6,6 @@ static const FFInputFormat * const demuxer_list[] = {
@@ -382,3 +352,4 @@ index 29f1f59381..6fb0769ce7 100644
 +    "libavcodec/x86/fmtconvert.asm",
 +  ]
  }
+
