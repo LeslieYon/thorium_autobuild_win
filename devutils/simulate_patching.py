@@ -23,7 +23,6 @@ Usage:
   python devutils/simulate_patching.py
   python devutils/simulate_patching.py --source-dir ../chromium
   python devutils/simulate_patching.py --work-dir D:/tmp/patch_test --keep-work-dir
-  python devutils/simulate_patching.py --patch-type thorium
   python devutils/simulate_patching.py --sequential
 """
 
@@ -279,12 +278,10 @@ def _collect_thorium_patches() -> List[Path]:
     return patches
 
 
-def discover_all_patches(patch_type: str = 'all') -> List[Tuple[Path, str]]:
+def discover_all_patches() -> List[Tuple[Path, str]]:
     """
     Discover all patches in build.py's application order.
-
-    Args:
-        patch_type: 'ungoogled', 'thorium', or 'all'
+    Includes both external patches (series.external) and thorium patches (series).
 
     Returns:
         List of (patch_path, label) tuples in application order.
@@ -292,13 +289,11 @@ def discover_all_patches(patch_type: str = 'all') -> List[Tuple[Path, str]]:
     """
     result: List[Tuple[Path, str]] = []
 
-    if patch_type in ('all', 'ungoogled'):
-        for p in _collect_external_patches():
-            result.append((p, 'ungoogled'))
+    for p in _collect_external_patches():
+        result.append((p, 'ungoogled'))
 
-    if patch_type in ('all', 'thorium'):
-        for p in _collect_thorium_patches():
-            result.append((p, 'thorium'))
+    for p in _collect_thorium_patches():
+        result.append((p, 'thorium'))
 
     return result
 
@@ -715,7 +710,6 @@ Examples:
   %(prog)s                                    # full simulation (temp dir, auto-cleaned)
   %(prog)s --source-dir ../chromium           # use a different pristine source
   %(prog)s --work-dir D:/tmp/patch_test --keep-work-dir  # inspect work dir after
-  %(prog)s --patch-type thorium               # only test thorium patches
   %(prog)s --sequential                        # stop on first failure
   %(prog)s --export-json results.json          # export detailed results
         """,
@@ -731,11 +725,6 @@ Examples:
     parser.add_argument(
         "--keep-work-dir", action="store_true",
         help="Do not delete the working directory after completion",
-    )
-    parser.add_argument(
-        "--patch-type", type=str, choices=['all', 'ungoogled', 'thorium'],
-        default='all',
-        help="Which patches to test (default: all)",
     )
     parser.add_argument(
         "--sequential", action="store_true",
@@ -788,7 +777,7 @@ Examples:
     print(f"  Source tree:    {source_tree}")
     print(f"  Project root:   {ROOT_DIR}")
     print(f"  Patch binary:   {patch_cmd}")
-    print(f"  Patch type:     {args.patch_type}")
+
     print(f"  Sequential:     {'yes' if args.sequential else 'no'}")
     version_file = ROOT_DIR / "chromium_version.txt"
     if version_file.exists():
@@ -807,7 +796,7 @@ Examples:
     print("  STEP 1: DISCOVER PATCHES")
     print(f"{'='*72}")
 
-    patches_info = discover_all_patches(patch_type=args.patch_type)
+    patches_info = discover_all_patches()
     if not patches_info:
         print("  \u26a0  No patches found. Check your series files.")
         sys.exit(0)
@@ -871,24 +860,23 @@ Examples:
     # Step 4: Apply ungoogled-chromium-windows patches
     all_results: List[PatchResult] = []
 
-    if args.patch_type in ('all', 'ungoogled'):
-        ung_patches = [(p, l) for p, l in patches_info if l == 'ungoogled']
-        if ung_patches:
-            print(f"\n{'='*72}")
-            print("  STEP 4: APPLY UNGOOGLED-CHROMIUM-WINDOWS PATCHES")
-            print(f"{'='*72}")
-            print(f"  Count: {len(ung_patches)} patches")
+    ung_patches = [(p, l) for p, l in patches_info if l == 'ungoogled']
+    if ung_patches:
+        print(f"\n{'='*72}")
+        print("  STEP 4: APPLY UNGOOGLED-CHROMIUM-WINDOWS PATCHES")
+        print(f"{'='*72}")
+        print(f"  Count: {len(ung_patches)} patches")
 
-            results = apply_patches_with_details(
-                ung_patches, work_dir, patch_cmd,
-                stop_on_failure=args.sequential,
-            )
-            all_results.extend(results)
+        results = apply_patches_with_details(
+            ung_patches, work_dir, patch_cmd,
+            stop_on_failure=args.sequential,
+        )
+        all_results.extend(results)
 
-            # Check if we need to stop (sequential mode)
-            if args.sequential and any(not r.success for r in results):
-                print(f"\n  \u274c Stopping due to patch failure (--sequential mode)")
-                _finish_and_exit(args, all_results, work_dir, keep_work_dir, temp_dir)
+        # Check if we need to stop (sequential mode)
+        if args.sequential and any(not r.success for r in results):
+            print(f"\n  \u274c Stopping due to patch failure (--sequential mode)")
+            _finish_and_exit(args, all_results, work_dir, keep_work_dir, temp_dir)
 
     # Step 5: Apply overlay files
     if not args.skip_overlay:
@@ -903,19 +891,18 @@ Examples:
         overwritten, new_files, overlay_file_list = 0, 0, []
 
     # Step 6: Apply Thorium patches
-    if args.patch_type in ('all', 'thorium'):
-        th_patches = [(p, l) for p, l in patches_info if l == 'thorium']
-        if th_patches:
-            print(f"\n{'='*72}")
-            print("  STEP 6: APPLY THORIUM PATCHES")
-            print(f"{'='*72}")
-            print(f"  Count: {len(th_patches)} patches")
+    th_patches = [(p, l) for p, l in patches_info if l == 'thorium']
+    if th_patches:
+        print(f"\n{'='*72}")
+        print("  STEP 6: APPLY THORIUM PATCHES")
+        print(f"{'='*72}")
+        print(f"  Count: {len(th_patches)} patches")
 
-            results = apply_patches_with_details(
-                th_patches, work_dir, patch_cmd,
-                stop_on_failure=args.sequential,
-            )
-            all_results.extend(results)
+        results = apply_patches_with_details(
+            th_patches, work_dir, patch_cmd,
+            stop_on_failure=args.sequential,
+        )
+        all_results.extend(results)
 
     # Step 7: Summary & export
     total_duration = sum(r.duration for r in all_results)
