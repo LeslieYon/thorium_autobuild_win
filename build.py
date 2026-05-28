@@ -295,18 +295,17 @@ def _ensure_depot_tools_deps():
 
     The ungoogled-chromium depot_tools.patch changes gclient.bat from vpython3
     to python3, bypassing the virtual environment that normally provides httplib2.
-    gerrit_util.py (from depot_tools) imports httplib2.socks, which was removed
-    in httplib2 >= 0.20.0. We install the compatible version here so gclient
-    can run during source preparation (clone.py -> gclient sync).
+    We install the compatible version here so gclient can run during source preparation 
+    (clone.py -> gclient sync).
     """
     try:
-        import httplib2.socks  # type: ignore[import-untyped] # noqa: F401
+        import httplib2
     except ImportError:
         get_logger().info(
-            'Installing httplib2==0.19.1 (required by depot_tools gclient)')
+            'Installing httplib2==0.22.0 (required by depot_tools gclient)')
         subprocess.check_call([
             sys.executable, '-m', 'pip', 'install',
-            '--disable-pip-version-check', 'httplib2==0.19.1'
+            '--disable-pip-version-check', 'httplib2==0.22.0'
         ])
 
 
