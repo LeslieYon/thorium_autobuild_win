@@ -15,6 +15,7 @@
 
 # ----- Prerequisites from main series -----
 #[main]
+upstream-fixes/missing-dependencies.patch
 core/inox-patchset/0001-fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-with-prunned-binaries.patch
@@ -28,7 +29,6 @@ ungoogled-chromium/windows/windows-disable-rcpy.patch
 ungoogled-chromium/windows/windows-fix-building-gn.patch
 ungoogled-chromium/windows/windows-compile-mini-installer.patch
 ungoogled-chromium/windows/windows-no-unknown-warnings.patch
-ungoogled-chromium/windows/windows-fix-showIncludes.patch
 ungoogled-chromium/windows/windows-fix-rc.patch
 ungoogled-chromium/windows/windows-disable-event-log.patch
 ungoogled-chromium/windows/windows-fix-clang-format-exe.patch
@@ -48,3 +48,4 @@ ungoogled-chromium/windows/windows-fix-missing-includes.patch
 #[cromite]
 # temporary disabled bacause conflict
 # Enable-Global-Privacy-Control.patch
+Override-the-MV2-deprecation.patch

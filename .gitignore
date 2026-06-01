@@ -5,6 +5,7 @@
 *.zip
 *.7z
 *.pak
+/test_new*
 
 # =========== Python ===========
 __pycache__/

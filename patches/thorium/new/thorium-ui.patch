@@ -1,23 +1,23 @@
 # Multi-tab closure confirmation
 --- a/chrome/browser/ui/browser.cc
 +++ b/chrome/browser/ui/browser.cc
-@@ -143,6 +143,7 @@
- #include "chrome/browser/ui/unload_controller.h"
+@@ -142,6 +142,7 @@
  #include "chrome/browser/ui/views/frame/browser_view.h"
  #include "chrome/browser/ui/views/frame/contents_web_view.h"
+ #include "chrome/browser/ui/views/frame/multi_contents_view.h"
 +#include "chrome/browser/ui/views/message_box_dialog.h"
  #include "chrome/browser/ui/views/status_bubble_views.h"
  #include "chrome/browser/ui/web_applications/app_browser_controller.h"
- #include "chrome/browser/ui/web_applications/web_app_launch_utils.h"
-@@ -640,6 +641,7 @@
-       omit_from_session_restore_(params.omit_from_session_restore),
+ #include "chrome/browser/ui/webui/signin/login_ui_service.h"
+@@ -593,6 +594,7 @@ Browser::Browser(const CreateParams& params)
        should_trigger_session_restore_(params.should_trigger_session_restore),
-       cancel_download_confirmation_state_(NOT_PROMPTED),
+       cancel_download_confirmation_state_(
+           CancelDownloadConfirmationState::kNotPrompted),
 +      close_multitab_confirmation_state_(NOT_PROMPTED),
        override_bounds_(params.initial_bounds),
        initial_show_state_(params.initial_show_state),
        initial_workspace_(params.initial_workspace),
-@@ -1102,20 +1104,22 @@
+@@ -980,20 +982,22 @@
      return WarnBeforeClosingResult::kOkToClose;
    }
  
@@ -54,10 +54,10 @@
    }
  
    DCHECK(!warn_before_closing_callback_)
-@@ -1153,6 +1157,7 @@
- 
+@@ -1047,6 +1051,7 @@ bool Browser::TryToCloseWindow(
  void Browser::ResetTryToCloseWindow() {
-   cancel_download_confirmation_state_ = NOT_PROMPTED;
+   cancel_download_confirmation_state_ =
+       CancelDownloadConfirmationState::kNotPrompted;
 +  close_multitab_confirmation_state_ = NOT_PROMPTED;
    unload_controller_.ResetTryToCloseWindow();
  }
@@ -120,7 +120,7 @@
 +
  void Browser::InProgressDownloadResponse(bool cancel_downloads) {
    if (cancel_downloads) {
-     cancel_download_confirmation_state_ = RESPONSE_RECEIVED;
+     cancel_download_confirmation_state_ =
 @@ -3573,6 +3630,22 @@
    std::move(warn_before_closing_callback_)
        .Run(proceed_closing ? WarnBeforeClosingResult::kOkToClose
@@ -148,13 +148,13 @@
 --- a/chrome/browser/ui/browser.h
 +++ b/chrome/browser/ui/browser.h
 @@ -31,6 +31,7 @@
- #include "chrome/browser/ui/browser_navigator_params.h"
- #include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
+ #include "chrome/browser/ui/browser_window/public/desktop_browser_window_capabilities_delegate.h"
+ #include "chrome/browser/ui/browser_window_deleter.h"
  #include "chrome/browser/ui/chrome_web_modal_dialog_manager_delegate.h"
 +#include "chrome/browser/ui/simple_message_box.h"
- #include "chrome/browser/ui/signin/signin_view_controller.h"
  #include "chrome/browser/ui/tabs/tab_strip_model.h"
  #include "chrome/browser/ui/tabs/tab_strip_model_observer.h"
+ #include "chrome/browser/ui/unload_controller.h"
 @@ -1237,11 +1238,17 @@
    // Returns true if the window can close, false otherwise.
    bool CanCloseWithInProgressDownloads();
@@ -208,7 +208,7 @@
 +  return true;
  }
  
- void Print(Browser* browser) {
+ void Print(BrowserWindowInterface* bwi) {
 # Home button default enabled
 --- a/chrome/browser/ui/browser_ui_prefs.cc
 +++ b/chrome/browser/ui/browser_ui_prefs.cc
@@ -219,15 +219,16 @@
 -  registry->RegisterBooleanPref(prefs::kShowHomeButton, false,
 +  registry->RegisterBooleanPref(prefs::kShowHomeButton, true,
                                  pref_registration_flags);
- 
-   registry->RegisterBooleanPref(prefs::kShowForwardButton, true,
-@@ -125,12 +125,12 @@
+   registry->RegisterBooleanPref(prefs::kSplitViewDragAndDropEnabled, true,
+                                 pref_registration_flags);
+@@ -145,13 +145,13 @@ void RegisterBrowserUserPrefs(user_prefs::PrefRegistrySyncable* registry) {
                                  false);
  #endif
    registry->RegisterStringPref(prefs::kWebRTCIPHandlingPolicy,
 -                               blink::kWebRTCIPHandlingDefault);
 +                               blink::kWebRTCIPHandlingDefaultPublicAndPrivateInterfaces);
    registry->RegisterListPref(prefs::kWebRTCIPHandlingUrl, base::Value::List());
+   registry->RegisterBooleanPref(prefs::kWebRTCPostQuantumKeyAgreement, false);
    registry->RegisterStringPref(prefs::kWebRTCUDPPortRange, std::string());
    registry->RegisterBooleanPref(prefs::kWebRtcEventLogCollectionAllowed, false);
    registry->RegisterListPref(prefs::kWebRtcLocalIpsAllowedUrls);
@@ -239,16 +240,16 @@
 # Disable extension/blink flag warnings
 --- a/chrome/browser/ui/startup/bad_flags_prompt.cc
 +++ b/chrome/browser/ui/startup/bad_flags_prompt.cc
-@@ -92,7 +92,7 @@
- 
+@@ -107,7 +107,7 @@ const char* const kBadFlags[] = {
  #if BUILDFLAG(ENABLE_EXTENSIONS)
-     // This flag gives extensions more powers.
+     // These flags enable extensions running scripts on chrome:// and
+     // chrome-extension:// URLs.
 -    extensions::switches::kExtensionsOnChromeURLs,
-+    // extensions::switches::kExtensionsOnChromeURLs, (Disabled by Alex313031)
++    // extensions::switches::kExtensionsOnChromeURLs,
+     extensions::switches::kExtensionsOnExtensionURLs,
  #endif
  
- #if BUILDFLAG(IS_LINUX)
-@@ -103,8 +103,8 @@
+@@ -119,8 +119,8 @@
  
      // These flags control Blink feature state, which is not supported and is
      // intended only for use by Chromium developers.
@@ -269,46 +270,15 @@
 -    switches::kEnableUnsafeWebGPU,
 +    // switches::kEnableUnsafeWebGPU, (Disabled by Alex313031)
  
-     // A flag to bypass the WebHID blocklist for testing purposes.
-     switches::kDisableHidBlocklist,
+ #if BUILDFLAG(IS_WIN)
+     // These flags allow loading libraries from specified paths, which may
 # Disable default browser prompt
 --- a/chrome/browser/ui/startup/default_browser_prompt/default_browser_prompt.cc
 +++ b/chrome/browser/ui/startup/default_browser_prompt/default_browser_prompt.cc
-@@ -37,66 +37,13 @@
- namespace {
- 
- void ShowPrompt() {
--  // Show the default browser request prompt in the most recently active,
--  // visible, tabbed browser. Do not show the prompt if no such browser exists.
--  for (Browser* browser : BrowserList::GetInstance()->OrderedByActivation()) {
--    // |browser| may be null in UI tests. Also, don't show the prompt in an app
--    // window, which is not meant to be treated as a Chrome window. Only show in
--    // a normal, tabbed browser.
--    if (browser && !browser->is_type_normal()) {
--      continue;
--    }
--
--    // In ChromeBot tests, there might be a race. This line appears to get
--    // called during shutdown and the active web contents can be nullptr.
--    content::WebContents* web_contents =
--        browser->tab_strip_model()->GetActiveWebContents();
--    if (!web_contents ||
--        web_contents->GetVisibility() != content::Visibility::VISIBLE) {
--      continue;
--    }
--
--    DefaultBrowserInfoBarDelegate::Create(
--        infobars::ContentInfoBarManager::FromWebContents(web_contents),
--        browser->profile(),
--        /*can_pin_to_taskbar=*/false);
--    break;
--  }
-+  return;
- }
- 
+@@ -38,34 +38,13 @@ namespace {
  // Do not show the prompt if "suppress_default_browser_prompt_for_version" in
  // the initial preferences is set to the current version.
--bool ShouldShowDefaultBrowserPromptForCurrentVersion() {
+ bool ShouldShowDefaultBrowserPromptForCurrentVersion() {
 -  const std::string disable_version_string =
 -      g_browser_process->local_state()->GetString(
 -          prefs::kBrowserSuppressDefaultBrowserPrompt);
@@ -316,12 +286,13 @@
 -  DCHECK(disable_version_string.empty() || disable_version.IsValid());
 -  return !(disable_version.IsValid() &&
 -           disable_version == version_info::GetVersion());
--}
--
--void OnCheckIsDefaultBrowserFinished(
--    Profile* profile,
--    base::OnceCallback<void(bool)> done_callback,
--    shell_integration::DefaultWebClientState state) {
++  return false;
+ }
+ 
+ void OnCheckIsDefaultBrowserFinished(
+     Profile* profile,
+     base::OnceCallback<void(bool)> done_callback,
+     shell_integration::DefaultWebClientState state) {
 -  bool did_show_prompt = false;
 -  if (state == shell_integration::IS_DEFAULT) {
 -    // Notify the user in the future if Chrome ceases to be the user's chosen
@@ -330,8 +301,6 @@
 -  } else if (state == shell_integration::NOT_DEFAULT &&
 -             shell_integration::CanSetAsDefaultBrowser() &&
 -             ShouldShowDefaultBrowserPromptForCurrentVersion()) {
--    chrome::startup::default_prompt::MaybeResetAppMenuPromptPrefs(profile);
--
 -    // Only show the prompt if some other program is the user's default browser.
 -    // In particular, don't show it if another install mode is default (e.g.,
 -    // don't prompt for Chrome Beta if stable Chrome is the default).
@@ -339,12 +308,10 @@
 -        DefaultBrowserPromptManager::GetInstance()->MaybeShowPrompt();
 -  }
 -  std::move(done_callback).Run(did_show_prompt);
-+[[maybe_unused]] bool ShouldShowDefaultBrowserPromptForCurrentVersion() {
-+  return false;
  }
  
  }  // namespace
-@@ -159,11 +106,7 @@
+@@ -159,10 +106,6 @@
      // taken care of in BrowserProcessImpl.
      return;
    }
@@ -356,7 +323,6 @@
 +  return;
  }
  
- void ShowPromptForTesting() {
 # Disable API keys infobar
 --- a/chrome/browser/ui/startup/google_api_keys_infobar_delegate.cc
 +++ b/chrome/browser/ui/startup/google_api_keys_infobar_delegate.cc
@@ -389,35 +355,36 @@
 +  } */
  
  #if BUILDFLAG(IS_WIN) && BUILDFLAG(GOOGLE_CHROME_BRANDING)
-     if (auto* controller = g_browser_process->GetFeatures()
+   if (auto* controller =
 # Scrollable tab strip
---- a/chrome/browser/ui/tabs/features.cc
-+++ b/chrome/browser/ui/tabs/features.cc
-@@ -12,6 +12,7 @@
- 
- // Splits pinned and unpinned tabs into separate TabStrips.
- // https://crbug.com/1346019
-+// TODO: Alex313031 Possibly Re-Enable after feedback
- BASE_FEATURE(kSplitTabStrip,
-              "SplitTabStrip",
-              base::FEATURE_DISABLED_BY_DEFAULT);
-@@ -26,7 +27,7 @@
- // https://crbug.com/1145747
- BASE_FEATURE(kScrollableTabStripWithDragging,
-              "kScrollableTabStripWithDragging",
--             base::FEATURE_DISABLED_BY_DEFAULT);
-+             base::FEATURE_ENABLED_BY_DEFAULT);
- const char kTabScrollingWithDraggingModeName[] = "tabScrollWithDragMode";
- 
- // Enables different methods of overflow when scrolling tabs in tabstrip
-@@ -42,6 +43,7 @@
-              "TabSearchPositionSetting",
-              base::FEATURE_DISABLED_BY_DEFAULT);
- 
-+// TODO: Alex313031 Maybe disable?
- BASE_FEATURE(kTabGroupShortcuts,
-              "TabGroupShortcuts",
-              base::FEATURE_ENABLED_BY_DEFAULT);
+# kScrollableTabStripWithDragging was removed in newer versions of Chromium.
+# --- a/chrome/browser/ui/tabs/features.cc
+# +++ b/chrome/browser/ui/tabs/features.cc
+# @@ -12,6 +12,7 @@
+#  
+#  // Splits pinned and unpinned tabs into separate TabStrips.
+#  // https://crbug.com/1346019
+# +// TODO: Alex313031 Possibly Re-Enable after feedback
+#  BASE_FEATURE(kSplitTabStrip,
+#               "SplitTabStrip",
+#               base::FEATURE_DISABLED_BY_DEFAULT);
+# @@ -26,7 +27,7 @@
+#  // https://crbug.com/1145747
+#  BASE_FEATURE(kScrollableTabStripWithDragging,
+#               "kScrollableTabStripWithDragging",
+# -             base::FEATURE_DISABLED_BY_DEFAULT);
+# +             base::FEATURE_ENABLED_BY_DEFAULT);
+#  const char kTabScrollingWithDraggingModeName[] = "tabScrollWithDragMode";
+#  
+#  // Enables different methods of overflow when scrolling tabs in tabstrip
+# @@ -42,6 +43,7 @@
+#               "TabSearchPositionSetting",
+#               base::FEATURE_DISABLED_BY_DEFAULT);
+#  
+# +// TODO: Alex313031 Maybe disable?
+#  BASE_FEATURE(kTabGroupShortcuts,
+#               "TabGroupShortcuts",
+#               base::FEATURE_ENABLED_BY_DEFAULT);
 # Close window with last tab flag
 --- a/chrome/browser/ui/tabs/tab_strip_model.cc
 +++ b/chrome/browser/ui/tabs/tab_strip_model.cc
@@ -552,14 +519,6 @@
 # UI features TODOs
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
-@@ -18,6 +18,7 @@
- 
- // Enables the tab dragging fallback when full window dragging is not supported
- // by the platform (e.g. Wayland). See https://crbug.com/896640
-+// TODO: Alex313031 possibly re-disable? Causes issues on newer Wayland
- BASE_FEATURE(kAllowWindowDragUsingSystemDragDrop,
-              "AllowWindowDragUsingSystemDragDrop",
-              base::FEATURE_ENABLED_BY_DEFAULT);
 @@ -333,6 +334,7 @@
  #if BUILDFLAG(IS_CHROMEOS)
               base::FEATURE_ENABLED_BY_DEFAULT
@@ -609,15 +568,15 @@
  
  BrowserRootView::~BrowserRootView() {
    // It's possible to destroy the browser while a drop is active.  In this case,
-@@ -327,7 +342,7 @@
+@@ -342,7 +342,7 @@ bool BrowserRootView::OnMouseWheel(const ui::MouseWheelEvent& event) {
  
    // Scroll-event-changes-tab is incompatible with scrolling tabstrip, so
    // disable it if the latter feature is enabled.
--  if (browser_defaults::kScrollEventChangesTab &&
-+  if (scroll_event_changes_tab_ &&
-       !base::FeatureList::IsEnabled(tabs::kScrollableTabStrip)) {
+-  if (browser_defaults::kScrollEventChangesTab) {
++  if (scroll_event_changes_tab_) {
      // Switch to the left/right tab if the wheel-scroll happens over the
      // tabstrip, or the empty space beside the tabstrip.
+     views::View* hit_view = GetEventHandlerForPoint(event.location());
 # Scroll tabs member variable
 --- a/chrome/browser/ui/views/frame/browser_root_view.h
 +++ b/chrome/browser/ui/views/frame/browser_root_view.h
@@ -751,13 +710,13 @@
 --- a/chrome/browser/ui/views/toolbar/home_button.cc
 +++ b/chrome/browser/ui/views/toolbar/home_button.cc
 @@ -6,6 +6,7 @@
- 
+ #include <memory>
  #include <string_view>
  
 +#include "base/command_line.h"
+ #include "base/feature_list.h"
  #include "base/functional/bind.h"
  #include "base/functional/callback_helpers.h"
- #include "base/memory/raw_ptr.h"
 @@ -136,7 +137,15 @@
    SetProperty(views::kElementIdentifierKey, kToolbarHomeButtonElementId);
    SetTriggerableEventFlags(ui::EF_LEFT_MOUSE_BUTTON |
@@ -779,8 +738,8 @@
 --- a/chrome/browser/ui/views/toolbar/reload_button.cc
 +++ b/chrome/browser/ui/views/toolbar/reload_button.cc
 @@ -41,7 +41,9 @@
-                     CreateMenuModel(),
                      nullptr),
+       metrics_recorder_(std::make_unique<WaapUIMetricsRecorder>(profile)),
        command_updater_(command_updater),
 -      reload_icon_(vector_icons::kReloadChromeRefreshIcon),
 +      reload_icon_(disable_thorium_icons
@@ -792,28 +751,23 @@
 @@ -115,7 +117,7 @@
  }
  
- void ReloadButton::SetMenuEnabled(bool enable) {
--  menu_enabled_ = enable;
-+  menu_enabled_ = true;
+ void ReloadButton::SetMenuEnabled(bool is_menu_enabled) {
+-  is_menu_enabled_ = is_menu_enabled;
++  is_menu_enabled_ = true;
    UpdateAccessibleHasPopup();
    UpdateCachedTooltipText();
  }
 # Reload icon flag variable
 --- a/chrome/browser/ui/views/toolbar/reload_button.h
 +++ b/chrome/browser/ui/views/toolbar/reload_button.h
-@@ -1,10 +1,11 @@
--// Copyright 2013 The Chromium Authors
-+// Copyright 2026 The Chromium Authors and Alex313031
- // Use of this source code is governed by a BSD-style license that can be
- // found in the LICENSE file.
- 
+@@ -5,6 +5,7 @@
  #ifndef CHROME_BROWSER_UI_VIEWS_TOOLBAR_RELOAD_BUTTON_H_
  #define CHROME_BROWSER_UI_VIEWS_TOOLBAR_RELOAD_BUTTON_H_
  
 +#include "base/command_line.h"
  #include "base/memory/raw_ptr.h"
+ #include "base/memory/weak_ptr.h"
  #include "base/time/time.h"
- #include "base/timer/timer.h"
 @@ -72,6 +73,9 @@
    FRIEND_TEST_ALL_PREFIXES(ReloadButtonTest, TooltipText);
    FRIEND_TEST_ALL_PREFIXES(ReloadButtonTest, TooltipTextAccessibility);
@@ -824,12 +778,12 @@
    std::unique_ptr<ui::SimpleMenuModel> CreateMenuModel();
  
    void SetVisibleMode(Mode mode);
-@@ -110,7 +114,7 @@
+@@ -130,7 +131,7 @@ class ReloadButton : public ToolbarButton, public ReloadControl {
    base::TimeDelta mode_switch_timer_delay_;
  
    // Indicates if reload menu is enabled.
--  bool menu_enabled_ = false;
-+  bool menu_enabled_ = true;
+-  bool is_menu_enabled_ = false;
++  bool is_menu_enabled_ = true;
  
    // TESTING ONLY
    // True if we should pretend the button is hovered.
@@ -867,37 +821,37 @@
  
  bool IsWmTiling(WindowManagerName window_manager) {
 # Auto dark mode flag for GTK
---- a/ui/gtk/native_theme_gtk.cc
-+++ b/ui/gtk/native_theme_gtk.cc
-@@ -6,6 +6,7 @@
- 
- #include <algorithm>
- 
-+#include "base/command_line.h"
- #include "base/no_destructor.h"
- #include "base/strings/strcat.h"
- #include "cc/paint/paint_canvas.h"
-@@ -173,6 +174,20 @@
-   SetPreferredContrast(
-       high_contrast ? ui::NativeThemeBase::PreferredContrast::kMore
-                     : ui::NativeThemeBase::PreferredContrast::kNoPreference);
-+
-+  static const bool auto_dark_mode =
-+      base::CommandLine::ForCurrentProcess()->HasSwitch("auto-dark-mode");
-+  if (auto_dark_mode) {
-+    // Brute force NativeUI to update
-+    ui::NativeTheme::GetInstanceForNativeUi()->set_use_dark_colors(color_utils::IsDark(window_bg_color));
-+    ui::NativeTheme::GetInstanceForNativeUi()->set_preferred_color_scheme(CalculatePreferredColorScheme());
-+    ui::NativeTheme::GetInstanceForNativeUi()->NotifyOnNativeThemeUpdated();
-+
-+    // Brute force Web Contents to update
-+    ui::NativeTheme::GetInstanceForWeb()->set_use_dark_colors(color_utils::IsDark(window_bg_color));
-+    ui::NativeTheme::GetInstanceForWeb()->set_preferred_color_scheme(CalculatePreferredColorScheme());
-+    ui::NativeTheme::GetInstanceForWeb()->NotifyOnNativeThemeUpdated();
-+  }
- 
-   NotifyOnNativeThemeUpdated();
- }
+# --- a/ui/gtk/native_theme_gtk.cc
+# +++ b/ui/gtk/native_theme_gtk.cc
+# @@ -6,6 +6,7 @@
+#  #include <string>
+#  #include <utility>
+#  
+# +#include "base/command_line.h"
+#  #include "base/no_destructor.h"
+#  #include "base/strings/strcat.h"
+#  #include "cc/paint/paint_canvas.h"
+# @@ -173,6 +174,20 @@
+#    SetPreferredContrast(
+#        high_contrast ? ui::NativeThemeBase::PreferredContrast::kMore
+#                      : ui::NativeThemeBase::PreferredContrast::kNoPreference);
+# +
+# +  static const bool auto_dark_mode =
+# +      base::CommandLine::ForCurrentProcess()->HasSwitch("auto-dark-mode");
+# +  if (auto_dark_mode) {
+# +    // Brute force NativeUI to update
+# +    ui::NativeTheme::GetInstanceForNativeUi()->set_use_dark_colors(color_utils::IsDark(window_bg_color));
+# +    ui::NativeTheme::GetInstanceForNativeUi()->set_preferred_color_scheme(CalculatePreferredColorScheme());
+# +    ui::NativeTheme::GetInstanceForNativeUi()->NotifyOnNativeThemeUpdated();
+# +
+# +    // Brute force Web Contents to update
+# +    ui::NativeTheme::GetInstanceForWeb()->set_use_dark_colors(color_utils::IsDark(window_bg_color));
+# +    ui::NativeTheme::GetInstanceForWeb()->set_preferred_color_scheme(CalculatePreferredColorScheme());
+# +    ui::NativeTheme::GetInstanceForWeb()->NotifyOnNativeThemeUpdated();
+# +  }
+#  
+#    NotifyOnNativeThemeUpdated();
+#  }
 # Thorium UI debug shell rename
 --- a/ui/views/examples/BUILD.gn
 +++ b/ui/views/examples/BUILD.gn
@@ -969,35 +923,37 @@
      "open_in_new.svg",
      "select.png",
      "throbber_medium.svg",
-@@ -47,14 +50,6 @@
+@@ -50,31 +50,22 @@ generate_grd("build_grdp") {
      "2x/select.png",
    ]
  
 -  if (!is_ios) {
 -    input_files += [
+-      "arrow_down.svg",
 -      "chrome_logo_dark.svg",
+-      "dark/arrow_down.svg",
 -      "icon_arrow_back.svg",
+-      "icon_delete_gray.svg",
 -      "icon_edit.svg",
+-      "icon_more_vert.svg",
 -    ]
 -  }
 -
    if (!is_android && !is_ios) {
      input_files += [
-       "arrow_down.svg",
-@@ -62,14 +57,17 @@
+       "arrow_right.svg",
        "business.svg",
        "colorize.svg",
        "chevron_down.svg",
 +      "chrome_logo_dark.svg",
-       "dark/arrow_down.svg",
        "dark/chevron_down.svg",
 +      "icon_arrow_back.svg",
        "icon_arrow_drop_down_cr23.svg",
        "icon_arrow_drop_up_cr23.svg",
+       "icon_arrow_upward.svg",
        "icon_bookmark.svg",
        "icon_clear.svg",
        "icon_clock.svg",
-       "icon_delete_gray.svg",
 +      "icon_edit.svg",
        "icon_filetype_generic.svg",
        "icon_folder_open.svg",
@@ -1060,21 +1016,26 @@
                                  /*default_value=*/true);
    registry->RegisterBooleanPref(
 # Remove Google search icon handling
---- a/components/omnibox/browser/omnibox_view.cc
-+++ b/components/omnibox/browser/omnibox_view.cc
-@@ -109,19 +109,9 @@
+--- a/chrome/browser/ui/omnibox/omnibox_view.cc
++++ b/chrome/browser/ui/omnibox/omnibox_view.cc
+@@ -101,24 +101,9 @@ ui::ImageModel OmniboxView::GetIcon(int dip_size,
                                       ->GetTemplateURLService()
                                       ->GetTemplateURLForKeyword(match.keyword)
                                 : nullptr;
 -    // For search queries, display match's search engine's favicon. If the
 -    // search engine is google, return the icon instead of favicon for
 -    // search queries with the chrome refresh feature.
--    if (turl && search::TemplateURLIsGoogle(turl, controller_->client()
--                                                      ->GetTemplateURLService()
--                                                      ->search_terms_data())) {
+-    if ((turl &&
+-         search::TemplateURLIsGoogle(turl, controller()
+-                                               ->client()
+-                                               ->GetTemplateURLService()
+-                                               ->search_terms_data())) ||
+-        (!turl && search::DefaultSearchProviderIsGoogle(
+-                      controller()->client()->GetTemplateURLService()))) {
 -      // For non-chrome builds this would return an empty image model. In
 -      // those cases revert to using the favicon.
--      ui::ImageModel icon = model()->GetSuperGIcon(dip_size, dark_mode);
+-      ui::ImageModel icon =
+-          controller()->edit_model()->GetSuperGIcon(dip_size, dark_mode);
 -      if (!icon.IsEmpty()) {
 -        return icon;
 -      }
@@ -1084,14 +1045,20 @@
 +    if (turl && turl->CreatedByEnterpriseSearchAggregatorPolicy()) {
        // If the search engine is enterprise search aggregator, return the icon
        // from the bitmap instead of favicon.
-       const SkBitmap* bitmap = model()->GetIconBitmap(turl->favicon_url());
-@@ -140,9 +130,6 @@
-     if (!match.keyword.empty()) {
-       favicon = controller_->client()->GetFaviconForKeywordSearchProvider(
-           turl, std::move(on_icon_fetched));
--    } else {
--      favicon = controller_->client()->GetFaviconForDefaultSearchProvider(
--          std::move(on_icon_fetched));
+       const SkBitmap* bitmap =
+@@ -135,11 +120,10 @@ ui::ImageModel OmniboxView::GetIcon(int dip_size,
+         return ui::ImageModel::FromImage(icon);
+       }
      }
+-    favicon = turl ? controller()->client()->GetFaviconForKeywordSearchProvider(
+-                         turl, std::move(on_icon_fetched))
+-                   : controller()->client()->GetFaviconForDefaultSearchProvider(
+-                         std::move(on_icon_fetched));
+-
++    if (turl) {
++      favicon = controller()->client()->GetFaviconForKeywordSearchProvider(
++                    turl, std::move(on_icon_fetched));
++    }
    } else if (match.type != AutocompleteMatchType::HISTORY_CLUSTER) {
      // The starter pack suggestions are a unique case. These suggestions
+     // normally use a favicon image that cannot be styled further by client

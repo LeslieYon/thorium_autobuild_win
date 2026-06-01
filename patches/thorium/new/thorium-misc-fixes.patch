@@ -22,14 +22,7 @@
    if (ntp_location.empty()) {
      return false;
    }
-@@ -1397,7 +1405,6 @@
-   registry->RegisterBooleanPref(prefs::kDeviceNativeClientForceAllowed, false);
-   registry->RegisterBooleanPref(prefs::kDeviceNativeClientForceAllowedCache,
-                                 false);
--  registry->RegisterBooleanPref(prefs::kIsFirstBootForNacl, true);
- #endif  // BUILDFLAG(IS_CHROMEOS)
- #if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_ANDROID)
-   registry->RegisterBooleanPref(prefs::kOutOfProcessSystemDnsResolutionEnabled,
+# (removed in M144: kIsFirstBootForNacl pref no longer exists)
 @@ -5148,7 +5155,8 @@
    }
  

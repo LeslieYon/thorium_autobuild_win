@@ -1,7 +1,6 @@
 --- a/device/vr/BUILD.gn
 +++ b/device/vr/BUILD.gn
-@@ -128,7 +128,10 @@ if (enable_vr) {
-   component("vr") {
+@@ -128,7 +128,10 @@
      output_name = "device_vr"
  
      defines = [ "DEVICE_VR_IMPLEMENTATION" ]
@@ -15,22 +14,19 @@
      deps = [
 --- a/chrome/browser/vr/BUILD.gn
 +++ b/chrome/browser/vr/BUILD.gn
-@@ -485,14 +485,16 @@
-         ":vr_common",
-         "//chrome/browser/content_settings:content_settings_factory",
-         "//components/content_settings/core/browser",
-         "//device/vr:directx_helpers",
+@@ -506,11 +506,13 @@
+           "//chrome/browser/content_settings:content_settings_factory",
+           "//components/content_settings/core/browser",
+           "//device/vr:directx_helpers",
 -        "//device/vr:openxr_data",
-       ]
+         ]
  
-       if (enable_openxr) {
+         if (enable_openxr) {
 -        deps += [ "//third_party/openxr" ]
 +        deps += [
 +          "//device/vr:openxr_data",
 +          "//third_party/openxr",
 +        ]
-         data_deps += [ "//device/vr:openxr_mock" ]
+           data_deps += [ "//device/vr:openxr_mock" ]
+         }
        }
-     }
-   }
- }
