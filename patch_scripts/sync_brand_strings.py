@@ -348,6 +348,9 @@ def sync_brand_strings(
     # an ambiguous reverse replacement.
     _old_text_cache: Dict[str, Tuple[str, str]] = {}
 
+    # Track which BRAND_STRING_IDS are actually found (to warn about missing ones).
+    _found_ids = set()
+
     # Build cache from current (pre-replacement) GRD/GRDP content.
     for mapping in GRD_XTB_MAP:
         grd = source_tree / mapping['grd']
@@ -359,6 +362,7 @@ def sync_brand_strings(
                 rid = msg.get('name', '')
                 if rid in BRAND_STRING_IDS:
                     _old_text_cache[rid] = _msg_info(msg)
+                    _found_ids.add(rid)
         except ET.ParseError:
             continue
         for grdp in _resolve_grd_parts(grd):
@@ -368,10 +372,22 @@ def sync_brand_strings(
                     rid = msg.get('name', '')
                     if rid in BRAND_STRING_IDS:
                         _old_text_cache[rid] = _msg_info(msg)
+                        _found_ids.add(rid)
             except ET.ParseError:
                 continue
 
     logger.debug('Cached %d pre-replacement message texts.', len(_old_text_cache))
+
+    # Warn about BRAND_STRING_IDS not present in any GRD/GRDP file.
+    missing_ids = BRAND_STRING_IDS - _found_ids
+    if missing_ids:
+        logger.warning('WARNING: %d BRAND_STRING_IDS not found in any GRD/GRDP file:',
+                       len(missing_ids))
+        for rid in sorted(missing_ids):
+            logger.warning('  MISSING: %s', rid)
+    else:
+        logger.info('All %d BRAND_STRING_IDS are present in GRD/GRDP files.',
+                    len(BRAND_STRING_IDS))
 
     # =================================================================
     # Phase 1 -- Apply brand replacement to every GRD/GRDP file
