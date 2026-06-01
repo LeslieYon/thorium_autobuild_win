@@ -48,3 +48,4 @@ ungoogled-chromium/windows/windows-fix-missing-includes.patch
 #[cromite]
 # temporary disabled bacause conflict
 # Enable-Global-Privacy-Control.patch
+Override-the-MV2-deprecation.patch
