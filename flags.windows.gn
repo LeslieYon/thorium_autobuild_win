@@ -22,7 +22,6 @@ enable_profiling=false
 thin_lto_enable_cache=false
 enable_iterator_debugging=false
 disable_fieldtrial_testing_config=true
-enable_nacl=false
 optimize_webui=true
 enable_webui_tab_strip=true
 win_enable_cfg_guards=true
