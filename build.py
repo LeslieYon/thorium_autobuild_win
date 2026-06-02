@@ -34,6 +34,7 @@ import shutil
 import subprocess
 import ctypes
 import fnmatch
+import hashlib
 import urllib.request
 import zipfile
 import tarfile
@@ -515,26 +516,34 @@ def _apply_source_overrides(source_tree):
     # Walk through overlay directory and copy each file
     new_count = 0
     overwrite_count = 0
+    skip_count = 0
     for f in overlay_src.rglob('*'):
         if not f.is_file() or f.name == '.gitkeep':
             continue
         rel = f.relative_to(overlay_src)
         dst = source_tree / rel
         existed_before = dst.exists()
-        
+
+        # When overwriting, skip if content is already identical (hash match)
+        if existed_before and dst.is_file():
+            if f.stat().st_size == dst.stat().st_size:
+                if hashlib.sha256(f.read_bytes()).digest() == hashlib.sha256(dst.read_bytes()).digest():
+                    skip_count += 1
+                    continue
+
         # Create parent directory if needed
         dst.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Copy the file
         shutil.copy2(f, dst)
-        
+
         if existed_before:
             overwrite_count += 1
         else:
             new_count += 1
 
-    get_logger().info('Source overrides applied: %d overwritten, %d new files',
-                      overwrite_count, new_count)
+    get_logger().info('Source overrides applied: %d overwritten, %d new files, %d skipped (identical)',
+                      overwrite_count, new_count, skip_count)
 
 
 def _download_and_apply_extra_overlay(source_tree, overlay_url):
@@ -634,6 +643,7 @@ def _download_and_apply_extra_overlay(source_tree, overlay_url):
         get_logger().info('Applying extra overlay from: %s', overlay_root)
         new_count = 0
         overwrite_count = 0
+        skip_count = 0
         for f in overlay_root.rglob('*'):
             if not f.is_file() or f.name == '.gitkeep':
                 continue
@@ -641,6 +651,14 @@ def _download_and_apply_extra_overlay(source_tree, overlay_url):
             dst = source_tree / rel
             dst.parent.mkdir(parents=True, exist_ok=True)
             existed_before = dst.exists()
+
+            # When overwriting, skip if content is already identical (hash match)
+            if existed_before and dst.is_file():
+                if f.stat().st_size == dst.stat().st_size:
+                    if hashlib.sha256(f.read_bytes()).digest() == hashlib.sha256(dst.read_bytes()).digest():
+                        skip_count += 1
+                        continue
+
             shutil.copy2(f, dst)
             if existed_before:
                 overwrite_count += 1
@@ -648,8 +666,8 @@ def _download_and_apply_extra_overlay(source_tree, overlay_url):
                 new_count += 1
 
         get_logger().info(
-            'Extra overlay applied: %d overwritten, %d new files',
-            overwrite_count, new_count)
+            'Extra overlay applied: %d overwritten, %d new files, %d skipped (identical)',
+            overwrite_count, new_count, skip_count)
 
 
 def _prepare_and_apply_api_keys_patch(source_tree, patch_bin_path):
