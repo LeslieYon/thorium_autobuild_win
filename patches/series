@@ -61,7 +61,7 @@ thorium/original/ffmpeg_hevc_ac3.patch
 #
 # === Conditional/special-purpose patches ===
 thorium/original/angle-lockfree.patch
-thorium/original/restore-libjxl-in-M138.patch
+thorium/original/restore-libjxl-in-M144.patch
 # thorium/original/Restore-libjxl-image-type-emulation-in-M119.patch  # Old JXL
 # thorium/original/netflix.patch                 # Raspberry Pi only
 # thorium/original/widevine-other-locations.patch # Raspberry Pi only
