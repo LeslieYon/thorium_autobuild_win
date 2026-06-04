@@ -39,7 +39,7 @@ std::unique_ptr<URLRequestJob> FtpProtocolHandler::CreateJob(
   DCHECK_EQ("ftp", request->url().scheme());
 
   if (!IsPortAllowedForScheme(request->url().EffectiveIntPort(),
-                              request->url().scheme_piece())) {
+                              request->url().scheme())) {
     return std::make_unique<URLRequestErrorJob>(request, ERR_UNSAFE_PORT);
   }
 

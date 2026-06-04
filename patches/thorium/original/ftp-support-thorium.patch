@@ -472,6 +472,22 @@
  //   700-799 Certificate manager errors
  //   800-899 DNS resolver errors
  //   900-999 Blob errors
+@@ -664,12 +664,12 @@
+ // Obsolete. This was in earlier SPDY implementations.
+ // NET_ERROR(SYN_REPLY_NOT_RECEIVED, -332)
+ 
+-// Obsolete. These were both used for FTP, which is no longer supported.
+-// NET_ERROR(ENCODING_CONVERSION_FAILED, -333)
+-// NET_ERROR(UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT, -334)
++// These errors are used for FTP directory listing parsing.
++NET_ERROR(ENCODING_CONVERSION_FAILED, -333)
++NET_ERROR(UNRECOGNIZED_FTP_DIRECTORY_LISTING_FORMAT, -334)
+ 
+ // Obsolete. Was only logged in NetLog when an HTTP/2 pushed stream expired.
+ // NET_ERROR(INVALID_SPDY_STREAM, -335)
+ 
+ // There are no supported proxies in the provided list.
+ NET_ERROR(NO_SUPPORTED_PROXIES, -336)
 @@ -965,14 +965,36 @@
  // )
  // LINT.IfChange

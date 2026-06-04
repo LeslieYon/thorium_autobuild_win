@@ -45,7 +45,8 @@ class PLATFORM_EXPORT JXLImageDecoder final : public ImageDecoder {
   JXLImageDecoder(AlphaOption,
                   HighBitDepthDecodingOption high_bit_depth_decoding_option,
                   const ColorBehavior&,
-                  wtf_size_t max_decoded_bytes);
+                  wtf_size_t max_decoded_bytes,
+                  AnimationOption);
 
   // ImageDecoder:
   String FilenameExtension() const override { return "jxl"; }

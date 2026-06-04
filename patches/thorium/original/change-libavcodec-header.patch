@@ -12,13 +12,13 @@ configs, need to change the header manually to fix this.
  third_party/ffmpeg/libavcodec/hevc/hevcdec.c       | 26 +++++++++++++-------------
  third_party/ffmpeg/libavcodec/hevc/mvs.c           |  2 +-
  third_party/ffmpeg/libavcodec/hevc/parse.c         |  4 ++--
- third_party/ffmpeg/libavcodec/hevc/parser.c        |  6 +++---
+ third_party/ffmpeg/libavcodec/hevc/parser.c        |  8 +++++---
  third_party/ffmpeg/libavcodec/hevc/pred_template.c |  2 +-
  third_party/ffmpeg/libavcodec/hevc/ps.c            |  6 +++---
  third_party/ffmpeg/libavcodec/hevc/ps_enc.c        |  4 ++--
  third_party/ffmpeg/libavcodec/hevc/refs.c          |  6 +++---
  third_party/ffmpeg/libavcodec/hevc/sei.c           |  4 ++--
- 12 files changed, 37 insertions(+), 37 deletions(-)
+ 12 files changed, 38 insertions(+), 38 deletions(-)
 
 --- a/third_party/ffmpeg/libavcodec/hevc/cabac.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/cabac.c
@@ -83,13 +83,14 @@ configs, need to change the header manually to fix this.
 -#include "codec_internal.h"
 -#include "decode.h"
 -#include "golomb.h"
+-#include "h274.h"
 +#include "libavcodec/aom_film_grain.h"
 +#include "libavcodec/bswapdsp.h"
 +#include "libavcodec/cabac_functions.h"
 +#include "libavcodec/codec_internal.h"
 +#include "libavcodec/decode.h"
 +#include "libavcodec/golomb.h"
- #include "h274.h"
++#include "libavcodec/h274.h"
  #include "hevc.h"
  #include "parse.h"
  #include "hevcdec.h"
@@ -144,7 +145,8 @@ configs, need to change the header manually to fix this.
 -#include "golomb.h"
 +#include "libavcodec/golomb.h"
  #include "hevc.h"
- #include "parser_internal.h"
+-#include "parser_internal.h"
++#include "libavcodec/parser_internal.h"
  #include "parse.h"
  #include "ps.h"
  #include "sei.h"

@@ -5,7 +5,6 @@
 #include "net/ftp/ftp_network_transaction.h"
 
 #include "base/containers/circular_deque.h"
-#include "base/macros.h"
 #include "base/memory/ref_counted.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
@@ -242,7 +241,8 @@ class FtpSocketDataProvider : public SocketDataProvider {
   // Data type to be used for TYPE command.
   char data_type_;
 
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProvider);
+  FtpSocketDataProvider(const FtpSocketDataProvider&) = delete;
+  FtpSocketDataProvider& operator=(const FtpSocketDataProvider&) = delete;
 };
 
 class FtpSocketDataProviderDirectoryListing : public FtpSocketDataProvider {
@@ -268,7 +268,8 @@ class FtpSocketDataProviderDirectoryListing : public FtpSocketDataProvider {
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderDirectoryListing);
+  FtpSocketDataProviderDirectoryListing(const FtpSocketDataProviderDirectoryListing&) = delete;
+  FtpSocketDataProviderDirectoryListing& operator=(const FtpSocketDataProviderDirectoryListing&) = delete;
 };
 
 class FtpSocketDataProviderDirectoryListingWithPasvFallback
@@ -293,8 +294,12 @@ class FtpSocketDataProviderDirectoryListingWithPasvFallback
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(
-      FtpSocketDataProviderDirectoryListingWithPasvFallback);
+  
+      FtpSocketDataProviderDirectoryListingWithPasvFallback(const 
+      FtpSocketDataProviderDirectoryListingWithPasvFallback&) = delete;
+  
+      FtpSocketDataProviderDirectoryListingWithPasvFallback& operator=(const 
+      FtpSocketDataProviderDirectoryListingWithPasvFallback&) = delete;
 };
 
 class FtpSocketDataProviderVMSDirectoryListing : public FtpSocketDataProvider {
@@ -328,7 +333,8 @@ class FtpSocketDataProviderVMSDirectoryListing : public FtpSocketDataProvider {
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderVMSDirectoryListing);
+  FtpSocketDataProviderVMSDirectoryListing(const FtpSocketDataProviderVMSDirectoryListing&) = delete;
+  FtpSocketDataProviderVMSDirectoryListing& operator=(const FtpSocketDataProviderVMSDirectoryListing&) = delete;
 };
 
 class FtpSocketDataProviderVMSDirectoryListingRootDirectory
@@ -363,8 +369,12 @@ class FtpSocketDataProviderVMSDirectoryListingRootDirectory
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(
-      FtpSocketDataProviderVMSDirectoryListingRootDirectory);
+  
+      FtpSocketDataProviderVMSDirectoryListingRootDirectory(const 
+      FtpSocketDataProviderVMSDirectoryListingRootDirectory&) = delete;
+  
+      FtpSocketDataProviderVMSDirectoryListingRootDirectory& operator=(const 
+      FtpSocketDataProviderVMSDirectoryListingRootDirectory&) = delete;
 };
 
 class FtpSocketDataProviderFileDownloadWithFileTypecode
@@ -388,7 +398,8 @@ class FtpSocketDataProviderFileDownloadWithFileTypecode
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderFileDownloadWithFileTypecode);
+  FtpSocketDataProviderFileDownloadWithFileTypecode(const FtpSocketDataProviderFileDownloadWithFileTypecode&) = delete;
+  FtpSocketDataProviderFileDownloadWithFileTypecode& operator=(const FtpSocketDataProviderFileDownloadWithFileTypecode&) = delete;
 };
 
 class FtpSocketDataProviderFileDownload : public FtpSocketDataProvider {
@@ -420,7 +431,8 @@ class FtpSocketDataProviderFileDownload : public FtpSocketDataProvider {
  private:
   std::string file_path_ = "/file";
 
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderFileDownload);
+  FtpSocketDataProviderFileDownload(const FtpSocketDataProviderFileDownload&) = delete;
+  FtpSocketDataProviderFileDownload& operator=(const FtpSocketDataProviderFileDownload&) = delete;
 };
 
 class FtpSocketDataProviderFileNotFound : public FtpSocketDataProvider {
@@ -448,7 +460,8 @@ class FtpSocketDataProviderFileNotFound : public FtpSocketDataProvider {
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderFileNotFound);
+  FtpSocketDataProviderFileNotFound(const FtpSocketDataProviderFileNotFound&) = delete;
+  FtpSocketDataProviderFileNotFound& operator=(const FtpSocketDataProviderFileNotFound&) = delete;
 };
 
 class FtpSocketDataProviderFileDownloadWithPasvFallback
@@ -473,7 +486,8 @@ class FtpSocketDataProviderFileDownloadWithPasvFallback
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderFileDownloadWithPasvFallback);
+  FtpSocketDataProviderFileDownloadWithPasvFallback(const FtpSocketDataProviderFileDownloadWithPasvFallback&) = delete;
+  FtpSocketDataProviderFileDownloadWithPasvFallback& operator=(const FtpSocketDataProviderFileDownloadWithPasvFallback&) = delete;
 };
 
 class FtpSocketDataProviderFileDownloadZeroSize
@@ -499,7 +513,8 @@ class FtpSocketDataProviderFileDownloadZeroSize
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderFileDownloadZeroSize);
+  FtpSocketDataProviderFileDownloadZeroSize(const FtpSocketDataProviderFileDownloadZeroSize&) = delete;
+  FtpSocketDataProviderFileDownloadZeroSize& operator=(const FtpSocketDataProviderFileDownloadZeroSize&) = delete;
 };
 
 class FtpSocketDataProviderFileDownloadCWD451
@@ -522,7 +537,8 @@ class FtpSocketDataProviderFileDownloadCWD451
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderFileDownloadCWD451);
+  FtpSocketDataProviderFileDownloadCWD451(const FtpSocketDataProviderFileDownloadCWD451&) = delete;
+  FtpSocketDataProviderFileDownloadCWD451& operator=(const FtpSocketDataProviderFileDownloadCWD451&) = delete;
 };
 
 class FtpSocketDataProviderVMSFileDownload : public FtpSocketDataProvider {
@@ -558,7 +574,8 @@ class FtpSocketDataProviderVMSFileDownload : public FtpSocketDataProvider {
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderVMSFileDownload);
+  FtpSocketDataProviderVMSFileDownload(const FtpSocketDataProviderVMSFileDownload&) = delete;
+  FtpSocketDataProviderVMSFileDownload& operator=(const FtpSocketDataProviderVMSFileDownload&) = delete;
 };
 
 class FtpSocketDataProviderFileDownloadInvalidResponse
@@ -583,7 +600,8 @@ class FtpSocketDataProviderFileDownloadInvalidResponse
   }
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderFileDownloadInvalidResponse);
+  FtpSocketDataProviderFileDownloadInvalidResponse(const FtpSocketDataProviderFileDownloadInvalidResponse&) = delete;
+  FtpSocketDataProviderFileDownloadInvalidResponse& operator=(const FtpSocketDataProviderFileDownloadInvalidResponse&) = delete;
 };
 
 class FtpSocketDataProviderEvilEpsv : public FtpSocketDataProviderFileDownload {
@@ -620,7 +638,8 @@ class FtpSocketDataProviderEvilEpsv : public FtpSocketDataProviderFileDownload {
   const size_t epsv_response_length_;
   const State expected_state_;
 
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderEvilEpsv);
+  FtpSocketDataProviderEvilEpsv(const FtpSocketDataProviderEvilEpsv&) = delete;
+  FtpSocketDataProviderEvilEpsv& operator=(const FtpSocketDataProviderEvilEpsv&) = delete;
 };
 
 class FtpSocketDataProviderEvilPasv
@@ -647,7 +666,8 @@ class FtpSocketDataProviderEvilPasv
   const char* const pasv_response_;
   const State expected_state_;
 
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderEvilPasv);
+  FtpSocketDataProviderEvilPasv(const FtpSocketDataProviderEvilPasv&) = delete;
+  FtpSocketDataProviderEvilPasv& operator=(const FtpSocketDataProviderEvilPasv&) = delete;
 };
 
 class FtpSocketDataProviderEvilSize : public FtpSocketDataProviderFileDownload {
@@ -673,7 +693,8 @@ class FtpSocketDataProviderEvilSize : public FtpSocketDataProviderFileDownload {
   const char* const size_response_;
   const State expected_state_;
 
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderEvilSize);
+  FtpSocketDataProviderEvilSize(const FtpSocketDataProviderEvilSize&) = delete;
+  FtpSocketDataProviderEvilSize& operator=(const FtpSocketDataProviderEvilSize&) = delete;
 };
 
 class FtpSocketDataProviderEvilLogin
@@ -705,7 +726,8 @@ class FtpSocketDataProviderEvilLogin
   const char* const expected_user_;
   const char* const expected_password_;
 
-  DISALLOW_COPY_AND_ASSIGN(FtpSocketDataProviderEvilLogin);
+  FtpSocketDataProviderEvilLogin(const FtpSocketDataProviderEvilLogin&) = delete;
+  FtpSocketDataProviderEvilLogin& operator=(const FtpSocketDataProviderEvilLogin&) = delete;
 };
 
 class FtpNetworkTransactionTest : public PlatformTest,

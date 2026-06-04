@@ -4,7 +4,6 @@
 
 #include "net/ftp/ftp_directory_listing_parser_unittest.h"
 
-#include "base/cxx17_backports.h"
 #include "base/format_macros.h"
 #include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
@@ -50,7 +49,7 @@ TEST_F(FtpDirectoryListingParserVmsTest, Good) {
        "(RWED,RWED,RE,RE)",
        FtpDirectoryListingEntry::FILE, "announce.txt", 512, 2005, 3, 12, 8, 44},
   };
-  for (size_t i = 0; i < base::size(good_cases); i++) {
+  for (size_t i = 0; i < std::size(good_cases); i++) {
     SCOPED_TRACE(base::StringPrintf("Test[%" PRIuS "]: %s", i,
                                     good_cases[i].input));
 
@@ -114,7 +113,7 @@ TEST_F(FtpDirectoryListingParserVmsTest, Bad) {
       "README.TXT;1  19223372036854775807/19223372036854775807  18-APR-2000 "
       "10:40:39.90",
   };
-  for (size_t i = 0; i < base::size(bad_cases); i++) {
+  for (size_t i = 0; i < std::size(bad_cases); i++) {
     SCOPED_TRACE(base::StringPrintf("Test[%" PRIuS "]: %s", i, bad_cases[i]));
 
     std::vector<std::u16string> lines(GetSingleLineTestCase(bad_cases[i]));
@@ -137,7 +136,7 @@ TEST_F(FtpDirectoryListingParserVmsTest, BadDataAfterFooter) {
     "Total of 1 file, 2 blocks.",
     "Directory ANYNYMOUS_ROOT:[000000]",
   };
-  for (size_t i = 0; i < base::size(bad_cases); i++) {
+  for (size_t i = 0; i < std::size(bad_cases); i++) {
     SCOPED_TRACE(base::StringPrintf("Test[%" PRIuS "]: %s", i, bad_cases[i]));
 
     std::vector<std::u16string> lines(

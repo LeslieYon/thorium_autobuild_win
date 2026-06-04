@@ -265,12 +265,12 @@ bool FtpUtil::LsDateListingToTime(const std::u16string& month,
       return false;
 
     if (!base::StringToInt(
-            base::MakeStringPiece16(rest.begin(), rest.begin() + colon_pos),
+            std::u16string_view(rest.data(), colon_pos),
             &time_exploded.hour)) {
       return false;
     }
     if (!base::StringToInt(
-            base::MakeStringPiece16(rest.begin() + colon_pos + 1, rest.end()),
+            std::u16string_view(rest.data() + colon_pos + 1, rest.length() - colon_pos - 1),
             &time_exploded.minute)) {
       return false;
     }

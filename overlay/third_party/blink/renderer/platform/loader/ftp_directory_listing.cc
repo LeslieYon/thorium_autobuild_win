@@ -100,7 +100,8 @@ scoped_refptr<SharedBuffer> GenerateFtpDirectoryListingHtml(
     int64_t size =
         entry.type == net::FtpDirectoryListingEntry::FILE ? entry.size : 0;
     std::string entry_string = net::GetDirectoryListingEntry(
-        entry.name, entry.raw_name, is_directory, size, entry.last_modified);
+        entry.name, entry.raw_name, is_directory, base::ByteCount(size),
+        entry.last_modified);
     output->Append(
         base::span<const char>(entry_string.data(), entry_string.size()));
   }

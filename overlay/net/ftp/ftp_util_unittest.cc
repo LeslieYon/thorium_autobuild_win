@@ -4,7 +4,6 @@
 
 #include "net/ftp/ftp_util.h"
 
-#include "base/cxx17_backports.h"
 #include "base/format_macros.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
@@ -41,7 +40,7 @@ TEST(FtpUtilTest, UnixFilePathToVMS) {
     { "//a//b///c", "a:[b]c"      },
     { "a//b///c",   "[.a.b]c"     },
   };
-  for (size_t i = 0; i < base::size(kTestCases); i++) {
+  for (size_t i = 0; i < std::size(kTestCases); i++) {
     EXPECT_EQ(kTestCases[i].expected_output,
               FtpUtil::UnixFilePathToVMS(kTestCases[i].input))
         << kTestCases[i].input;
@@ -78,7 +77,7 @@ TEST(FtpUtilTest, UnixDirectoryPathToVMS) {
     { "//a//b///c//", "a:[b.c]"     },
     { "a//b///c//",   "[.a.b.c]"    },
   };
-  for (size_t i = 0; i < base::size(kTestCases); i++) {
+  for (size_t i = 0; i < std::size(kTestCases); i++) {
     EXPECT_EQ(kTestCases[i].expected_output,
               FtpUtil::UnixDirectoryPathToVMS(kTestCases[i].input))
         << kTestCases[i].input;
@@ -118,7 +117,7 @@ TEST(FtpUtilTest, VMSPathToUnix) {
     { "/a/b/c",      "/a/b/c"     },
     { "/a/b/c/d",    "/a/b/c/d"   },
   };
-  for (size_t i = 0; i < base::size(kTestCases); i++) {
+  for (size_t i = 0; i < std::size(kTestCases); i++) {
     EXPECT_EQ(kTestCases[i].expected_output,
               FtpUtil::VMSPathToUnix(kTestCases[i].input))
         << kTestCases[i].input;
@@ -174,7 +173,7 @@ TEST(FtpUtilTest, LsDateListingToTime) {
     { "Sep", "02", "09:00", 1994, 9, 2, 9, 0 },
     { "Dec", "06", "21:00", 1993, 12, 6, 21, 0 },
   };
-  for (size_t i = 0; i < base::size(kTestCases); i++) {
+  for (size_t i = 0; i < std::size(kTestCases); i++) {
     SCOPED_TRACE(base::StringPrintf("Test[%" PRIuS "]: %s %s %s", i,
                                     kTestCases[i].month, kTestCases[i].day,
                                     kTestCases[i].rest));
@@ -215,7 +214,7 @@ TEST(FtpUtilTest, WindowsDateListingToTime) {
 
     { "11-01-2007", "12:42", 2007, 11, 1, 12, 42 },
   };
-  for (size_t i = 0; i < base::size(kTestCases); i++) {
+  for (size_t i = 0; i < std::size(kTestCases); i++) {
     SCOPED_TRACE(base::StringPrintf("Test[%" PRIuS "]: %s %s", i,
                                     kTestCases[i].date, kTestCases[i].time));
 
@@ -253,7 +252,7 @@ TEST(FtpUtilTest, GetStringPartAfterColumns) {
     { "  foo   abc ", 1, "abc" },
     { "  foo   abc ", 2, "" },
   };
-  for (size_t i = 0; i < base::size(kTestCases); i++) {
+  for (size_t i = 0; i < std::size(kTestCases); i++) {
     SCOPED_TRACE(base::StringPrintf("Test[%" PRIuS "]: %s %d", i,
                                     kTestCases[i].text, kTestCases[i].column));
 

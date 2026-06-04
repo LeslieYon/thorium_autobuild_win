@@ -682,9 +682,9 @@ int FtpNetworkTransaction::DoCtrlConnect() {
   // TODO(https://crbug.com/1123197): Pass a non-null NetworkQualityEstimator.
   NetworkQualityEstimator* network_quality_estimator = nullptr;
 
-  DCHECK(resolve_request_ && resolve_request_->GetAddressResults());
+  DCHECK(resolve_request_);
   ctrl_socket_ = socket_factory_->CreateTransportClientSocket(
-      AddressList(*resolve_request_->GetAddressResults()), nullptr,
+      resolve_request_->GetAddressResults(), nullptr,
       network_quality_estimator, net_log_.net_log(), net_log_.source());
   net_log_.AddEventReferencingSource(NetLogEventType::FTP_CONTROL_CONNECTION,
                                      ctrl_socket_->NetLog().source());

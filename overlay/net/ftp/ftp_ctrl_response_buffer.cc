@@ -121,7 +121,7 @@ FtpCtrlResponseBuffer::ParsedLine FtpCtrlResponseBuffer::ParseLine(
   ParsedLine result;
 
   if (line.length() >= 3) {
-    if (ParseInt32(base::MakeStringPiece(line.begin(), line.begin() + 3),
+    if (ParseInt32(std::string_view(line.data(), 3),
                    ParseIntFormat::NON_NEGATIVE, &result.status_code)) {
       result.has_status_code =
           (100 <= result.status_code && result.status_code <= 599);

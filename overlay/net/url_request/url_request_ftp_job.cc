@@ -103,7 +103,8 @@ void URLRequestFtpJob::Start() {
         request_->url(), "GET", NetworkAnonymizationKey(), &proxy_info_,
         base::BindOnce(&URLRequestFtpJob::OnResolveProxyComplete,
                        base::Unretained(this)),
-        &proxy_resolve_request_, request_->net_log());
+        &proxy_resolve_request_, request_->net_log(),
+        request_->priority());
 
     if (rv == ERR_IO_PENDING)
       return;

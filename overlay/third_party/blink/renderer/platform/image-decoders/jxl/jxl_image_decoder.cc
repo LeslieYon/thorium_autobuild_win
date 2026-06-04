@@ -70,7 +70,8 @@ JXLImageDecoder::JXLImageDecoder(
     AlphaOption alpha_option,
     HighBitDepthDecodingOption high_bit_depth_decoding_option,
     const ColorBehavior& color_behavior,
-    wtf_size_t max_decoded_bytes)
+    wtf_size_t max_decoded_bytes,
+    AnimationOption animation_option)
     : ImageDecoder(alpha_option,
                    high_bit_depth_decoding_option,
                    color_behavior,
