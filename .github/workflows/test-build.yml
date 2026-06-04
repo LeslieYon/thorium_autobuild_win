@@ -1,0 +1,232 @@
+# test-build.yml
+#
+# Test build workflow — supports both fresh builds and resuming interrupted
+# builds from any previous workflow run (by providing its run-id).
+#
+# Resume mechanism:
+#   When a previous CI build times out, the stage action saves the build
+#   state (build/src/) as an intermediate artifact named build-artifact-{simd}
+#   (or build-artifact-x86/build-artifact-arm).  This workflow can download
+#   that artifact from the specified run-id and resume the ninja build with
+#   --build-only, skipping re-preparation and GN gen.
+#
+#   Cross-workflow artifact download requires permissions.actions: read and
+#   an explicit github-token — see:
+#   https://github.com/orgs/community/discussions/106300
+#
+# On timeout (build.py exit code 2):
+#   1. Save build/src/ as C:\tbw\artifacts.zip
+#   2. Upload as intermediate artifact (for future resume)
+#   3. Terminate (no chained stages)
+#
+# On success: upload the final installer package.
+
+name: test-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      python-version:
+        description: Python version for the build environment
+        required: false
+        default: '3.12'
+      run-id:
+        description: >
+          Workflow run ID from which to download a previously-saved
+          intermediate build artifact.  Leave empty for a fresh build.
+        required: false
+        default: ''
+      x86:
+        description: Build 32-bit x86 binary
+        required: false
+        default: false
+        type: boolean
+      arm:
+        description: Build ARM64 binary
+        required: false
+        default: false
+        type: boolean
+      simd:
+        description: SIMD variant (sse3, sse4, avx, avx2)
+        required: false
+        default: 'avx2'
+      extra-overlay-url:
+        description: >
+          URL to a compressed archive applied as an extra overlay
+          after the standard overlay/ directory.
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  actions: read        # required for cross-workflow artifact download
+
+concurrency:
+  group: test-build-${{ github.ref }}-${{ github.event.inputs.simd }}
+  cancel-in-progress: true
+
+env:
+  THORIUM_EXTRA_OVERLAY_URL: ${{ inputs['extra-overlay-url'] }}
+
+jobs:
+  build:
+    runs-on: windows-2022
+    env:
+      GOOGLE_API_KEY: ${{ secrets['GOOGLE_API_KEY'] }}
+      GOOGLE_API_KEY_REMOTING: ${{ secrets['GOOGLE_API_KEY_REMOTING'] }}
+      GOOGLE_API_KEY_SODA: ${{ secrets['GOOGLE_API_KEY_SODA'] }}
+      GOOGLE_DEFAULT_CLIENT_ID: ${{ secrets['GOOGLE_DEFAULT_CLIENT_ID'] }}
+      GOOGLE_CLIENT_ID_REMOTING: ${{ secrets['GOOGLE_CLIENT_ID_REMOTING'] }}
+      GOOGLE_DEFAULT_CLIENT_SECRET: ${{ secrets['GOOGLE_DEFAULT_CLIENT_SECRET'] }}
+      GOOGLE_CLIENT_SECRET_REMOTING: ${{ secrets['GOOGLE_CLIENT_SECRET_REMOTING'] }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Prepare
+        uses: ./.github/actions/prepare
+        with:
+          python-version: ${{ inputs['python-version'] }}
+
+      # ------------------------------------------------------------------
+      # Resume from a previous run's intermediate artifact
+      # ------------------------------------------------------------------
+      - name: Determine intermediate artifact name
+        id: artifact-name
+        shell: pwsh
+        run: |
+          if ('${{ inputs.x86 }}' -eq 'true') {
+            $name = 'build-artifact-x86'
+          } elseif ('${{ inputs.arm }}' -eq 'true') {
+            $name = 'build-artifact-arm'
+          } else {
+            $name = 'build-artifact-${{ inputs.simd }}'
+          }
+          Write-Host "Intermediate build artifact name: $name"
+          "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Download intermediate artifact from previous run
+        if: ${{ inputs.run-id != '' }}
+        uses: actions/download-artifact@v7
+        continue-on-error: true
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          run-id: ${{ inputs.run-id }}
+          github-token: ${{ github.token }}
+          path: C:\tbw\build
+
+      - name: Extract build state from downloaded artifact
+        if: ${{ inputs.run-id != '' }}
+        shell: pwsh
+        run: |
+          $zip = 'C:\tbw\build\artifacts.zip'
+          if (Test-Path $zip) {
+            Write-Host "Extracting build state from artifacts.zip to C:\tbw ..."
+            7z x $zip -oC:\tbw -y
+            Remove-Item $zip -ErrorAction SilentlyContinue
+            Write-Host "Resume artifact applied — build/src restored."
+          } else {
+            Write-Host "No artifacts.zip found under C:\tbw\build.  "
+            Write-Host "The specified run-id may not have saved an intermediate artifact."
+          }
+
+      # ------------------------------------------------------------------
+      # Prepare source (only for fresh builds)
+      # ------------------------------------------------------------------
+      - name: Restore source cache
+        id: source-cache
+        uses: actions/cache@v5
+        if: ${{ inputs.run-id == '' }}
+        with:
+          path: C:\tbw\build\src
+          key: thorium-src-test-${{ github.sha }}
+
+      - name: Prepare Chromium source
+        if: ${{ inputs.run-id == '' && steps.source-cache.outputs.cache-hit != 'true' }}
+        shell: pwsh
+        run: |
+          $args = @('--ci', '--prepare-only')
+          if ('${{ inputs.x86 }}' -eq 'true') { $args += '--x86' }
+          if ('${{ inputs.arm }}' -eq 'true') { $args += '--arm' }
+          if ('${{ inputs.simd }}') { $args += '--simd'; $args += '${{ inputs.simd }}' }
+          Write-Host "Running: python build.py $($args -join ' ')"
+          python build.py @args
+        working-directory: C:\tbw
+
+      # ------------------------------------------------------------------
+      # Build
+      # ------------------------------------------------------------------
+      - name: Run build
+        id: build
+        shell: pwsh
+        run: |
+          $isResume = '${{ inputs.run-id }}' -ne ''
+          $buildArgs = @('build.py', '--ci', '-j', '2')
+          if ($isResume) { $buildArgs += '--build-only' }
+          if ('${{ inputs.x86 }}' -eq 'true') { $buildArgs += '--x86' }
+          if ('${{ inputs.arm }}' -eq 'true') { $buildArgs += '--arm' }
+          if ('${{ inputs.simd }}') { $buildArgs += '--simd'; $buildArgs += '${{ inputs.simd }}' }
+
+          Write-Host "Running: python $($buildArgs -join ' ')"
+          python $buildArgs
+          $exitCode = $LASTEXITCODE
+          Write-Host "Build process exited with code: $exitCode"
+
+          if ($exitCode -eq 0) {
+            # Success — packaging is handled by build.py --ci
+            Write-Host "Build completed successfully."
+            "finished=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } elseif ($exitCode -eq 2) {
+            # Timeout — save build state, then terminate
+            Write-Host "Build timed out. Saving build state for future resume..."
+            Start-Sleep -Seconds 5
+            7z a -tzip C:\tbw\artifacts.zip C:\tbw\build\src -mx=3 -mtc=on
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "Warning: 7z exit code $LASTEXITCODE — zip may be incomplete."
+            }
+            "finished=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            # Failure
+            Write-Host "Build failed with exit code $exitCode."
+            exit $exitCode
+          }
+        working-directory: C:\tbw
+
+      # ------------------------------------------------------------------
+      # Post-build actions
+      # ------------------------------------------------------------------
+      - name: Upload intermediate artifact (on timeout)
+        if: ${{ steps.build.outputs.finished == 'false' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact-name.outputs.name }}
+          path: C:\tbw\artifacts.zip
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Determine final artifact name
+        id: final-artifact-name
+        if: ${{ steps.build.outputs.finished == 'true' }}
+        shell: pwsh
+        run: |
+          if ('${{ inputs.x86 }}' -eq 'true') {
+            $name = 'test-thorium-x86'
+          } elseif ('${{ inputs.arm }}' -eq 'true') {
+            $name = 'test-thorium-arm'
+          } else {
+            $name = 'test-thorium-${{ inputs.simd }}'
+          }
+          Write-Host "Final artifact name: $name"
+          "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Upload final package (on success)
+        if: ${{ steps.build.outputs.finished == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.final-artifact-name.outputs.name }}
+          path: C:\tbw\build\thorium_*
+          retention-days: 4
+          compression-level: 0
+          if-no-files-found: warn

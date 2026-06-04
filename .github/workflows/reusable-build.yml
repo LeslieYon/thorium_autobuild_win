@@ -62,17 +62,12 @@ jobs:
         uses: ./.github/actions/prepare
         with:
           python-version: ${{ inputs.python-version }}
-      - name: Restore prepared source
-        uses: actions/cache/restore@v5
-        with:
-          path: C:\tbw\build\src
-          key: ${{ inputs.cache-key }}
       - name: Run Stage
         id: stage
         uses: ./.github/actions/stage
         with:
           finished: false
-          from_artifact: false
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -95,7 +90,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -118,7 +113,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -141,7 +136,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -164,7 +159,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -187,7 +182,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -210,7 +205,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -233,7 +228,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -256,7 +251,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -279,7 +274,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -302,7 +297,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -325,7 +320,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -348,7 +343,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -371,7 +366,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -394,7 +389,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}
@@ -417,7 +412,7 @@ jobs:
         uses: ./.github/actions/stage
         with:
           finished: ${{ join(needs.*.outputs.finished) }}
-          from_artifact: true
+          cache-key: ${{ inputs.cache-key }}
           x86: ${{ inputs.x86 }}
           arm: ${{ inputs.arm }}
           simd: ${{ inputs.simd }}

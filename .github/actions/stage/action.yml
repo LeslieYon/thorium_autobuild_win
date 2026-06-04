@@ -4,9 +4,6 @@ inputs:
   finished:
     description: 'If a previous stage already finished the build, the stage will set all output variables to the input ones and exit'
     required: true
-  from_artifact:
-    description: 'If a previous stage already uploaded build artifacts, the stage will resume building'
-    required: true
   x86:
     description: 'Build x86 binary'
     required: false
@@ -19,6 +16,9 @@ inputs:
     description: 'SIMD variant to build (sse3, sse4, avx, avx2)'
     required: false
     default: 'avx2'
+  cache-key:
+    description: 'Cache key for prepared source restore (used when no build artifact exists)'
+    required: true
 outputs:
   finished:
     description: 'Whether the build is complete'
