@@ -102,93 +102,93 @@
    // User-initiated extension downloads from pref-whitelisted sources are not
    // considered dangerous.
 # Download UI controller
---- a/chrome/browser/download/download_ui_controller.cc
-+++ b/chrome/browser/download/download_ui_controller.cc
-@@ -152,6 +152,68 @@
-       });
- }
-
-+class DownloadShelfUIControllerDelegate
-+    : public DownloadUIController::Delegate {
-+ public:
-+  // |profile| is required to outlive DownloadShelfUIControllerDelegate.
-+  explicit DownloadShelfUIControllerDelegate(Profile* profile)
-+      : profile_(profile) {
-+    // Match DownloadBubbleUIControllerDelegate behavior: in incognito mode,
-+    // prompt for download location.
-+    if (profile_->IsOffTheRecord()) {
-+      profile_->GetPrefs()->SetBoolean(prefs::kPromptForDownload, true);
-+    }
-+  }
-+  ~DownloadShelfUIControllerDelegate() override = default;
-+
-+ private:
-+  // DownloadUIController::Delegate
-+  void OnNewDownloadReady(download::DownloadItem* item) override;
-+
-+  raw_ptr<Profile> profile_;
-+};
-+
-+void DownloadShelfUIControllerDelegate::OnNewDownloadReady(
-+    download::DownloadItem* item) {
-+  // Here the item will be surfaced to the bubble UI and should
-+  // subject to the auto resumption logic.
-+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
-+  if (download::features::IsBackoffInDownloadingEnabled()) {
-+    auto* handler = download::DesktopAutoResumptionHandler::Get();
-+    item->RemoveObserver(handler);
-+    item->AddObserver(handler);
-+  }
-+#endif
-+  content::WebContents* web_contents =
-+      content::DownloadItemUtils::GetWebContents(item);
-+  // For the case of DevTools web contents, we'd like to use target browser
-+  // shelf although saving from the DevTools web contents.
-+  if (web_contents && DevToolsWindow::IsDevToolsWindow(web_contents)) {
-+    DevToolsWindow* devtools_window =
-+        DevToolsWindow::AsDevToolsWindow(web_contents);
-+    content::WebContents* inspected =
-+        devtools_window->GetInspectedWebContents();
-+    // Do not overwrite web contents for the case of remote debugging.
-+    if (inspected)
-+      web_contents = inspected;
-+  }
-+  Browser* browser =
-+      web_contents ? chrome::FindBrowserWithTab(web_contents) : nullptr;
-+
-+  // As a last resort, use the last active browser for this profile. Not ideal,
-+  // but better than not showing the download at all.
-+  if (browser == nullptr)
-+    browser = chrome::FindLastActiveWithProfile(profile_);
-+
-+  if (browser && browser->window() && browser->window()->GetDownloadShelf() &&
-+      DownloadItemModel(item).ShouldShowInShelf()) {
-+    DownloadUIModel::DownloadUIModelPtr model = DownloadItemModel::Wrap(item);
-+
-+    // GetDownloadShelf creates the download shelf if it was not yet created.
-+    browser->window()->GetDownloadShelf()->AddDownload(std::move(model));
-+  }
-+}
-+
- #endif
- } // namespace
-
-@@ -174,8 +236,12 @@
- #if BUILDFLAG(IS_CHROMEOS)
-     delegate_ = std::make_unique<DownloadNotificationManager>(profile);
- #else
--    delegate_ = std::make_unique<DownloadBubbleUIControllerDelegate>(profile);
--    InitializeDownloadBubbleUpdateService(profile, manager);
-+    if (download::IsDownloadBubbleEnabled()) {
-+      delegate_ = std::make_unique<DownloadBubbleUIControllerDelegate>(profile);
-+      InitializeDownloadBubbleUpdateService(profile, manager);
-+    } else {
-+      delegate_ = std::make_unique<DownloadShelfUIControllerDelegate>(profile);
-+    }
- #endif
-   }
- #endif  // BUILDFLAG(IS_ANDROID)
-
+# Download bubble was completely removed in newer versions of Chromium.
+# --- a/chrome/browser/download/download_ui_controller.cc
+# +++ b/chrome/browser/download/download_ui_controller.cc
+# @@ -152,6 +152,68 @@
+#        });
+#  }
+# 
+# +class DownloadShelfUIControllerDelegate
+# +    : public DownloadUIController::Delegate {
+# + public:
+# +  // |profile| is required to outlive DownloadShelfUIControllerDelegate.
+# +  explicit DownloadShelfUIControllerDelegate(Profile* profile)
+# +      : profile_(profile) {
+# +    // Match DownloadBubbleUIControllerDelegate behavior: in incognito mode,
+# +    // prompt for download location.
+# +    if (profile_->IsOffTheRecord()) {
+# +      profile_->GetPrefs()->SetBoolean(prefs::kPromptForDownload, true);
+# +    }
+# +  }
+# +  ~DownloadShelfUIControllerDelegate() override = default;
+# +
+# + private:
+# +  // DownloadUIController::Delegate
+# +  void OnNewDownloadReady(download::DownloadItem* item) override;
+# +
+# +  raw_ptr<Profile> profile_;
+# +};
+# +
+# +void DownloadShelfUIControllerDelegate::OnNewDownloadReady(
+# +    download::DownloadItem* item) {
+# +  // Here the item will be surfaced to the bubble UI and should
+# +  // subject to the auto resumption logic.
+# +#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC)
+# +  if (download::features::IsBackoffInDownloadingEnabled()) {
+# +    auto* handler = download::DesktopAutoResumptionHandler::Get();
+# +    item->RemoveObserver(handler);
+# +    item->AddObserver(handler);
+# +  }
+# +#endif
+# +  content::WebContents* web_contents =
+# +      content::DownloadItemUtils::GetWebContents(item);
+# +  // For the case of DevTools web contents, we'd like to use target browser
+# +  // shelf although saving from the DevTools web contents.
+# +  if (web_contents && DevToolsWindow::IsDevToolsWindow(web_contents)) {
+# +    DevToolsWindow* devtools_window =
+# +        DevToolsWindow::AsDevToolsWindow(web_contents);
+# +    content::WebContents* inspected =
+# +        devtools_window->GetInspectedWebContents();
+# +    // Do not overwrite web contents for the case of remote debugging.
+# +    if (inspected)
+# +      web_contents = inspected;
+# +  }
+# +  Browser* browser =
+# +      web_contents ? chrome::FindBrowserWithTab(web_contents) : nullptr;
+# +
+# +  // As a last resort, use the last active browser for this profile. Not ideal,
+# +  // but better than not showing the download at all.
+# +  if (browser == nullptr)
+# +    browser = chrome::FindLastActiveWithProfile(profile_);
+# +
+# +  if (browser && browser->window() && browser->window()->GetDownloadShelf() &&
+# +      DownloadItemModel(item).ShouldShowInShelf()) {
+# +    DownloadUIModel::DownloadUIModelPtr model = DownloadItemModel::Wrap(item);
+# +
+# +    // GetDownloadShelf creates the download shelf if it was not yet created.
+# +    browser->window()->GetDownloadShelf()->AddDownload(std::move(model));
+# +  }
+# +}
+# +
+#  #endif
+#  } // namespace
+# 
+# @@ -174,8 +236,12 @@
+#  #if BUILDFLAG(IS_CHROMEOS)
+#      delegate_ = std::make_unique<DownloadNotificationManager>(profile);
+#  #else
+# -    delegate_ = std::make_unique<DownloadBubbleUIControllerDelegate>(profile);
+# -    InitializeDownloadBubbleUpdateService(profile, manager);
+# +    if (download::IsDownloadBubbleEnabled()) {
+# +      delegate_ = std::make_unique<DownloadBubbleUIControllerDelegate>(profile);
+# +      InitializeDownloadBubbleUpdateService(profile, manager);
+# +    } else {
+# +      delegate_ = std::make_unique<DownloadShelfUIControllerDelegate>(profile);
+# +    }
+#  #endif
+#    }
+#  #endif  // BUILDFLAG(IS_ANDROID)
 --- a/chrome/browser/download/insecure_download_blocking.cc
 +++ b/chrome/browser/download/insecure_download_blocking.cc
 @@ -6,6 +6,7 @@

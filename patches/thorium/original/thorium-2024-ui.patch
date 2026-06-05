@@ -858,8 +858,8 @@
    switch (command_id) {
 +    case CommandNewTabToLeft: {
 +      base::RecordAction(UserMetricsAction("TabContextMenu_NewTab"));
-+      UMA_HISTOGRAM_ENUMERATION("Tab.NewTab", NewTabTypes::NEW_TAB_CONTEXT_MENU,
-+                                NewTabTypes::NEW_TAB_ENUM_COUNT);
++      UMA_HISTOGRAM_ENUMERATION("Tab.NewTab", NewTabTypes::kNewTabContextMenu,
++                                NewTabTypes::kNewTabEnumCount);
 +      delegate()->AddTabAt(GURL(), context_index, true,
 +                           GetTabGroupForTab(context_index));
 +      break;
@@ -1099,6 +1099,14 @@
  }
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
+@@ -5,6 +5,7 @@
+ #include "chrome/browser/ui/ui_features.h"
+ 
++#include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/time/time.h"
+ #include "build/build_config.h"
 @@ -731,6 +731,10 @@ static std::string GetCountryCode() {
  }
  
@@ -1495,7 +1503,7 @@
      }
  
      // There is no top border in tablet mode when the window is "restored"
-@@ -665,8 +672,25 @@
+@@ -665,8 +672,20 @@
      return top;
    }
  
@@ -1514,12 +1522,7 @@
 +  // Besides the frame border, there's empty space atop the window in restored
 +  // mode, to use to drag the window around.
 +  constexpr int kNonClientRestoredExtraThickness = 8;
-+  int thickness = kNonClientRestoredExtraThickness;
-+  if (EverHasVisibleBackgroundTabShapes() && features::IsThorium2024()) {
-+    thickness =
-+        std::max(thickness, BrowserNonClientFrameView::kMinimumDragHeight);
-+  }
-+  return top + thickness;
++  return top + kNonClientRestoredExtraThickness;
  }
  
  int BrowserFrameViewWin::TitlebarMaximizedVisualHeight() const {
@@ -1583,7 +1586,7 @@
    int TopUIFullscreenYOffset() const;
 --- a/chrome/browser/ui/views/frame/browser_frame_view_mac.mm
 +++ b/chrome/browser/ui/views/frame/browser_frame_view_mac.mm
-@@ -237,7 +237,46 @@ BrowserLayoutParams BrowserFrameViewMac::GetBrowserLayoutParams() const {
+@@ -237,7 +237,41 @@ BrowserLayoutParams BrowserFrameViewMac::GetBrowserLayoutParams() const {
  }
  
  int BrowserFrameViewMac::GetTopInset(bool restored) const {
@@ -1596,11 +1599,6 @@
 +    // Mac seems to reserve 1 DIP of the top inset as a resize handle.
 +    constexpr int kTabstripTopInset = 8;
 +    int top_inset = kTabstripTopInset;
-+    if (EverHasVisibleBackgroundTabShapes()) {
-+      top_inset =
-+          std::max(top_inset, BrowserNonClientFrameView::kMinimumDragHeight +
-+                                  kResizeHandleHeight);
-+    }
 +
 +    // Immersive fullscreen attaches the tab strip to the title bar, no need to
 +    // calculate the y_offset below.
@@ -1742,7 +1740,7 @@
  }
  
  int OpaqueBrowserFrameViewLayout::CaptionButtonY(views::FrameButton button_id,
-@@ -240,6 +254,22 @@ int OpaqueBrowserFrameViewLayout::GetWindowCaptionSpacing(
+@@ -240,6 +254,17 @@ int OpaqueBrowserFrameViewLayout::GetWindowCaptionSpacing(
    return 0;
  }
  
@@ -1754,12 +1752,7 @@
 +  // Besides the frame border, there's empty space atop the window in restored
 +  // mode, to use to drag the window around.
 +  constexpr int kNonClientRestoredExtraThickness = 8;
-+  int thickness = kNonClientRestoredExtraThickness;
-+  if (delegate_->EverHasVisibleBackgroundTabShapes()) {
-+    thickness =
-+        std::max(thickness, BrowserNonClientFrameView::kMinimumDragHeight);
-+  }
-+  return thickness;
++  return kNonClientRestoredExtraThickness;
 +}
 +
  void OpaqueBrowserFrameViewLayout::SetWindowControlsOverlayEnabled(
@@ -1788,6 +1781,14 @@
  
 --- a/chrome/browser/ui/views/frame/tab_strip_region_view.cc
 +++ b/chrome/browser/ui/views/frame/tab_strip_region_view.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "chrome/browser/ui/views/frame/tab_strip_region_view.h"
+ 
++#include "base/command_line.h"
+ #include "base/functional/bind.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/task/single_thread_task_runner.h"
 @@ -22,6 +22,7 @@
  #include "chrome/browser/ui/ui_features.h"
  #include "chrome/browser/ui/views/chrome_layout_provider.h"
@@ -2005,7 +2006,7 @@
  
  }  // namespace
  
-@@ -246,18 +246,22 @@ LocationBarView::LocationBarView(Browser* browser,
+@@ -246,18 +246,24 @@ LocationBarView::LocationBarView(Browser* browser,
        });
    set_suppress_default_focus_handling();
    if (!is_popup_mode_) {
@@ -2034,6 +2035,8 @@
 +          }));
 +      views::FocusRing::Get(this)->SetOutsetFocusRingDisabled(true);
 +    }
++    static const bool classic_omnibox =
++        base::CommandLine::ForCurrentProcess()->HasSwitch("classic-omnibox");
 +    if (!classic_omnibox) {
 +      views::InstallPillHighlightPathGenerator(this);
 +    }
@@ -2203,7 +2206,7 @@
    const double opacity = hover_animation_.GetCurrentValue();
    const bool is_caret_visible =
        GetOmniboxController()->edit_model()->is_caret_visible();
-+  const bool is_open = GetOmniboxPopupView()->IsOpen();
++  const bool is_open = omnibox_controller_->IsPopupOpen();
    const bool input_in_progress =
        GetOmniboxController()->edit_model()->user_input_in_progress();
    const bool high_contrast = GetNativeTheme()->preferred_contrast() ==
@@ -3614,7 +3617,7 @@
      UpdateThumb();
    }
  }
-@@ -458,10 +488,42 @@
+@@ -458,10 +488,40 @@
  }
  
  SkPath ToggleButton::GetFocusRingPath() const {
@@ -3625,9 +3628,7 @@
 +  if (features::IsThorium2024()) {
 +    const gfx::Point center = GetThumbBounds().CenterPoint();
 +    constexpr int kFocusRingRadius = 16;
-+    SkPath path;
-+    path.addCircle(center.x(), center.y(), kFocusRingRadius);
-+    return path;
++    return SkPath::Circle(center.x(), center.y(), kFocusRingRadius);
 +  } else {
 +    gfx::RectF bounds(GetTrackBounds());
 +    const SkRect sk_rect = gfx::RectFToSkRect(bounds);
@@ -4185,7 +4186,7 @@
      case DISTANCE_UNRELATED_CONTROL_HORIZONTAL:
        return 16;
      case DISTANCE_UNRELATED_INFOBAR_CONTAINER_HORIZONTAL:
-@@ -230,6 +232,40 @@
+@@ -230,6 +232,38 @@
  
  int LayoutProvider::GetCornerRadiusMetric(ShapeContextTokens id,
                                            const gfx::Size& size) const {
@@ -4216,8 +4217,6 @@
 +        return 4.0f; // 2.0f normally, should be 4.0f in Th24
 +      case ShapeContextTokens::kSidePanelContentRadius:
 +        return 16; // 8
-+      case ShapeContextTokens::kSidePanelPageContentRadius:
-+        return 8;
 +      default:
 +        return 0;
 +    }
@@ -4249,7 +4248,7 @@
 -               ? base::Milliseconds(show_delay)
 -               : kDefaultMenuShowDelay;
 -  }();
-+  static base::TimeDelta delay = kDefaultMenuShowDelay
++  static base::TimeDelta delay = kDefaultMenuShowDelay;
    return delay;
  #else
    return base::Milliseconds(0);

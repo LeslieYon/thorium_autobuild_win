@@ -44,3 +44,16 @@
  #if BUILDFLAG(ENABLE_PDF)
    { key::kPdfLocalFileAccessAllowedForDomains,
      prefs::kPdfLocalFileAccessAllowedForDomains,
+--- a/components/sync_preferences/common_syncable_prefs_database.cc
++++ b/components/sync_preferences/common_syncable_prefs_database.cc
+@@ -277,10 +274,6 @@ constexpr auto kCommonSyncablePrefsAllow
+         {payments::kCanMakePaymentEnabled,
+          {syncable_prefs_ids::kCanMakePaymentEnabled, syncer::PREFERENCES,
+           PrefSensitivity::kNone, MergeBehavior::kNone}},
+-        {prefs::kAccountTailoredSecurityUpdateTimestamp,
+-         {syncable_prefs_ids::kAccountTailoredSecurityUpdateTimestamp,
+-          syncer::PRIORITY_PREFERENCES, PrefSensitivity::kNone,
+-          MergeBehavior::kNone}},
+         {prefs::kCookieControlsMode,
+          {syncable_prefs_ids::kCookieControlsMode, syncer::PREFERENCES,
+           PrefSensitivity::kNone, MergeBehavior::kNone}},
