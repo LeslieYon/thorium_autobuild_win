@@ -199,15 +199,6 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ needs.resolve-release-context.outputs.arm_run_id }}
 
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.resolve-release-context.outputs.target_tag }}
-          fail_on_unmatched_files: true
-          overwrite_files: true
-          files: |
-            artifacts/**/thorium*
-
       - name: Generate release notes
         run: |
           echo "## Thorium Release ${{ needs.resolve-release-context.outputs.target_tag }}" > release-notes.md
@@ -218,3 +209,13 @@ jobs:
           if ! grep -q '^- `' release-notes.md; then
             echo "- See release assets below for available builds." >> release-notes.md
           fi
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.resolve-release-context.outputs.target_tag }}
+          body_path: release-notes.md
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          files: |
+            artifacts/**/thorium*
