@@ -1256,9 +1256,26 @@ def main():
         # Run ninja build in phases
         get_logger().info('Starting Thorium build for SIMD variant: %s', args.simd)
         if args.ci:
+            # Dynamic timeout: max 5.25h, subtract elapsed time since job start
+            _job_start = os.environ.get('JOB_START_TIME')
+            if _job_start:
+                try:
+                    _elapsed = time.time() - float(_job_start)
+                    _build_timeout = max(0, 5.25 * 60 * 60 - _elapsed)
+                    get_logger().info(
+                        'Dynamic timeout: %.1fs (%.1fh elapsed of %.1fh budget)',
+                        _build_timeout, _elapsed / 3600, 5.25)
+                except (ValueError, TypeError):
+                    get_logger().warning(
+                        'Invalid JOB_START_TIME value, using default timeout')
+                    _build_timeout = 4.35 * 60 * 60
+            else:
+                get_logger().info(
+                    'JOB_START_TIME not set, using default timeout')
+                _build_timeout = 4.35 * 60 * 60
             try:
                 for phase_args in all_ninja_phases:
-                    _run_build_process_timeout(*phase_args, timeout=4.35 * 60 * 60)
+                    _run_build_process_timeout(*phase_args, timeout=_build_timeout)
             except KeyboardInterrupt:
                 get_logger().info('Build timed out, will resume in next stage.')
                 sys.exit(2)

@@ -55,6 +55,9 @@ jobs:
   build-1:
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -78,6 +81,9 @@ jobs:
     needs: build-1
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -101,6 +107,9 @@ jobs:
     needs: build-2
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -124,6 +133,9 @@ jobs:
     needs: build-3
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -147,6 +159,9 @@ jobs:
     needs: build-4
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -170,6 +185,9 @@ jobs:
     needs: build-5
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -193,6 +211,9 @@ jobs:
     needs: build-6
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -216,6 +237,9 @@ jobs:
     needs: build-7
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -239,6 +263,9 @@ jobs:
     needs: build-8
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -262,6 +289,9 @@ jobs:
     needs: build-9
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -285,6 +315,9 @@ jobs:
     needs: build-10
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -308,6 +341,9 @@ jobs:
     needs: build-11
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -331,6 +367,9 @@ jobs:
     needs: build-12
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -354,6 +393,9 @@ jobs:
     needs: build-13
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -377,6 +419,9 @@ jobs:
     needs: build-14
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
@@ -400,6 +445,9 @@ jobs:
     needs: build-15
     runs-on: windows-2022
     steps:
+      - name: Record start time
+        run: |
+          echo "JOB_START_TIME=$(date +%s)" >> $GITHUB_ENV
       - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
