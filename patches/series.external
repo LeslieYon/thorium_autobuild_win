@@ -21,6 +21,7 @@ core/ungoogled-chromium/fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-with-prunned-binaries.patch
 core/ungoogled-chromium/disable-privacy-sandbox.patch
 extra/ungoogled-chromium/disable-ai-search-shortcuts.patch
+extra/ungoogled-chromium/disable-download-quarantine.patch
 
 # ----- Windows-specific patches -----
 #[windows]

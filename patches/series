@@ -76,7 +76,6 @@ thorium/new/thorium-build-config.patch
 thorium/new/thorium-ui.patch
 thorium/new/thorium-privacy.patch
 thorium/new/thorium-media-codecs.patch
-thorium/new/thorium-quarantine-removal.patch
 thorium/new/thorium-extensions-mv3.patch
 thorium/new/thorium-dns-network.patch
 thorium/new/thorium-downloads.patch
