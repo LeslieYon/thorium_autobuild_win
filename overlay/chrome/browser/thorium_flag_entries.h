@@ -140,12 +140,13 @@
      "Allows downloading files from mixed origin/cross origin schemes.",
      kOsAll, SINGLE_VALUE_TYPE("allow-insecure-downloads")},
 
-#if !BUILDFLAG(IS_ANDROID)
-    {"download-shelf",
-     "Restore Download Shelf",
-     "When enabled, the traditional download shelf is used instead of the download bubble in the toolbar. Thorium flag",
-     kOsDesktop, FEATURE_VALUE_TYPE(features::kDownloadShelf)},
-#endif // BUILDFLAG(IS_ANDROID)
+// download shelf was completely removed in newer versions of Chromium, so this flag is effectively dead code now.
+// #if !BUILDFLAG(IS_ANDROID)
+//     {"download-shelf",
+//      "Restore Download Shelf",
+//      "When enabled, the traditional download shelf is used instead of the download bubble in the toolbar. Thorium flag",
+//      kOsDesktop, FEATURE_VALUE_TYPE(features::kDownloadShelf)},
+// #endif // BUILDFLAG(IS_ANDROID)
 
     {"show-avatar-button",
      "Show/Hide the Avatar Button",
