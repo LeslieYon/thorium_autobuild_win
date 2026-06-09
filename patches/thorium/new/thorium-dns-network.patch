@@ -154,11 +154,10 @@
 # Remove Windows parental DoH check
 --- a/chrome/browser/net/stub_resolver_config_reader.cc
 +++ b/chrome/browser/net/stub_resolver_config_reader.cc
-@@ -54,11 +54,6 @@
- 
+@@ -55,10 +55,6 @@
  namespace {
  
--#if BUILDFLAG(IS_WIN)
+ #if BUILDFLAG(IS_WIN)
 -bool ShouldDisableDohForWindowsParentalControls() {
 -  return GetWinParentalControls().web_filter;
 -}
@@ -166,7 +165,7 @@
  // Defines the base::Feature for controlling the ZTDNS check.
  BASE_FEATURE(kZeroTrustDNS, base::FEATURE_ENABLED_BY_DEFAULT);
  
-@@ -213,42 +208,11 @@ void StubResolverConfigReader::UpdateNetworkService(bool record_metrics) {
+@@ -213,42 +209,11 @@
  }
  
  bool StubResolverConfigReader::ShouldDisableDohForManaged() {
@@ -209,7 +208,6 @@
  }
  
  void StubResolverConfigReader::SetOverrideDnsOverHttpsConfigSource(
-# Expand saveable URL schemes
 --- a/content/common/url_schemes.cc
 +++ b/content/common/url_schemes.cc
 @@ -24,13 +24,22 @@

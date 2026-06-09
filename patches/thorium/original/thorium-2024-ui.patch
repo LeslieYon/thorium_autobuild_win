@@ -3025,15 +3025,22 @@
  
 --- a/chrome/browser/ui/views/toolbar/BUILD.gn
 +++ b/chrome/browser/ui/views/toolbar/BUILD.gn
-@@ -25,6 +25,8 @@ source_set("toolbar") {
+@@ -25,6 +25,7 @@ source_set("toolbar") {
      "pinned_toolbar_actions_controller.h",
      "pinned_toolbar_button_status_indicator.h",
      "reload_button.h",
-+    "restore_tab_button.cc",
 +    "restore_tab_button.h",
      "reload_button_web_view.h",
      "reload_control.h",
      "split_tabs_button.h",
+@@ -99,6 +100,7 @@ source_set("impl") {
+     "pinned_toolbar_actions_controller.cc",
+     "pinned_toolbar_button_status_indicator.cc",
+     "reload_button.cc",
++    "restore_tab_button.cc",
+     "reload_button_web_view.cc",
+     "split_tabs_button.cc",
+     "toolbar_action_hover_card_bubble_view.cc",
 --- a/chrome/browser/ui/views/toolbar/chrome_labs/chrome_labs_bubble_view.cc
 +++ b/chrome/browser/ui/views/toolbar/chrome_labs/chrome_labs_bubble_view.cc
 @@ -109,7 +109,7 @@ ChromeLabsBubbleView::ChromeLabsBubbleView(views::Button* anchor_view,
@@ -3387,8 +3394,8 @@
 +COMPONENT_EXPORT(UI_BASE_FEATURES) bool IsThorium2024();
 +
 +// Whether to use the old download shelf instead of new toolbar bubble UI
-+COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kDownloadShelf);
-+COMPONENT_EXPORT(UI_BASE_FEATURES) bool UseDownloadShelf();
++// COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kDownloadShelf);
++// COMPONENT_EXPORT(UI_BASE_FEATURES) bool UseDownloadShelf();
 +
 +// Whether to use Alex313031's Restore Tab toolbar button
 +COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kRestoreTabButton);

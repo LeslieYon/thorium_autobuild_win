@@ -560,7 +560,7 @@
    // Parse configuration from the command line and resources.
 -  Configuration configuration;
 -  if (!configuration.Initialize()) {
-+  if (!conf.Initialize(hModule)) {
++  if (!conf.Initialize()) {
      return ProcessExitResult(GENERIC_INITIALIZATION_FAILURE, ::GetLastError());
    }
  
