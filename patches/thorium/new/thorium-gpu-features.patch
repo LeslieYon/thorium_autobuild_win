@@ -21,15 +21,16 @@
 # Vulkan ICD paths in GPU sandbox
 --- a/content/common/gpu_pre_sandbox_hook_linux.cc
 +++ b/content/common/gpu_pre_sandbox_hook_linux.cc
-@@ -262,6 +262,11 @@
+@@ -262,6 +262,12 @@
        "/usr/lib64/dri/r300_dri.so",
        "/usr/lib64/dri/r600_dri.so",
        "/usr/lib64/dri/radeonsi_dri.so",
 +      // GPU Log Warnings Workaround
++      "/usr/lib/libvulkan_radeon.so",
 +      "/usr/share/vulkan/icd.d",
-+      "/usr/share/vulkan/icd.d/radeon_icd.x86_64.json"
++      "/usr/share/vulkan/icd.d/radeon_icd.x86_64.json",
 +      "/etc/vulkan/icd.d",
-+      "/etc/vulkan/icd.d/radeon_icd.x86_64.json"
++      "/etc/vulkan/icd.d/radeon_icd.x86_64.json",
        // Allow libglvnd files and libs.
        "/usr/share/glvnd/egl_vendor.d",
        "/usr/share/glvnd/egl_vendor.d/50_mesa.json",

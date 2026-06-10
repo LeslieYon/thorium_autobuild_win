@@ -1,6 +1,8 @@
+diff --git a/chrome/updater/BUILD.gn b/chrome/updater/BUILD.gn
+index ae9d83075d2eb..64efb84497a14 100644
 --- a/chrome/updater/BUILD.gn
 +++ b/chrome/updater/BUILD.gn
-@@ -358,6 +358,7 @@ if (is_win || is_mac || is_linux) {
+@@ -377,6 +377,7 @@ if (is_win || is_mac || is_linux) {
          "//chrome/installer/util:constants",
          "//chrome/installer/util:metainstaller_utils",
          "//chrome/installer/util:work_item",
@@ -8,6 +10,8 @@
          "//chrome/updater/app/server/win:updater_idl",
          "//chrome/updater/app/server/win:updater_idl_system",
          "//chrome/updater/app/server/win:updater_idl_user",
+diff --git a/chrome/updater/win/installer/installer.cc b/chrome/updater/win/installer/installer.cc
+index 543e55df64519..bd732c5103745 100644
 --- a/chrome/updater/win/installer/installer.cc
 +++ b/chrome/updater/win/installer/installer.cc
 @@ -11,6 +11,11 @@
@@ -22,7 +26,7 @@
  #include "chrome/updater/win/installer/installer.h"
  
  #include <shellapi.h>
-@@ -30,6 +35,7 @@
+@@ -31,6 +36,7 @@
  #include "base/memory/ref_counted.h"
  #include "base/path_service.h"
  #include "base/strings/strcat.h"
@@ -30,7 +34,7 @@
  #include "base/strings/utf_string_conversions.h"
  #include "base/synchronization/waitable_event.h"
  #include "base/task/thread_pool.h"
-@@ -44,6 +50,7 @@
+@@ -45,6 +51,7 @@
  #include "base/win/scoped_localalloc.h"
  #include "base/win/windows_version.h"
  #include "chrome/installer/util/lzma_util.h"
@@ -38,7 +42,7 @@
  #include "chrome/updater/branded_constants.h"
  #include "chrome/updater/constants.h"
  #include "chrome/updater/ping_configurator.h"
-@@ -74,11 +81,19 @@ namespace {
+@@ -75,11 +82,19 @@ namespace {
  // program file image used to create this process. The implementation of this
  // function only handles UTF8 tags.
  std::string ExtractTag() {
@@ -58,9 +62,11 @@
  }
  
  // Shows a splash screen "Initializing...".
+diff --git a/chrome/updater/win/signing/sign.py b/chrome/updater/win/signing/sign.py
+index 42becb59dd93c..8304169764b80 100755
 --- a/chrome/updater/win/signing/sign.py
 +++ b/chrome/updater/win/signing/sign.py
-@@ -124,49 +124,10 @@
+@@ -124,49 +124,11 @@ class Signer:
          self._sign_flags = sign_flags
  
      def _add_tagging_cert(self, in_file, out_file):
@@ -70,8 +76,8 @@
 -             '--out=%s' % out_file, in_file],
 -            check=True,
 -            stdout=subprocess.DEVNULL)
--        return out_file
 +        shutil.copy(in_file, out_file)
+         return out_file
  
      def _sign_item(self, in_file):
 -        """Sign an executable in-place."""

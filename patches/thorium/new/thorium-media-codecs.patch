@@ -10,6 +10,44 @@
  
  #if BUILDFLAG(ENABLE_PLATFORM_HEVC)
  // Enables HEVC hardware accelerated decoding.
+@@ -700,7 +700,7 @@ BASE_FEATURE(kAcceleratedVideoDecodeLinuxGL, base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ BASE_FEATURE(kAcceleratedVideoEncodeLinux,
+              "AcceleratedVideoEncoder",
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ 
+ // Ignore the non-intel driver blacklist for VaapiVideoDecoder implementations.
+ // Intended for manual usage only in order to gague the status of newer driver
+@@ -1204,7 +1205,7 @@ BASE_FEATURE(kPlatformEncryptedDolbyVision,
+ #if BUILDFLAG(IS_WIN)
+              base::FEATURE_ENABLED_BY_DEFAULT
+ #else
+-             base::FEATURE_DISABLED_BY_DEFAULT
++             base::FEATURE_ENABLED_BY_DEFAULT
+ #endif
+ );
+ 
+@@ -1216,7 +1217,7 @@ BASE_FEATURE(kPlatformEncryptedDolbyVision,
+ // Otherwise, this feature has no effect and neither encrypted nor clear Dolby
+ // Vision is allowed.
+ BASE_FEATURE(kAllowClearDolbyVisionInMseWhenPlatformEncryptedDvEnabled,
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+ 
+ #if BUILDFLAG(IS_CHROMEOS)
+@@ -1286,7 +1287,9 @@ std::string GetEffectiveAutoplayPolicy(const base::CommandLine& command_line) {
+     return command_line.GetSwitchValueASCII(switches::kAutoplayPolicy);
+   }
+ 
+-  if (base::FeatureList::IsEnabled(media::kUnifiedAutoplay)) {
++  if (command_line.HasSwitch("no-autoplay")) {
++    return switches::autoplay::kUserGestureRequiredPolicy;
++  } else if (base::FeatureList::IsEnabled(media::kUnifiedAutoplay)) {
+     return switches::autoplay::kDocumentUserActivationRequiredPolicy;
+   }
+ 
 --- a/media/base/supported_types.cc
 +++ b/media/base/supported_types.cc
 @@ -229,25 +229,12 @@

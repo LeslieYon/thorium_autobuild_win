@@ -22,3 +22,16 @@
        configs += [ "//build/config/gcc:rpath_for_built_shared_libraries" ]
      }
  
+@@ -1666,7 +1702,11 @@ if (is_linux || is_chromeos) {
+       }
+     }
+     extract_symbols("chrome_symbols") {
+-      binary = "$root_out_dir/chrome"
++      if (is_chromeos) {
++        binary = "$root_out_dir/chrome"
++      } else {
++        binary = "$root_out_dir/thorium"
++      }
+ 
+       if (current_cpu == "x86") {
+         # GYP used "ia32" so keep that naming for back-compat.

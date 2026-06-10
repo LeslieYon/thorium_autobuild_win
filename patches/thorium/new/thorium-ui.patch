@@ -95,12 +95,12 @@
 +  bool show_confirmation_last_window = flag_value == "last";
 +
 +  if (show_confirmation_last_window) {
-+    if (total_window_count >= 1 || this->tab_strip_model()->count() <= 1)
++    if (total_window_count >= 1 || tab_strip_model()->count() <= 1)
 +      return true;
 +  } else {
 +    if (total_window_count == 0)
 +      return true;
-+    if (this->tab_strip_model()->count() == 0)
++    if (tab_strip_model()->count() == 0)
 +      tab_strip_model_delegate_->AddTabAt(GURL(), -1, true);
 +  }
 +
@@ -717,7 +717,7 @@
 # Thorium home icon flag
 --- a/chrome/browser/ui/views/toolbar/home_button.cc
 +++ b/chrome/browser/ui/views/toolbar/home_button.cc
-@@ -6,6 +6,7 @@
+@@ -7,6 +7,7 @@
  #include <memory>
  #include <string_view>
  
@@ -725,20 +725,17 @@
  #include "base/feature_list.h"
  #include "base/functional/bind.h"
  #include "base/functional/callback_helpers.h"
-@@ -136,7 +137,15 @@
+@@ -148,7 +149,12 @@ HomeButton::HomeButton(BrowserWindowInterface* browser_window_interface,
    SetProperty(views::kElementIdentifierKey, kToolbarHomeButtonElementId);
    SetTriggerableEventFlags(ui::EF_LEFT_MOUSE_BUTTON |
                             ui::EF_MIDDLE_MOUSE_BUTTON);
 -  SetVectorIcons(kNavigateHomeChromeRefreshIcon, kNavigateHomeTouchIcon);
-+
 +  static const bool disable_thorium_icons =
-+      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-thorium-icons");
-+  if (disable_thorium_icons) {
-+    SetVectorIcons(kNavigateHomeChromeRefreshIcon, kNavigateHomeTouchIcon);
-+  } else {
-+    SetVectorIcons(kNavigateHomeChromeRefreshThoriumIcon, kNavigateHomeTouchIcon);
-+  }
-+
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
++  SetVectorIcons(disable_thorium_icons ? kNavigateHomeChromeRefreshIcon
++                                       : kNavigateHomeChromeRefreshThoriumIcon,
++                 kNavigateHomeTouchIcon);
    SetTooltipText(l10n_util::GetStringUTF16(IDS_TOOLTIP_HOME));
    GetViewAccessibility().SetName(l10n_util::GetStringUTF16(IDS_ACCNAME_HOME));
    SetID(VIEW_ID_HOME_BUTTON);
@@ -905,17 +902,7 @@
 # Hazard SVG icon
 --- a/ui/webui/resources/images/BUILD.gn
 +++ b/ui/webui/resources/images/BUILD.gn
-@@ -1,7 +1,8 @@
--# Copyright 2020 The Chromium Authors
-+# Copyright 2026 The Chromium Authors and Alex313031
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
- 
-+import("//build/config/chromeos/ui_mode.gni")
- import("//ui/webui/resources/tools/generate_grd.gni")
- 
- generate_grd("build_grdp") {
-@@ -24,6 +25,7 @@
+@@ -24,6 +24,7 @@ generate_grd("build_grdp") {
      "error.svg",
      "error_yellow900.svg",
      "extension.svg",
@@ -923,7 +910,7 @@
      "icon_arrow_dropdown.svg",
      "icon_cancel.svg",
      "icon_copy_content.svg",
-@@ -33,6 +35,7 @@
+@@ -33,6 +34,7 @@ generate_grd("build_grdp") {
      "icon_tab.svg",
      "icon_refresh.svg",
      "icon_search.svg",
@@ -931,51 +918,6 @@
      "open_in_new.svg",
      "select.png",
      "throbber_medium.svg",
-@@ -50,31 +50,22 @@ generate_grd("build_grdp") {
-     "2x/select.png",
-   ]
- 
--  if (!is_ios) {
--    input_files += [
--      "arrow_down.svg",
--      "chrome_logo_dark.svg",
--      "dark/arrow_down.svg",
--      "icon_arrow_back.svg",
--      "icon_delete_gray.svg",
--      "icon_edit.svg",
--      "icon_more_vert.svg",
--    ]
--  }
--
-   if (!is_android && !is_ios) {
-     input_files += [
-       "arrow_right.svg",
-       "business.svg",
-       "colorize.svg",
-       "chevron_down.svg",
-+      "chrome_logo_dark.svg",
-       "dark/chevron_down.svg",
-+      "icon_arrow_back.svg",
-       "icon_arrow_drop_down_cr23.svg",
-       "icon_arrow_drop_up_cr23.svg",
-       "icon_arrow_upward.svg",
-       "icon_bookmark.svg",
-       "icon_clear.svg",
-       "icon_clock.svg",
-+      "icon_edit.svg",
-       "icon_filetype_generic.svg",
-       "icon_folder_open.svg",
-       "icon_history.svg",
-@@ -79,9 +77,6 @@
-       "icon_settings.svg",
-       "icon_visibility_off.svg",
-       "icon_visibility.svg",
--      "promotion_banner_light.svg",
--      "dark/promotion_banner_dark.svg",
--      "promotion_policy_banner_close.svg",
-     ]
-   }
- 
 # Windows titlebar config
 --- a/chrome/browser/themes/theme_helper_win.cc
 +++ b/chrome/browser/themes/theme_helper_win.cc
@@ -1070,3 +1012,45 @@
    } else if (match.type != AutocompleteMatchType::HISTORY_CLUSTER) {
      // The starter pack suggestions are a unique case. These suggestions
      // normally use a favicon image that cannot be styled further by client
+--- a/chrome/android/chrome_java_resources.gni
++++ b/chrome/android/chrome_java_resources.gni
+@@ -55,6 +55,7 @@ chrome_java_resources = [
+   "java/res/drawable-hdpi/ic_exit_to_app_white_24dp.png",
+   "java/res/drawable-hdpi/ic_file_download_white_24dp.png",
+   "java/res/drawable-hdpi/ic_link_grey600_36dp.png",
++  "java/res/drawable-hdpi/ic_most_visited_placeholder.png",
+   "java/res/drawable-hdpi/ic_phone_googblue_36dp.png",
+   "java/res/drawable-hdpi/ic_photo_camera.png",
+   "java/res/drawable-hdpi/ic_place_googblue_36dp.png",
+@@ -106,6 +107,7 @@ chrome_java_resources = [
+   "java/res/drawable-mdpi/ic_exit_to_app_white_24dp.png",
+   "java/res/drawable-mdpi/ic_file_download_white_24dp.png",
+   "java/res/drawable-mdpi/ic_link_grey600_36dp.png",
++  "java/res/drawable-mdpi/ic_most_visited_placeholder.png",
+   "java/res/drawable-mdpi/ic_phone_googblue_36dp.png",
+   "java/res/drawable-mdpi/ic_photo_camera.png",
+   "java/res/drawable-mdpi/ic_place_googblue_36dp.png",
+@@ -159,6 +161,7 @@ chrome_java_resources = [
+   "java/res/drawable-xhdpi/ic_exit_to_app_white_24dp.png",
+   "java/res/drawable-xhdpi/ic_file_download_white_24dp.png",
+   "java/res/drawable-xhdpi/ic_link_grey600_36dp.png",
++  "java/res/drawable-xhdpi/ic_most_visited_placeholder.png",
+   "java/res/drawable-xhdpi/ic_phone_googblue_36dp.png",
+   "java/res/drawable-xhdpi/ic_photo_camera.png",
+   "java/res/drawable-xhdpi/ic_place_googblue_36dp.png",
+@@ -209,6 +212,7 @@ chrome_java_resources = [
+   "java/res/drawable-xxhdpi/ic_exit_to_app_white_24dp.png",
+   "java/res/drawable-xxhdpi/ic_file_download_white_24dp.png",
+   "java/res/drawable-xxhdpi/ic_link_grey600_36dp.png",
++  "java/res/drawable-xxhdpi/ic_most_visited_placeholder.png",
+   "java/res/drawable-xxhdpi/ic_phone_googblue_36dp.png",
+   "java/res/drawable-xxhdpi/ic_photo_camera.png",
+   "java/res/drawable-xxhdpi/ic_place_googblue_36dp.png",
+@@ -257,6 +261,7 @@ chrome_java_resources = [
+   "java/res/drawable-xxxhdpi/ic_exit_to_app_white_24dp.png",
+   "java/res/drawable-xxxhdpi/ic_file_download_white_24dp.png",
+   "java/res/drawable-xxxhdpi/ic_link_grey600_36dp.png",
++  "java/res/drawable-xxxhdpi/ic_most_visited_placeholder.png",
+   "java/res/drawable-xxxhdpi/ic_phone_googblue_36dp.png",
+   "java/res/drawable-xxxhdpi/ic_photo_camera.png",
+   "java/res/drawable-xxxhdpi/ic_place_googblue_36dp.png",
