@@ -217,7 +217,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/android/arm64/libavcodec/
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/android/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/android/arm64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -283,7 +283,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/android/ia32/libavcodec/p
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/android/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/android/ia32/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -349,7 +349,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/android/x64/libavcodec/pa
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/android/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/android/x64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -415,7 +415,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/ios/arm64/libavcodec/pars
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/ios/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/ios/arm64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -481,7 +481,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/arm-neon/libavcodec
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/arm-neon/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/arm-neon/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -547,7 +547,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/arm/libavcodec/pars
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/arm/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/arm/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -613,7 +613,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/arm64/libavcodec/pa
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/arm64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -679,7 +679,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/ia32/libavcodec/par
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/ia32/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -745,7 +745,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/pars
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/linux/x64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -811,7 +811,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/mac/arm64/libavcodec/pars
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/mac/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/mac/arm64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -901,7 +901,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/parser
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/mac/x64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1001,7 +1001,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/win-msvc/ia32/libavcodec/
 index 19d670aa24..f55c2ca459 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win-msvc/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win-msvc/ia32/libavcodec/parser_list.c
-@@ -7,4 +7,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -7,4 +7,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_vorbis_parser,
      &ff_vp3_parser,
      &ff_vp8_parser,
@@ -1101,7 +1101,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/win-msvc/x64/libavcodec/p
 index 19d670aa24..f55c2ca459 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win-msvc/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win-msvc/x64/libavcodec/parser_list.c
-@@ -7,4 +7,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -7,4 +7,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_vorbis_parser,
      &ff_vp3_parser,
      &ff_vp8_parser,
@@ -1167,7 +1167,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/arm64/libavcodec/pars
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/arm64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1257,7 +1257,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/ia32/libavcodec/parse
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/ia32/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1347,7 +1347,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/parser
 index 3e4fa9c320..c85087a596 100644
 --- a/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chrome/win/x64/libavcodec/parser_list.c
-@@ -6,4 +6,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -6,4 +6,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1413,7 +1413,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/android/arm64/libavcode
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/android/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/android/arm64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1479,7 +1479,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/android/ia32/libavcodec
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/android/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/android/ia32/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1545,7 +1545,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/android/x64/libavcodec/
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/android/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/android/x64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1611,7 +1611,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/ios/arm64/libavcodec/pa
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/ios/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/ios/arm64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1677,7 +1677,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/linux-noasm/x64/libavco
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/linux-noasm/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/linux-noasm/x64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1743,7 +1743,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/linux/arm-neon/libavcod
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/linux/arm-neon/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/linux/arm-neon/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1809,7 +1809,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/linux/arm/libavcodec/pa
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/linux/arm/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/linux/arm/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1875,7 +1875,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/linux/arm64/libavcodec/
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/linux/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/linux/arm64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -1941,7 +1941,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/linux/ia32/libavcodec/p
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/linux/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/linux/ia32/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -2007,7 +2007,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/linux/x64/libavcodec/pa
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/linux/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/linux/x64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -2073,7 +2073,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/mac/arm64/libavcodec/pa
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/mac/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/mac/arm64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -2163,7 +2163,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/mac/x64/libavcodec/pars
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/mac/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/mac/x64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -2263,7 +2263,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/win-msvc/ia32/libavcode
 index 4c59b89cdf..8629776838 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/win-msvc/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/win-msvc/ia32/libavcodec/parser_list.c
-@@ -5,4 +5,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -5,4 +5,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_vorbis_parser,
      &ff_vp3_parser,
      &ff_vp8_parser,
@@ -2363,7 +2363,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/win-msvc/x64/libavcodec
 index 4c59b89cdf..8629776838 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/win-msvc/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/win-msvc/x64/libavcodec/parser_list.c
-@@ -5,4 +5,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -5,4 +5,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_vorbis_parser,
      &ff_vp3_parser,
      &ff_vp8_parser,
@@ -2429,7 +2429,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/win/arm64/libavcodec/pa
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/win/arm64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/win/arm64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -2519,7 +2519,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/win/ia32/libavcodec/par
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/win/ia32/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/win/ia32/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,
@@ -2609,7 +2609,7 @@ diff --git a/third_party/ffmpeg/chromium/config/Chromium/win/x64/libavcodec/pars
 index fdc533b38f..520472e237 100644
 --- a/third_party/ffmpeg/chromium/config/Chromium/win/x64/libavcodec/parser_list.c
 +++ b/third_party/ffmpeg/chromium/config/Chromium/win/x64/libavcodec/parser_list.c
-@@ -4,4 +4,5 @@ static const AVCodecParser * const parser_list[] = {
+@@ -4,4 +4,5 @@ static const FFCodecParser * const parser_list[] = {
      &ff_opus_parser,
      &ff_vorbis_parser,
      &ff_vp9_parser,

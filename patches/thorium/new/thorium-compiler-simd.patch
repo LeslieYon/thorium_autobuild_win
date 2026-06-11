@@ -380,7 +380,7 @@
    }
  
    configs = [ ":default_warnings" ]
-@@ -2642,6 +2735,121 @@ config("no_incompatible_pointer_warnings") {
+@@ -2642,6 +2735,120 @@ config("no_incompatible_pointer_warnings") {
    }
  }
  
