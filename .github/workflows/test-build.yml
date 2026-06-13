@@ -122,10 +122,10 @@ jobs:
         run: |
           $zip = 'C:\tbw\build\artifacts.zip'
           if (Test-Path $zip) {
-            Write-Host "Extracting build state from artifacts.zip to C:\tbw ..."
-            7z x $zip -oC:\tbw -y
+            Write-Host "Extracting build state from artifacts.zip to C:\tbw\build ..."
+            7z x $zip -oC:\tbw\build -y
             Remove-Item $zip -ErrorAction SilentlyContinue
-            Write-Host "Resume artifact applied — build/src restored."
+            Write-Host "Resume artifact applied — build\src restored in C:\tbw\build."
           } else {
             Write-Host "No artifacts.zip found under C:\tbw\build.  "
             Write-Host "The specified run-id may not have saved an intermediate artifact."
