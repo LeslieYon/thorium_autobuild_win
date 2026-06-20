@@ -1,0 +1,22 @@
+--- a/third_party/blink/renderer/platform/fonts/win/font_fallback_win.cc
++++ b/third_party/blink/renderer/platform/fonts/win/font_fallback_win.cc
+@@ -330,7 +330,8 @@ UScriptCode GetScript(int ucs4) {
+ }
+ 
+ const char* AvailableColorEmojiFont(const SkFontMgr& font_manager) {
+-  static const char* const kEmojiFonts[] = {"Segoe UI Emoji",
++  static const char* const kEmojiFonts[] = {"Noto Color Emoji",
++                                            "Segoe UI Emoji",
+                                             "Segoe UI Symbol"};
+   static const char* emoji_font = nullptr;
+   // `std::once()` may cause hangs. crbug.com/349456407
+@@ -343,7 +344,8 @@ const char* AvailableColorEmojiFont(const SkFontMgr& font_manager) {
+ }
+ 
+ const char* AvailableMonoEmojiFont(const SkFontMgr& font_manager) {
+-  static const char* const kEmojiFonts[] = {"Segoe UI Symbol",
++  static const char* const kEmojiFonts[] = {"Noto Color Emoji",
++                                            "Segoe UI Symbol",
+                                             "Segoe UI Emoji"};
+   static const char* emoji_font = nullptr;
+   // `std::once()` may cause hangs. crbug.com/349456407

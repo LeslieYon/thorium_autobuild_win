@@ -74,3 +74,4 @@ thorium/new/thorium-telemetry-flags.patch
 thorium/new/thorium-set-api-keys.patch
 thorium/new/thorium-gpu-features.patch
 thorium/new/thorium-misc-fixes.patch
+thorium/new/add-support-Noto-Color-Emoji.patch
