@@ -2,7 +2,7 @@
 
 Thorium Autobuild Win reorganizes Thorium's Chromium changes into a standard patch-and-overlay layout and provides a Windows build pipeline on top of the `ungoogled-chromium-windows` submodule.
 
-**Pinned Chromium version**: `144.0.7559.255` (see `chromium_version.txt`)
+**Pinned Chromium version**: `144.0.7559.256` (see `chromium_version.txt`)
 **Submodule**: `ungoogled-chromium-windows` at `144.0.7559.132-1.1`
 
 ## Layout
