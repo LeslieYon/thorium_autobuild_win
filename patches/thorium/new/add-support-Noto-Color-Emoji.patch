@@ -20,3 +20,25 @@
                                              "Segoe UI Emoji"};
    static const char* emoji_font = nullptr;
    // `std::once()` may cause hangs. crbug.com/349456407
+# fix CBDT/SVG color font detection on older Windows versions (e.g., Windows 10)
+# without this, Skia skips the PNG/CBDT rendering path for color bitmap fonts
+--- a/third_party/skia/src/ports/SkTypeface_win_dw.cpp
++++ b/third_party/skia/src/ports/SkTypeface_win_dw.cpp
+@@ -205,6 +205,17 @@ DWriteFontTypeface::DWriteFontTypeface(const SkFontStyle& style,
+     }
+ 
+     fIsColorFont = fFactory2 && fDWriteFontFace2 && fDWriteFontFace2->IsColorFont();
++    // Also check for CBDT (color bitmap) and SVG tables, since
++    // IsColorFont() may not detect these on older Windows versions.
++    if (!fIsColorFont && fDWriteFontFace) {
++        AutoDWriteTable cbdt(fDWriteFontFace.get(),
++                             DWRITE_MAKE_OPENTYPE_TAG('C','B','D','T'));
++        AutoDWriteTable svg(fDWriteFontFace.get(),
++                            DWRITE_MAKE_OPENTYPE_TAG('S','V','G',' '));
++        if (cbdt.fExists || svg.fExists) {
++            fIsColorFont = true;
++        }
++    }
+     this->initializePalette();
+ }
+ 
