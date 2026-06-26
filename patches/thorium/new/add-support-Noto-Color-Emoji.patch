@@ -42,3 +42,45 @@
      this->initializePalette();
  }
  
+# add Noto Color Emoji to UI font fallback chain (tabs, context menus, etc.)
+# the UI uses DirectWrite MapCharacters which doesn't find Noto Color Emoji
+# try before the main fallback loop so emoji fonts are prioritized over
+# non-color fonts (e.g., Segoe UI Symbol) for emoji text. early return if
+# Noto covers all characters, saving the full fallback loop overhead.
+--- a/ui/gfx/font_fallback_skia_impl.cc
++++ b/ui/gfx/font_fallback_skia_impl.cc
+@@ -135,6 +135,34 @@ sk_sp<SkTypeface> GetSkiaFallbackTypeface(const Font& template_font,
+   std::set<UChar32> codepoints;
+   RetrieveCodepointsAndDecomposedCodepoints(text, &codepoints);
+ 
++  // If the text contains emoji characters (including flag Regional Indicators),
++  // try Noto Color Emoji first since it may not be in DirectWrite's system
++  // font fallback chain but should be preferred for emoji rendering over
++  // non-color fonts like Segoe UI Symbol.
++  for (size_t i = 0; i < text.length();) {
++    UChar32 codepoint;
++    UNSAFE_TODO(U16_NEXT(text.data(), i, text.length(), codepoint));
++    if ((codepoint >= 0x1F1E6 && codepoint <= 0x1F1FF) ||
++        u_hasBinaryProperty(codepoint, UCHAR_EMOJI) ||
++        u_hasBinaryProperty(codepoint, UCHAR_EMOJI_PRESENTATION) ||
++        u_hasBinaryProperty(codepoint, UCHAR_EMOJI_MODIFIER_BASE) ||
++        u_hasBinaryProperty(codepoint, UCHAR_EXTENDED_PICTOGRAPHIC)) {
++      sk_sp<SkTypeface> noto_typeface(
++          font_mgr->matchFamilyStyle("Noto Color Emoji", skia_style));
++      if (noto_typeface) {
++        tested_typeface.insert(noto_typeface->uniqueID());
++        size_t missing = ComputeMissingGlyphsForGivenTypeface(text, noto_typeface);
++        if (missing == 0)
++          return noto_typeface;
++        if (missing < fewest_missing_glyphs) {
++          fewest_missing_glyphs = missing;
++          fallback_typeface = noto_typeface;
++        }
++      }
++      break;
++    }
++  }
++
+   // Determine which fallback font is given the fewer missing glyphs.
+   for (UChar32 codepoint : codepoints) {
+ 
