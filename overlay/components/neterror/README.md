@@ -1,16 +1,21 @@
-## Thorium Network Error Interstitial Resources&nbsp;&nbsp;<img src="https://github.com/Alex313031/thorium/blob/main/logos/NEW/components/200/error_network_generic.png" width="48">
+## Thorium Neterror Overlay&nbsp;&nbsp;<img src="https://github.com/Alex313031/thorium/blob/main/logos/NEW/components/200/error_network_generic.png" width="48">
 
-This directory contains the HTML template and resources displayed in the case of
-network errors received when fetching the root document or iframes. These error
-pages can be previewed by following the links listed in chrome://network-errors.
+This overlay carries Thorium-specific resources for Chromium's network error
+page and offline dino game.
 
-The same template is used across all desktop and mobile platforms and for main
-frames and iframes.
+Keep Chromium-owned source files, such as `neterror.html` and
+`dino_game/offline.ts`, as patches instead of copying them wholesale from this
+directory. Those files change upstream and should be rebased against the current
+Chromium implementation.
 
-This dir also includes the scripts and images for the Thorium Dino game.&nbsp;&nbsp;<img src="https://github.com/Alex313031/thorium/blob/main/logos/STAGING/dino_32px.png">
+Binary artwork and audio for the Thorium dino game can remain as overlay
+resources:
+
+- `resources/images/default_100_percent/offline/*.png`
+- `resources/images/default_200_percent/offline/*.png`
+- `resources/sounds/perpetuum_factory_2.mp3`
 
 ---
 See also:
-- https://chromium.googlesource.com/chromium/src/+/main/components/neterror for the code that utilises this template
-- https://chromium.googlesource.com/chromium/src/+/main/components/security_interstitials/core/common/resources/ for commons CSS and JS files with security interstitials
-
+- https://chromium.googlesource.com/chromium/src/+/main/components/neterror
+- https://chromium.googlesource.com/chromium/src/+/main/components/security_interstitials/core/common/resources/

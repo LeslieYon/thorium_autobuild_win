@@ -1,0 +1,226 @@
+diff --git a/components/metrics/machine_id_provider_nonwin.cc b/components/metrics/machine_id_provider_nonwin.cc
+index 283f4dccbd538..42dcf74ecd876 100644
+--- a/components/metrics/machine_id_provider_nonwin.cc
++++ b/components/metrics/machine_id_provider_nonwin.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2020 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -6,6 +6,7 @@
+ 
+ #include <stdint.h>
+ 
++#include "base/command_line.h"
+ #include "base/check.h"
+ #include "base/system/sys_info.h"
+ 
+@@ -17,12 +18,23 @@ MachineIdProvider::~MachineIdProvider() = default;
+ 
+ // Checks if hardware model name is available.
+ bool MachineIdProvider::HasId() const {
++  static const bool disable_machine_id =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id");
++  if (disable_machine_id) {
++    return false;
++  }
+   return !base::SysInfo::HardwareModelName().empty();
+ }
+ 
+ // On non-windows, the machine id is based on the hardware model name.
+ // This will suffice as users are unlikely to change to the same machine model.
+ std::string MachineIdProvider::GetMachineId() const {
++  static const bool disable_machine_id =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id");
++  if (disable_machine_id) {
++    return std::string();
++  }
++
+   // Gets hardware model name. (e.g. 'Macbook Pro 16,1', 'iPhone 9,3')
+   std::string hardware_model_name = base::SysInfo::HardwareModelName();
+ 
+diff --git a/components/metrics/machine_id_provider_win.cc b/components/metrics/machine_id_provider_win.cc
+index 937cd3b1e4b84..5951f1dc7e59e 100644
+--- a/components/metrics/machine_id_provider_win.cc
++++ b/components/metrics/machine_id_provider_win.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -10,6 +10,7 @@
+ #include <winioctl.h>
+ 
+ #include "base/base_paths.h"
++#include "base/command_line.h"
+ #include "base/files/file_path.h"
+ #include "base/notreached.h"
+ #include "base/path_service.h"
+@@ -23,12 +24,22 @@ MachineIdProvider::MachineIdProvider() = default;
+ MachineIdProvider::~MachineIdProvider() = default;
+ 
+ bool MachineIdProvider::HasId() const {
++  static const bool disable_machine_id =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id");
++  if (disable_machine_id) {
++    return false;
++  }
+   return true;
+ }
+ 
+ // On windows, the machine id is based on the serial number of the drive Chrome
+ // is running from.
+ std::string MachineIdProvider::GetMachineId() const {
++  static const bool disable_machine_id =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id");
++  if (disable_machine_id) {
++    return std::string();
++  }
+   base::ScopedBlockingCall scoped_blocking_call(FROM_HERE,
+                                                 base::BlockingType::MAY_BLOCK);
+ 
+diff --git a/components/os_crypt/async/browser/dpapi_key_provider.cc b/components/os_crypt/async/browser/dpapi_key_provider.cc
+index 5ecbff3d8daf9..0badee6edba1d 100644
+--- a/components/os_crypt/async/browser/dpapi_key_provider.cc
++++ b/components/os_crypt/async/browser/dpapi_key_provider.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2024 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -10,6 +10,7 @@
+ #include <wincrypt.h>
+ 
+ #include "base/base64.h"
++#include "base/command_line.h"
+ #include "base/compiler_specific.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_functions.h"
+@@ -38,6 +39,13 @@ constexpr uint8_t kDPAPIKeyPrefix[] = {'D', 'P', 'A', 'P', 'I'};
+ 
+ std::optional<std::vector<uint8_t>> DecryptKeyWithDPAPI(
+     base::span<const uint8_t> ciphertext) {
++  static const bool disable_encryption =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-encryption");
++
++  if (disable_encryption) {
++    return std::vector<uint8_t>(ciphertext.begin(), ciphertext.end());
++  }
++
+   DATA_BLOB input = {};
+   input.pbData = const_cast<BYTE*>(ciphertext.data());
+   input.cbData = static_cast<DWORD>(ciphertext.size());
+diff --git a/components/os_crypt/async/browser/os_crypt_win.cc b/components/os_crypt/async/browser/os_crypt_win.cc
+index 59482db22dc11..b9ca04d92910f 100644
+--- a/components/os_crypt/async/browser/os_crypt_win.cc
++++ b/components/os_crypt/async/browser/os_crypt_win.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2026 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031.
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -12,6 +12,7 @@
+ #include <vector>
+ 
+ #include "base/base64.h"
++#include "base/command_line.h"
+ #include "base/logging.h"
+ #include "base/metrics/histogram_functions.h"
+ #include "base/strings/strcat.h"
+@@ -39,6 +40,14 @@ constexpr char kDPAPIKeyPrefix[] = "DPAPI";
+ 
+ bool EncryptStringWithDPAPI(const std::string& plaintext,
+                             std::string* ciphertext) {
++  static const bool disable_encryption =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-encryption");
++
++  if (disable_encryption) {
++    *ciphertext = plaintext;
++    return true;
++  }
++
+   DATA_BLOB input;
+   input.pbData =
+       const_cast<BYTE*>(reinterpret_cast<const BYTE*>(plaintext.data()));
+@@ -73,6 +82,14 @@ bool EncryptStringWithDPAPI(const std::string& plaintext,
+ 
+ bool DecryptStringWithDPAPI(const std::string& ciphertext,
+                             std::string* plaintext) {
++  static const bool disable_encryption =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-encryption");
++
++  if (disable_encryption) {
++    *plaintext = ciphertext;
++    return true;
++  }
++
+   DATA_BLOB input;
+   input.pbData =
+       const_cast<BYTE*>(reinterpret_cast<const BYTE*>(ciphertext.data()));
+diff --git a/services/preferences/tracked/device_id_win.cc b/services/preferences/tracked/device_id_win.cc
+index d59df0d9103fe..d00feb7f41264 100644
+--- a/services/preferences/tracked/device_id_win.cc
++++ b/services/preferences/tracked/device_id_win.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2015 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -10,12 +10,19 @@
+ 
+ #include <memory>
+ 
++#include "base/command_line.h"
+ #include "base/check.h"
+ #include "base/containers/heap_array.h"
+ 
+ MachineIdStatus GetDeterministicMachineSpecificId(std::string* machine_id) {
+   DCHECK(machine_id);
+ 
++  static const bool disable_machine_id =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id");
++  if (disable_machine_id) {
++    return MachineIdStatus::NOT_IMPLEMENTED;
++  }
++
+   wchar_t computer_name[MAX_COMPUTERNAME_LENGTH + 1] = {};
+   DWORD computer_name_size = std::size(computer_name);
+ 
+diff --git a/services/preferences/tracked/tracked_split_preference.cc b/services/preferences/tracked/tracked_split_preference.cc
+index 484fe52093f80..e795591640db5 100644
+--- a/services/preferences/tracked/tracked_split_preference.cc
++++ b/services/preferences/tracked/tracked_split_preference.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors, win32ss (Shane Fournier), and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -7,6 +7,7 @@
+ #include <vector>
+ 
+ #include "base/check.h"
++#include "base/command_line.h"
+ #include "base/notreached.h"
+ #include "base/values.h"
+ #include "services/preferences/public/cpp/tracked/pref_names.h"
+@@ -102,6 +103,14 @@ bool TrackedSplitPreference::EnforceAndReport(
+   }
+   TrackedPreferenceHelper::ResetAction reset_action =
+       helper_.GetAction(value_state);
++
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch("disable-machine-id") ||
++      base::CommandLine::ForCurrentProcess()->HasSwitch("disable-encryption") ||
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "revert-from-portable")) {
++    reset_action = TrackedPreferenceHelper::DONT_RESET;
++  }
++
+   helper_.ReportAction(reset_action);
+ 
+   if (reset_action == TrackedPreferenceHelper::DO_RESET ||

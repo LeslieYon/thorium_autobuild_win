@@ -1,0 +1,19 @@
+diff --git a/chrome/browser/background/extensions/background_mode_manager.cc b/chrome/browser/background/extensions/background_mode_manager.cc
+index d92f6fa9ac3cd..c1f4fec419398 100644
+--- a/chrome/browser/background/extensions/background_mode_manager.cc
++++ b/chrome/browser/background/extensions/background_mode_manager.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -348,7 +348,7 @@ BackgroundModeManager::~BackgroundModeManager() {
+ 
+ // static
+ void BackgroundModeManager::RegisterPrefs(PrefRegistrySimple* registry) {
+-  registry->RegisterBooleanPref(prefs::kBackgroundModeEnabled, true);
++  registry->RegisterBooleanPref(prefs::kBackgroundModeEnabled, false);
+ }
+ 
+ void BackgroundModeManager::RegisterProfile(Profile* profile) {

@@ -1,0 +1,21 @@
+diff --git a/chrome/browser/resources/default_apps/external_extensions.json b/chrome/browser/resources/default_apps/external_extensions.json
+index b186b1dde8257..762dc5819eaf9 100644
+--- a/chrome/browser/resources/default_apps/external_extensions.json
++++ b/chrome/browser/resources/default_apps/external_extensions.json
+@@ -1,10 +1,12 @@
+ // Dictionary of default apps to install into new profiles. They will be
+ // dynamically downloaded and installed from CWS on profile creation.
+ {
+-  // Docs Offline extension
+-  // TODO(crbug.com/517655721): Remove this and use the hard-coded list in
+-  // preinstalled_apps::Provider::SetPrefs().
+-  "ghbmnnjooekpmoecnnnilnnbdlolhkhi": {
++  // Docs extension
++  //"ghbmnnjooekpmoecnnnilnnbdlolhkhi" : {
++  //  "external_update_url": "https://clients2.google.com/service/update2/crx"
++  //},
++  // uBlock Origin extension
++  "cjpalhdlnbpafiamejdnhcphjbkeiagm" : {
+     "external_update_url": "https://clients2.google.com/service/update2/crx"
+   }
+ }

@@ -1,0 +1,124 @@
+diff --git a/v8/BUILD.gn b/v8/BUILD.gn
+index a19ec521254..f009d4a85e1 100644
+--- a/v8/BUILD.gn
++++ b/v8/BUILD.gn
+@@ -6,6 +6,7 @@
+ 
+ import("//build/config/android/config.gni")
+ import("//build/config/arm.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/c++/c++.gni")
+ import("//build/config/coverage/coverage.gni")
+ import("//build/config/dcheck_always_on.gni")
+@@ -1750,7 +1751,31 @@ config("toolchain") {
+     defines += [ "V8_TARGET_ARCH_IA32" ]
+     if (is_win) {
+       # Ensure no surprising artifacts from 80bit double math with x86.
+-      cflags += [ "/arch:SSE2" ]
++      if (use_sse2 && !use_sse3) {
++        cflags += [ "/arch:SSE2" ]
++      }
++      if (use_sse3 && !use_sse41) {
++        cflags += [ "/clang:-msse3" ]
++      }
++      if (use_sse41 && !use_sse42) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1" ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2" ]
++      }
++    } else {
++      if (use_sse2 && !use_sse3) {
++        cflags += [ "-msse2" ]
++      }
++      if (use_sse3 && !use_sse41) {
++        cflags += [ "-msse3" ]
++      }
++      if (use_sse41 && !use_sse42) {
++        cflags += [ "-mssse3", "-msse4.1" ]
++      }
++      if (use_sse42) {
++        cflags += [ "-msse4.2" ]
++      }
+     }
+   }
+   if (v8_current_cpu == "x64") {
+@@ -1759,7 +1784,78 @@ config("toolchain") {
+       # Increase the initial stack size. The default is 1MB, this is 2MB. This
+       # applies only to executables and shared libraries produced by V8 since
+       # ldflags are not pushed to dependants.
++      cflags += [ "/clang:-msse3" ]
+       ldflags += [ "/STACK:2097152" ]
++      if (use_sse41) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1" ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2" ]
++      }
++      if (use_avx) {
++        cflags += [ "/clang:-mpclmul", "/clang:-maes", "/clang:-mavx" ]
++      }
++      if (use_avx2) {
++        cflags += [
++          "/clang:-mfma",
++          "/clang:-ffp-contract=fast",
++          "/clang:-mavx2",
++          "/clang:-mf16c",
++          "/clang:-mlzcnt",
++          "/clang:-mbmi",
++          "/clang:-mbmi2",
++        ]
++      }
++      if (use_fma) {
++        cflags += [ "/clang:-ffp-contract=fast" ]
++      }
++      if (use_avx512) {
++        cflags += [
++          "/clang:-mavx512f",
++          "/clang:-mavx512cd",
++          "/clang:-mavx512vl",
++          "/clang:-mavx512bw",
++          "/clang:-mavx512dq",
++        ]
++      }
++    } else {
++      if (current_cpu == "x64") {
++        cflags += [ "-msse3" ]
++        if (use_sse41) {
++          cflags += [ "-mssse3", "-msse4.1" ]
++        }
++        if (use_sse42) {
++          cflags += [ "-msse4.2" ]
++        }
++        if (use_avx) {
++          cflags += [ "-mpclmul", "-maes", "-mavx" ]
++        }
++        if (use_avx2) {
++          cflags += [ "-mavx2", "-mf16c", "-mlzcnt", "-mbmi", "-mbmi2" ]
++        }
++        if (use_fma) {
++          cflags += [ "-mfma", "-ffp-contract=fast" ]
++        }
++        if (use_avx512) {
++          cflags += [
++            "-mavx512f",
++            "-mavx512cd",
++            "-mavx512vl",
++            "-mavx512bw",
++            "-mavx512dq",
++          ]
++        }
++      }
++    }
++  }
++  if (is_linux || is_chromeos || is_android || is_mac || is_win) {
++    if (is_official_build) {
++      if (is_win) {
++        cflags += [ "/O2", "-Xclang", "-O3" ]
++      } else {
++        cflags += [ "-O3" ]
++        ldflags += [ "-Wl,-O3" ]
++      }
+     }
+   }
+   if (is_android && v8_android_log_stdout) {

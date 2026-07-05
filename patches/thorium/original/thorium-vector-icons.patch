@@ -1,0 +1,31 @@
+diff --git a/components/vector_icons/BUILD.gn b/components/vector_icons/BUILD.gn
+index f4969982faa44..ee314593403aa 100644
+--- a/components/vector_icons/BUILD.gn
++++ b/components/vector_icons/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2017 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -509,6 +509,20 @@ if (current_toolchain == default_toolchain) {
+       "work_old.icon",
+     ]
+ 
++    if (is_thorium_build) {
++      sources += [
++        "bookmark_folder.icon",
++        "folder_managed.icon",
++        "info_regular.icon",
++        "thorium/close_chrome_refresh_thorium.icon",
++        "thorium/cookie_chrome_refresh_thorium.icon",
++        "thorium/extension_chrome_refresh_thorium.icon",
++        "thorium/reload_thorium.icon",
++        "thorium/reload_chrome_refresh_thorium.icon",
++        "thorium/restore_tab.icon",
++        "thorium/submenu_arrow_chrome_refresh_thorium.icon",
++      ]
++    }
+     if (is_chromeos) {
+       sources += [ "notification_download_old.icon" ]
+     }

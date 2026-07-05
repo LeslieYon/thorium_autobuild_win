@@ -1,0 +1,171 @@
+diff --git a/ui/views/examples/BUILD.gn b/ui/views/examples/BUILD.gn
+index 3f9d615a5a511..9f66a0cd07a9f 100644
+--- a/ui/views/examples/BUILD.gn
++++ b/ui/views/examples/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -435,7 +435,7 @@ component("views_examples_with_content_lib") {
+   public_deps = [ ":views_examples_lib" ]
+ }
+ 
+-executable("views_examples_with_content") {
++executable("thorium_ui_debug_shell") {
+   testonly = true
+ 
+   sources = [ "examples_with_content_main.cc" ]
+diff --git a/ui/views/examples/examples_window.cc b/ui/views/examples/examples_window.cc
+index 8ab42a4cec3d7..0b7c8debbcef4 100644
+--- a/ui/views/examples/examples_window.cc
++++ b/ui/views/examples/examples_window.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -20,8 +20,6 @@
+ #include "base/strings/string_split.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "ui/base/l10n/l10n_util.h"
+-#include "ui/base/metadata/metadata_header_macros.h"
+-#include "ui/base/metadata/metadata_impl_macros.h"
+ #include "ui/base/ui_base_paths.h"
+ #include "ui/color/color_id.h"
+ #include "ui/views/background.h"
+@@ -100,11 +98,12 @@ bool CheckCommandLineUsage() {
+   return false;
+ }
+ 
+-class ExamplesWindowContentsView : public View, public TabbedPaneListener {
+-  METADATA_HEADER(ExamplesWindowContentsView, View)
+-
++class ExamplesWindowContents : public WidgetDelegateView,
++                              public TabbedPaneListener {
+  public:
+-  explicit ExamplesWindowContentsView(ExampleVector examples) {
++  ExamplesWindowContents(base::OnceClosure on_close, ExampleVector examples)
++      : on_close_(std::move(on_close)) {
++    SetHasWindowSizeControls(true);
+     SetBackground(CreateSolidBackground(ui::kColorDialogBackground));
+ 
+     auto* layout = SetLayoutManager(
+@@ -121,8 +120,14 @@ class ExamplesWindowContentsView : public View, public TabbedPaneListener {
+     status_label_ = AddChildView(std::make_unique<Label>());
+     status_label_->SetVisible(false);
+     tabbed_pane_->SetListener(this);
++    instance_ = this;
+   }
+ 
++  ExamplesWindowContents(const ExamplesWindowContents&) = delete;
++  ExamplesWindowContents& operator=(const ExamplesWindowContents&) = delete;
++
++  ~ExamplesWindowContents() override = default;
++
+   // Sets the status area (at the bottom of the window) to |status|.
+   void SetStatus(std::string_view status) {
+     status_label_->SetText(base::UTF8ToUTF16(status));
+@@ -131,11 +136,23 @@ class ExamplesWindowContentsView : public View, public TabbedPaneListener {
+ 
+   void TabSelectedAt(int index) override { status_label_->SetVisible(false); }
+ 
++  static ExamplesWindowContents* instance() { return instance_; }
++
+  private:
+-  // View:
++  // WidgetDelegateView:
++  std::u16string GetWindowTitle() const override {
++    return u"Thorium UI Debug Shell";
++  }
++  void WindowClosing() override {
++    instance_ = nullptr;
++    if (on_close_) {
++      std::move(on_close_).Run();
++    }
++  }
++
+   gfx::Size CalculatePreferredSize(
+       const SizeBounds& /*available_size*/) const override {
+-    gfx::Size size(800, 300);
++    gfx::Size size(800, 400);
+     for (size_t i = 0; i < tabbed_pane_->GetTabCount(); ++i) {
+       size.set_height(
+           std::max(size.height(),
+@@ -143,7 +160,7 @@ class ExamplesWindowContentsView : public View, public TabbedPaneListener {
+     }
+     return size;
+   }
+-  gfx::Size GetMinimumSize() const override { return gfx::Size(50, 50); }
++  gfx::Size GetMinimumSize() const override { return gfx::Size(100, 50); }
+ 
+   void CreateSidePanel(ExampleVector examples) {
+     for (auto& example : examples) {
+@@ -156,42 +173,12 @@ class ExamplesWindowContentsView : public View, public TabbedPaneListener {
+     examples_ = std::move(examples);
+   }
+ 
++  static ExamplesWindowContents* instance_;
+   raw_ptr<Label> status_label_ = nullptr;
++  base::OnceClosure on_close_;
+   raw_ptr<TabbedPane> tabbed_pane_ = nullptr;
+   ExampleVector examples_;
+ };
+-
+-class ExamplesWindowContents : public WidgetDelegate {
+- public:
+-  ExamplesWindowContents(base::OnceClosure on_close, ExampleVector examples)
+-      : on_close_(std::move(on_close)) {
+-    SetHasWindowSizeControls(true);
+-    SetContentsView(
+-        std::make_unique<ExamplesWindowContentsView>(std::move(examples)));
+-    instance_ = this;
+-  }
+-
+-  ExamplesWindowContents(const ExamplesWindowContents&) = delete;
+-  ExamplesWindowContents& operator=(const ExamplesWindowContents&) = delete;
+-
+-  ~ExamplesWindowContents() override = default;
+-
+-  static ExamplesWindowContents* instance() { return instance_; }
+-
+- private:
+-  // WidgetDelegate:
+-  std::u16string GetWindowTitle() const override { return u"Views Examples"; }
+-  void WindowClosing() override {
+-    instance_ = nullptr;
+-    if (on_close_) {
+-      std::move(on_close_).Run();
+-    }
+-  }
+-
+-  static ExamplesWindowContents* instance_;
+-  base::OnceClosure on_close_;
+-};
+-
+ // static
+ ExamplesWindowContents* ExamplesWindowContents::instance_ = nullptr;
+ 
+@@ -221,18 +208,10 @@ void ShowExamplesWindow(base::OnceClosure on_close,
+ }
+ 
+ void PrintStatus(std::string_view status) {
+-  if (!ExamplesWindowContents::instance()) {
+-    return;
+-  }
+-  auto* view = AsViewClass<ExamplesWindowContentsView>(
+-      ExamplesWindowContents::instance()->GetContentsView());
+-  if (!view) {
+-    return;
++  if (ExamplesWindowContents::instance()) {
++    ExamplesWindowContents::instance()->SetStatus(status);
+   }
+-  view->SetStatus(status);
+ }
+ 
+-BEGIN_METADATA(ExamplesWindowContentsView)
+-END_METADATA
+ 
+ }  // namespace views::examples

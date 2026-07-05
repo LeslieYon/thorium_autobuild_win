@@ -1,0 +1,88 @@
+diff --git a/chrome/browser/ui/omnibox/omnibox_edit_model.cc b/chrome/browser/ui/omnibox/omnibox_edit_model.cc
+index 107796e919064..9286bbf4c29bd 100644
+--- a/chrome/browser/ui/omnibox/omnibox_edit_model.cc
++++ b/chrome/browser/ui/omnibox/omnibox_edit_model.cc
+@@ -41,6 +41,7 @@
+ #include "chrome/browser/ui/omnibox/omnibox_popup_state_manager.h"
+ #include "chrome/browser/ui/omnibox/omnibox_popup_view.h"
+ #include "chrome/browser/ui/omnibox/omnibox_view.h"
++#include "chrome/browser/ui/ui_features.h"
+ #include "chrome/common/chrome_features.h"
+ #include "chrome/common/webui_url_constants.h"
+ #include "chrome/grit/theme_resources.h"
+@@ -188,6 +189,22 @@ const char kKeywordModeUsageByEngineTypeEnteredHistogramName[] =
+ const char kKeywordModeUsageByEngineTypeAcceptedHistogramName[] =
+     "Omnibox.KeywordModeUsageByEngineType.Accepted";
+ 
++WindowOpenDisposition MaybeOverrideOmniboxCurrentTabDisposition(
++    WindowOpenDisposition disposition) {
++  if (disposition != WindowOpenDisposition::CURRENT_TAB ||
++      !base::FeatureList::IsEnabled(features::kOpenOmniboxUrlInNewTab)) {
++    return disposition;
++  }
++
++  const std::string mode = features::kOpenOmniboxUrlInNewTabMode.Get();
++  if (mode == "background") {
++    return WindowOpenDisposition::NEW_BACKGROUND_TAB;
++  }
++
++  // Default to foreground for unknown values as well as the default parameter.
++  return WindowOpenDisposition::NEW_FOREGROUND_TAB;
++}
++
+ void EmitEnteredKeywordModeHistogram(
+     OmniboxEventProto::KeywordModeEntryMethod entry_method,
+     const TemplateURL* turl,
+@@ -854,6 +871,8 @@ void OmniboxEditModel::OpenSelection(OmniboxPopupSelection selection,
+                                      base::TimeTicks timestamp,
+                                      WindowOpenDisposition disposition,
+                                      bool via_keyboard) {
++  disposition = MaybeOverrideOmniboxCurrentTabDisposition(disposition);
++
+   controller_->StopAutocomplete(/*clear_result=*/false);
+ 
+   base::UmaHistogramMicrosecondsTimes("Omnibox.InputToOpenSelection",
+@@ -2517,6 +2536,8 @@ void OmniboxEditModel::StepPopupSelection(
+ 
+ void OmniboxEditModel::AcceptInput(WindowOpenDisposition disposition,
+                                    base::TimeTicks match_selection_timestamp) {
++  disposition = MaybeOverrideOmniboxCurrentTabDisposition(disposition);
++
+   // Get the URL and transition type for the selected entry.
+   GURL alternate_nav_url;
+   AutocompleteMatch match = CurrentMatchAndAlternateNavUrl(&alternate_nav_url);
+diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
+index 3966288dfbbf3..5748bc53a2024 100644
+--- a/chrome/browser/ui/ui_features.cc
++++ b/chrome/browser/ui/ui_features.cc
+@@ -171,6 +171,16 @@ BASE_FEATURE_PARAM(std::string,
+                    "mode",
+                    "foreground");
+ 
++// When enabled, navigations from the omnibox open in a new tab instead of the
++// current tab.
++BASE_FEATURE(kOpenOmniboxUrlInNewTab,
++             base::FEATURE_DISABLED_BY_DEFAULT);
++BASE_FEATURE_PARAM(std::string,
++                   kOpenOmniboxUrlInNewTabMode,
++                   &kOpenOmniboxUrlInNewTab,
++                   "mode",
++                   "foreground");
++
+ #if BUILDFLAG(IS_WIN)
+ // Enables the UI for Process Isolation in chrome://settings/system.
+ BASE_FEATURE(kProcessIsolationSettings, base::FEATURE_DISABLED_BY_DEFAULT);
+diff --git a/chrome/browser/ui/ui_features.h b/chrome/browser/ui/ui_features.h
+index f796b19b6fb79..ab357b0de9367 100644
+--- a/chrome/browser/ui/ui_features.h
++++ b/chrome/browser/ui/ui_features.h
+@@ -385,6 +385,9 @@ BASE_DECLARE_FEATURE_PARAM(int, kHoverActivateTabDelayMs);
+ BASE_DECLARE_FEATURE(kOpenBookmarksInNewTab);
+ BASE_DECLARE_FEATURE_PARAM(std::string, kOpenBookmarksInNewTabMode);
+ 
++BASE_DECLARE_FEATURE(kOpenOmniboxUrlInNewTab);
++BASE_DECLARE_FEATURE_PARAM(std::string, kOpenOmniboxUrlInNewTabMode);
++
+ BASE_DECLARE_FEATURE(kVerticalTabsGrabHandleRemoval);
+ BASE_DECLARE_FEATURE_PARAM(bool, kVerticalTabsGrabHandleRemovalAlways);
+ 

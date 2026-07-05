@@ -1,0 +1,67 @@
+diff --git a/components/history/core/browser/history_backend.cc b/components/history/core/browser/history_backend.cc
+index 0098d980cd83d..6f2580f45f3a1 100644
+--- a/components/history/core/browser/history_backend.cc
++++ b/components/history/core/browser/history_backend.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -14,6 +14,7 @@
+ #include <utility>
+ #include <vector>
+ 
++#include "base/command_line.h"
+ #include "base/compiler_specific.h"
+ #include "base/containers/flat_set.h"
+ #include "base/feature_list.h"
+@@ -1374,8 +1375,12 @@ void HistoryBackend::InitImpl(
+   // Get the first item in our database.
+   db_->GetStartDate(&first_recorded_time_);
+ 
+-  // Start expiring old stuff.
+-  expirer_.StartExpiringOldStuff(base::Days(kExpireDaysThreshold));
++  // Start expiring old stuff if flag is unset.
++  static const bool keep_all_history =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("keep-all-history");
++  if (!keep_all_history) {
++    expirer_.StartExpiringOldStuff(base::Days(kExpireDaysThreshold));
++  }
+ }
+ 
+ void HistoryBackend::CloseAllDatabases() {
+@@ -1616,7 +1621,13 @@ void HistoryBackend::AddPagesWithDetails(const URLRows& urls,
+ }
+ 
+ bool HistoryBackend::IsExpiredVisitTime(const base::Time& time) const {
+-  return time < expirer_.GetCurrentExpirationTime();
++  static const bool keep_all_history =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("keep-all-history");
++  if (keep_all_history) {
++    return false;
++  } else {
++    return time < expirer_.GetCurrentExpirationTime();
++  }
+ }
+ 
+ // static
+diff --git a/components/history/core/browser/history_backend.h b/components/history/core/browser/history_backend.h
+index 38f7fb922dd5e..742df99fa14f4 100644
+--- a/components/history/core/browser/history_backend.h
++++ b/components/history/core/browser/history_backend.h
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -205,7 +205,7 @@ class HistoryBackend : public base::RefCountedThreadSafe<HistoryBackend>,
+ 
+   // The number of days old a history entry can be before it is considered "old"
+   // and is deleted.
+-  static constexpr int kExpireDaysThreshold = 90;
++  static constexpr int kExpireDaysThreshold = 120;
+ 
+   // Init must be called to complete object creation. This object can be
+   // constructed on any thread, but all other functions including Init() must

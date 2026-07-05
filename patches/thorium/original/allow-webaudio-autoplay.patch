@@ -1,0 +1,24 @@
+diff --git a/third_party/blink/renderer/modules/webaudio/audio_context.cc b/third_party/blink/renderer/modules/webaudio/audio_context.cc
+index 64cc335435bf3..a43559dc0f392 100644
+--- a/third_party/blink/renderer/modules/webaudio/audio_context.cc
++++ b/third_party/blink/renderer/modules/webaudio/audio_context.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2015 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -1278,7 +1278,13 @@ AutoplayPolicy::Type AudioContext::GetAutoplayPolicy() const {
+   LocalDOMWindow* window = GetWindow();
+   DCHECK(window);
+ 
++// When ignored, the policy is different on Android compared to Desktop.
++#if BUILDFLAG(IS_ANDROID)
+   return AutoplayPolicy::GetAutoplayPolicyForDocument(*window->document());
++#else
++  // Force no user gesture required on desktop to allow WebAudio to play.
++  return AutoplayPolicy::Type::kNoUserGestureRequired;
++#endif
+ }
+ 
+ bool AudioContext::AreAutoplayRequirementsFulfilled() const {

@@ -1,0 +1,61 @@
+diff --git a/media/base/supported_types.cc b/media/base/supported_types.cc
+index aa1f911343008..7d440f9e76f9b 100644
+--- a/media/base/supported_types.cc
++++ b/media/base/supported_types.cc
+@@ -448,9 +448,10 @@ bool IsDefaultDecoderSupportedVideoType(const VideoType& type) {
+       return IsDecoderHevcProfileSupported(type);
+     case VideoCodec::kDolbyVision:
+       return IsDecoderDolbyVisionProfileSupported(type);
++    case VideoCodec::kMPEG2:
++      return true;
+     case VideoCodec::kUnknown:
+     case VideoCodec::kVC1:
+-    case VideoCodec::kMPEG2:
+     case VideoCodec::kMPEG4:
+       return false;
+   }
+diff --git a/media/ffmpeg/ffmpeg_common.cc b/media/ffmpeg/ffmpeg_common.cc
+index 27b73afbb4b60..4a6daa31ed652 100644
+--- a/media/ffmpeg/ffmpeg_common.cc
++++ b/media/ffmpeg/ffmpeg_common.cc
+@@ -186,6 +186,12 @@ AVCodecID AudioCodecToCodecID(AudioCodec audio_codec,
+   switch (audio_codec) {
+     case AudioCodec::kAAC:
+       return AV_CODEC_ID_AAC;
++#if BUILDFLAG(ENABLE_PLATFORM_AC3_EAC3_AUDIO)
++    case AudioCodec::kAC3:
++      return AV_CODEC_ID_AC3;
++    case AudioCodec::kEAC3:
++      return AV_CODEC_ID_EAC3;
++#endif
+     case AudioCodec::kALAC:
+       return AV_CODEC_ID_ALAC;
+     case AudioCodec::kMP3:
+@@ -1062,7 +1068,7 @@ int32_t HashCodecName(const char* codec_name) {
+ 
+ const char* GetAllowedAudioDecoders() {
+ #if BUILDFLAG(USE_PROPRIETARY_CODECS)
+-#define EXTRA_CODECS ",aac"
++#define EXTRA_CODECS ",aac,ac3,eac3"
+ #else
+ #define EXTRA_CODECS
+ #endif
+diff --git a/media/filters/ffmpeg_glue.cc b/media/filters/ffmpeg_glue.cc
+index 6ecbf5d8b3157..61849c4913f5a 100644
+--- a/media/filters/ffmpeg_glue.cc
++++ b/media/filters/ffmpeg_glue.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors, Alex313031, and RobRich999
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -89,6 +89,8 @@ static const char* GetAllowedDemuxers() {
+                                                  "flac", "mp3",      "mov"};
+ #if BUILDFLAG(USE_PROPRIETARY_CODECS)
+     allowed_demuxers.push_back("aac");
++    allowed_demuxers.push_back("ac3");
++    allowed_demuxers.push_back("eac3");
+ #endif
+     return base::JoinString(allowed_demuxers, ",");
+   }());

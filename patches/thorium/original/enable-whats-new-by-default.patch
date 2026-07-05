@@ -1,0 +1,19 @@
+diff --git a/chrome/browser/ui/webui/whats_new/whats_new_util.cc b/chrome/browser/ui/webui/whats_new/whats_new_util.cc
+index 72f8a1070f1d8..f259ed73f3c1a 100644
+--- a/chrome/browser/ui/webui/whats_new/whats_new_util.cc
++++ b/chrome/browser/ui/webui/whats_new/whats_new_util.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2021 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -29,7 +29,7 @@ bool g_is_remote_content_disabled = false;
+ // CQ bots.
+ BASE_FEATURE(kForceEnabled,
+              "WhatsNewForceEnabled",
+-             base::FEATURE_DISABLED_BY_DEFAULT);
++             base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif
+ 
+ bool IsEnabled() {

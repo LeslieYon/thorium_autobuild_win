@@ -1,0 +1,105 @@
+diff --git a/components/user_education/common/feature_promo/impl/feature_promo_controller_impl.cc b/components/user_education/common/feature_promo/impl/feature_promo_controller_impl.cc
+index a48f979c5da22..59004f9b610f6 100644
+--- a/components/user_education/common/feature_promo/impl/feature_promo_controller_impl.cc
++++ b/components/user_education/common/feature_promo/impl/feature_promo_controller_impl.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2024 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -231,15 +231,8 @@ FeaturePromoResult FeaturePromoControllerImpl::CanShowPromo(
+   if (!spec) {
+     return FeaturePromoResult::kError;
+   }
+-  auto result = private_->queues.CanShow(*spec, params, context);
+-  if (result &&
+-      !private_->tracker_->WouldTriggerHelpUI(
+-          *params.feature, base::PassKey<FeaturePromoControllerImpl>())) {
+-    // This can happen if a non-IPH promo is showing.
+-    // These are strongly advised against but they can happen.
+-    result = FeaturePromoResult::kBlockedByConfig;
+-  }
+-  return result;
++  // Never show annoying promos in Thorium.
++  return FeaturePromoResult::kBlockedByConfig;
+ }
+ 
+ void FeaturePromoControllerImpl::MaybeShowStartupPromo(
+@@ -268,47 +261,12 @@ void FeaturePromoControllerImpl::MaybeShowPromo(
+     return;
+   }
+ 
+-  if (current_promo() &&
+-      current_promo()->iph_feature() == &params.feature.get()) {
+-    PostShowPromoResult(*params.feature,
+-                        std::move(params.show_promo_result_callback),
+-                        FeaturePromoResult::kAlreadyQueued);
+-    return;
+-  }
+-
+-  // If the context is not valid, it should abort immediately.
+-  if (!context->IsValid()) {
+-    PostShowPromoResult(*params.feature,
+-                        std::move(params.show_promo_result_callback),
+-                        FeaturePromoResult::kAnchorNotVisible);
+-    return;
+-  }
+-
+-  params.show_promo_result_callback = base::BindOnce(
+-      [](base::WeakPtr<FeaturePromoControllerImpl> controller,
+-         std::string feature_name,
+-         FeaturePromoController::ShowPromoResultCallback callback,
+-         FeaturePromoResult result) {
+-        if (controller && !result) {
+-          if (result == FeaturePromoResult::kTimedOut &&
+-              (controller->current_promo() ||
+-               controller->bubble_factory_registry()->is_any_bubble_showing() ||
+-               controller->private_->messaging_coordinator
+-                   .IsBlockedByExternalPromo())) {
+-            result = FeaturePromoResult::kBlockedByPromo;
+-          }
+-          controller->RecordPromoNotShown(feature_name.c_str(),
+-                                          *result.failure());
+-        }
+-        if (callback) {
+-          std::move(callback).Run(result);
+-        }
+-      },
+-      weak_ptr_factory_.GetWeakPtr(), params.feature->name,
+-      std::move(params.show_promo_result_callback));
+-
+-  private_->queues.TryToQueue(*spec, std::move(params), std::move(context));
+-  MaybePostUpdate();
++  // Never show annoying promos in Thorium.
++  RecordPromoNotShown(params.feature->name,
++                      FeaturePromoResult::kBlockedByConfig);
++  PostShowPromoResult(*params.feature,
++                      std::move(params.show_promo_result_callback),
++                      FeaturePromoResult::kBlockedByConfig);
+ }
+ 
+ void FeaturePromoControllerImpl::MaybeShowPromoForDemoPage(
+@@ -322,16 +280,12 @@ void FeaturePromoControllerImpl::MaybeShowPromoForDemoPage(
+     return;
+   }
+ 
+-  if (auto* const feature = GetCurrentPromoFeature()) {
+-    // Note that overriding for promo or precedence doesn't trigger an update.
+-    EndPromo(*feature, FeaturePromoClosedReason::kOverrideForDemo);
+-  }
+-  private_->demo_queue.FailAll(FeaturePromoResult::kCanceled);
+-  private_->demo_queue.TryToQueue(*spec, std::move(params), std::move(context));
+-
+-  // This can happen immediately since the message to show the promo will come
+-  // in on a (mostly) fresh call stack.
+-  UpdateQueuesAndMaybeShowPromo();
++  // Never show annoying promos in Thorium.
++  RecordPromoNotShown(params.feature->name,
++                      FeaturePromoResult::kBlockedByConfig);
++  PostShowPromoResult(*params.feature,
++                      std::move(params.show_promo_result_callback),
++                      FeaturePromoResult::kBlockedByConfig);
+ }
+ 
+ bool FeaturePromoControllerImpl::IsPromoQueued(

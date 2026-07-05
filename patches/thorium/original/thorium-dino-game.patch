@@ -1,0 +1,173 @@
+diff --git a/components/neterror/resources/dino_game/offline.ts b/components/neterror/resources/dino_game/offline.ts
+index bccbd9493bd75..bc986299a306a 100644
+--- a/components/neterror/resources/dino_game/offline.ts
++++ b/components/neterror/resources/dino_game/offline.ts
+@@ -1,4 +1,4 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -106,6 +106,7 @@ enum RunnerSounds {
+   BUTTON_PRESS = 'offline-sound-press',
+   HIT = 'offline-sound-hit',
+   SCORE = 'offline-sound-reached',
++  BACKGROUND = 'offline-sound-background',
+ }
+ 
+ /**
+@@ -137,9 +138,15 @@ enum RunnerEvents {
+ let runnerInstance: Runner|null = null;
+ 
+ const ARCADE_MODE_URL: string = 'chrome://dino/';
++const ARCADE_MODE2_URL: string = 'Thorium Dino Game';
+ 
+ const RESOURCE_POSTFIX: string = 'offline-resources-';
+ 
++const THORIUM_DINO_FAVICON_16 =
++    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAA3XAAAN1wFCKJt4AAABCUlEQVQ4y5WSK2/DMBSFv1RFwSuJZIWYBHe0wystTumCRze+/zC84NFqtMHDISaRJZMal27kZqqsm7Q7kiU/7uPc45NxBYV3G6BWnt6CscOS6zgCrVLkCcgW3IZ66uHWApNY/jO+BTogAsMfg8K73YyAIyJwBtZAHoz9vmTwAnwmyR/A48XVEIxt0iaZBP8IvWdgBRyAMomNwAnYj91TDWoglwKlMtEgDQZNxB6ogN2cgsHYbuobH0TdueT7SR8EYyOwB76UmCjUVWSFdyVwJ+cz8A5sZCyALhjbFN6tteILRahW9ltZs8gS06yETRmMfZX7I9AEY3vVyjJCPipceFcp9tVcWgVj+1+cIE8di05TcgAAAABJRU5ErkJggg==';
++const THORIUM_DINO_FAVICON_32 =
++    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA3XAAAN1wFCKJt4AAABxklEQVRYw81XoW7DMBB9mYKKM2LJKjEJTmn4cPFG23/oB+QfGjpePB7a4BCDZZaMiks3cp28yE7s1G13UqUmju13d+/e2QkiGFOyBJB7ft5pLprLQ4o49gpg4/ltDeAXQBLB+2/6ewbQUSQWU/M0FwkAPCGedZqLFYHwtpgAcqbkMYALUTkACnsROilmBGbZwwGkN15/+2gAraVSzvcEcBw8r4agUkNQjgAqzcXBU4DWAHaO4QOAyqYVYykoAGQeG+cASvq5yu6kuWhvRcISwD5WjhKLprckqUPP9wEN508laC7qEB1YMiX3TMnlYPMyYNPGpwRdKcjI0xNTsqd3oZ53mouaKVlMNacxDuyuza/mYjIK/6oXbM2Tyt17AeUsIw7kV6z5FuJIYim3wiKhIbbyFSEXBzrS7C6U+XPmJSOSuwPw4ln/DYAPzUU1WwkdIDaesjuqdqMkJOItXWICoDZk2myrhQ0cNauF5/59CuDZ0dV6OusP31XG2NYCIvfpqsZdwu/ywZT8ZEq+O8Y2V+uAsWAGYG25x1Vz8xxahmc6NrUAvszeYIuAx9gkCXOj1BrNRWc5TNYGBxAw5izxS8kmDgB3sx9qpKWGIYm9DgAAAABJRU5ErkJggg==';
++
+ /**
+  * T-Rex runner.
+  */
+@@ -212,6 +219,7 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+   private soundFx:
+       Partial<{[K in keyof typeof RunnerSounds]: AudioBuffer}> = {};
+   private audioContext: AudioContext|null = null;
++  private backgroundSoundSource: AudioBufferSourceNode|null = null;
+   private generatedSoundFx: GeneratedSoundFx|null = null;
+ 
+   // Gamepad state.
+@@ -509,8 +517,8 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+     iconElement.style.visibility = 'hidden';
+ 
+     if (this.isArcadeMode()) {
+-      document.title =
+-          document.title + ' - ' + getA11yString(A11yStrings.ARIA_LABEL);
++      document.title = ARCADE_MODE2_URL;
++      this.installArcadeModeFavicons();
+     }
+ 
+     this.adjustDimensions();
+@@ -600,6 +608,20 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+     });
+   }
+ 
++  private installArcadeModeFavicons() {
++    const favicon16 = document.createElement('link');
++    const favicon32 = document.createElement('link');
++    favicon16.rel = 'shortcut icon';
++    favicon32.rel = 'shortcut icon';
++    favicon16.type = 'image/png';
++    favicon32.type = 'image/png';
++    favicon16.sizes = '16x16';
++    favicon32.sizes = '32x32';
++    favicon16.href = THORIUM_DINO_FAVICON_16;
++    favicon32.href = THORIUM_DINO_FAVICON_32;
++    document.head.appendChild(favicon16);
++    document.head.appendChild(favicon32);
++  }
+   /**
+    * Create the touch controller. A div that covers whole screen.
+    */
+@@ -729,6 +751,8 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+       this.containerEl.setAttribute('title', getA11yString(A11yStrings.JUMP));
+     }
+ 
++    this.playBackgroundSound();
++
+     // Handle tabbing off the page. Pause the current game.
+     document.addEventListener(
+         RunnerEvents.VISIBILITY, this.onVisibilityChange.bind(this));
+@@ -1350,6 +1374,7 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+     assert(this.tRex);
+     assert(this.containerEl);
+     this.playSound(this.soundFx.HIT);
++    this.stopBackgroundSound();
+     vibrate(200);
+ 
+     this.stop();
+@@ -1419,6 +1444,7 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+     if (this.hasAudioCuesInternal) {
+       this.getGeneratedSoundFx().stopAll();
+     }
++    this.stopBackgroundSound();
+   }
+ 
+   private play() {
+@@ -1432,6 +1458,7 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+       if (this.hasAudioCuesInternal) {
+         this.getGeneratedSoundFx().background();
+       }
++      this.playBackgroundSound();
+     }
+   }
+ 
+@@ -1463,6 +1490,7 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+       if (this.hasAudioCuesInternal) {
+         this.getGeneratedSoundFx().background();
+       }
++      this.playBackgroundSound();
+       this.containerEl.setAttribute('title', getA11yString(A11yStrings.JUMP));
+       this.announcePhrase(getA11yString(A11yStrings.STARTED));
+     }
+@@ -1481,7 +1509,8 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+   private isArcadeMode(): boolean {
+     // In RTL languages the title is wrapped with the left to right mark
+     // control characters &#x202A; and &#x202C but are invisible.
+-    return document.title.startsWith(ARCADE_MODE_URL, IS_RTL ? 1 : 0);
++    return document.title.startsWith(ARCADE_MODE_URL, IS_RTL ? 1 : 0) ||
++        document.title.startsWith(ARCADE_MODE2_URL, IS_RTL ? 1 : 0);
+   }
+ 
+   /**
+@@ -1543,6 +1572,35 @@ export class Runner implements ImageSpriteProvider, GameStateProvider,
+     }
+   }
+ 
++  private playBackgroundSound() {
++    const soundBuffer = this.soundFx.BACKGROUND;
++    if (!soundBuffer || !this.audioContext || this.backgroundSoundSource) {
++      return;
++    }
++
++    const sourceNode = this.audioContext.createBufferSource();
++    sourceNode.buffer = soundBuffer;
++    sourceNode.loop = true;
++    sourceNode.connect(this.audioContext.destination);
++    sourceNode.start(0);
++    sourceNode.onended = () => {
++      if (this.backgroundSoundSource === sourceNode) {
++        this.backgroundSoundSource = null;
++      }
++    };
++    this.backgroundSoundSource = sourceNode;
++  }
++
++  private stopBackgroundSound() {
++    if (!this.backgroundSoundSource) {
++      return;
++    }
++
++    const sourceNode = this.backgroundSoundSource;
++    this.backgroundSoundSource = null;
++    sourceNode.onended = null;
++    sourceNode.stop();
++  }
+   /**
+    * Inverts the current page / canvas colors.
+    * @param reset Whether to reset colors.
+diff --git a/components/neterror/resources/neterror.html b/components/neterror/resources/neterror.html
+index ead5b8a13dad5..ff9bb4050e12c 100644
+--- a/components/neterror/resources/neterror.html
++++ b/components/neterror/resources/neterror.html
+@@ -26,6 +26,7 @@
+       <audio id="offline-sound-press" src="sounds/button-press.mp3"></audio>
+       <audio id="offline-sound-hit" src="sounds/hit.mp3"></audio>
+       <audio id="offline-sound-reached" src="sounds/score-reached.mp3"></audio>
++      <audio id="offline-sound-background" src="sounds/perpetuum_factory_2.mp3"></audio>
+     </template>
+   </div>
+ </body>

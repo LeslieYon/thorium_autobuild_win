@@ -150,6 +150,9 @@ const FeatureEntry::Choice kCloseConfirmation[] = {
     {"Show confirmation with multiple windows",
      "close-confirmation",
      "multiple"},
+    {"Show confirmation with any window",
+     "close-confirmation",
+     "any"},
 };
 
 const FeatureEntry::Choice kCloseWindowWithLastTab[] = {
@@ -158,6 +161,50 @@ const FeatureEntry::Choice kCloseWindowWithLastTab[] = {
      "close-window-with-last-tab",
      "never"},
 };
+
+constexpr flags_ui::FeatureEntry::FeatureParam kHoverActivateTab250ms[] = {
+    {"hover_delay_ms", "250"}};
+constexpr flags_ui::FeatureEntry::FeatureParam kHoverActivateTab500ms[] = {
+    {"hover_delay_ms", "500"}};
+constexpr flags_ui::FeatureEntry::FeatureParam kHoverActivateTab750ms[] = {
+    {"hover_delay_ms", "750"}};
+constexpr flags_ui::FeatureEntry::FeatureParam kHoverActivateTab1000ms[] = {
+    {"hover_delay_ms", "1000"}};
+
+constexpr flags_ui::FeatureEntry::FeatureVariation
+    kHoverActivateTabVariations[] = {
+    {"250ms delay", kHoverActivateTab250ms, nullptr},
+    {"500ms delay (default)", kHoverActivateTab500ms, nullptr},
+    {"750ms delay", kHoverActivateTab750ms, nullptr},
+    {"1000ms delay", kHoverActivateTab1000ms, nullptr}};
+
+constexpr flags_ui::FeatureEntry::FeatureParam
+    kOpenBookmarksInNewTabForeground[] = {
+    {"mode", "foreground"}};
+constexpr flags_ui::FeatureEntry::FeatureParam
+    kOpenBookmarksInNewTabBackground[] = {
+    {"mode", "background"}};
+
+constexpr flags_ui::FeatureEntry::FeatureVariation
+    kOpenBookmarksInNewTabVariations[] = {
+    {"Open in foreground tab (default)", kOpenBookmarksInNewTabForeground,
+     nullptr},
+    {"Open in background tab", kOpenBookmarksInNewTabBackground,
+     nullptr}};
+
+constexpr flags_ui::FeatureEntry::FeatureParam
+    kOpenOmniboxUrlInNewTabForeground[] = {
+    {"mode", "foreground"}};
+constexpr flags_ui::FeatureEntry::FeatureParam
+    kOpenOmniboxUrlInNewTabBackground[] = {
+    {"mode", "background"}};
+
+constexpr flags_ui::FeatureEntry::FeatureVariation
+    kOpenOmniboxUrlInNewTabVariations[] = {
+    {"Open in foreground tab (default)", kOpenOmniboxUrlInNewTabForeground,
+     nullptr},
+    {"Open in background tab", kOpenOmniboxUrlInNewTabBackground,
+     nullptr}};
 
 #if BUILDFLAG(IS_LINUX)
 const FeatureEntry::Choice kPasswordStoreChoices[] = {
@@ -168,10 +215,8 @@ const FeatureEntry::Choice kPasswordStoreChoices[] = {
      password_manager::kPasswordStore, "kwallet"},
     {"Kwallet5",
      password_manager::kPasswordStore, "kwallet5"},
-    {"Gnome",
-     password_manager::kPasswordStore, "gnome"},
-    {"Gnome-Keyring",
-     password_manager::kPasswordStore, "gnome-keyring"},
+    {"Kwallet6",
+     password_manager::kPasswordStore, "kwallet6"},
     {"Gnome-LibSecret",
      password_manager::kPasswordStore, "gnome-libsecret"},
 };

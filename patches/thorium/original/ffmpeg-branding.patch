@@ -1,0 +1,27 @@
+diff --git a/third_party/ffmpeg/ffmpeg_options.gni b/third_party/ffmpeg/ffmpeg_options.gni
+index a6a012e5b9..a8d6ab61b7 100644
+--- a/third_party/ffmpeg/ffmpeg_options.gni
++++ b/third_party/ffmpeg/ffmpeg_options.gni
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors. All rights reserved.
++# Copyright 2026 The Chromium Authors and Alex313031. All rights reserved.
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -13,6 +13,16 @@ if (is_chrome_branded || is_chrome_for_testing_branded) {
+   _default_ffmpeg_branding = "Chromium"
+ }
+ 
++# Initialize declaration of Chancie Wancie build argument.
++declare_args() {
++  is_chancie_wancie_build = false
++}
++
++# Chancie Wancie build for testing ChromeOS ffmpeg branding on desktop Chromium.
++if (is_chancie_wancie_build && !is_mac) {
++  _default_ffmpeg_branding = "ChromeOS"
++}
++
+ if (is_cast_android || is_castos) {
+   _default_ffmpeg_branding = "Chrome"
+ }

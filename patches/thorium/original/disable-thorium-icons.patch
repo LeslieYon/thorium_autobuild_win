@@ -1,0 +1,536 @@
+diff --git a/chrome/browser/ui/browser_actions.cc b/chrome/browser/ui/browser_actions.cc
+index 44f0d03da121a..e67a072c3d217 100644
+--- a/chrome/browser/ui/browser_actions.cc
++++ b/chrome/browser/ui/browser_actions.cc
+@@ -830,6 +830,9 @@ void BrowserActions::InitializeChromeMenuActions() {
+   TabStripModel* const tab_strip_model = bwi_->GetTabStripModel();
+   BrowserWindowInterface* const bwi = base::to_address(bwi_);
+   const bool is_guest_session = profile->IsGuestSession();
++  static const bool disable_thorium_command_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+ 
+   root_action_item_->AddChild(
+       ChromeMenuAction(
+@@ -842,8 +845,12 @@ void BrowserActions::InitializeChromeMenuActions() {
+               profile),
+           kActionNewIncognitoWindow, IDS_NEW_INCOGNITO_WINDOW,
+           IDS_NEW_INCOGNITO_WINDOW,
+-          features::IsRoundedIconsEnabled() ? kIncognitoIcon
+-                                            : kIncognitoRefreshMenuOldIcon)
++          disable_thorium_command_icons
++              ? (features::IsRoundedIconsEnabled() ? kIncognitoIcon
++                                                   : kIncognitoRefreshMenuOldIcon)
++              : (features::IsRoundedIconsEnabled()
++                     ? kIncognitoThoriumIcon
++                     : kIncognitoRefreshMenuThoriumIcon))
+           .SetEnabled(IncognitoModePrefs::IsIncognitoAllowed(profile))
+           .Build());
+ 
+@@ -998,9 +1005,11 @@ void BrowserActions::InitializeChromeMenuActions() {
+                            bwi, is_incognito),
+                        kActionClearBrowsingData, IDS_CLEAR_BROWSING_DATA,
+                        IDS_CLEAR_BROWSING_DATA,
+-                       features::IsRoundedIconsEnabled()
+-                           ? kDeleteIcon
+-                           : kTrashCanRefreshOldIcon)
++                       disable_thorium_command_icons
++                           ? (features::IsRoundedIconsEnabled()
++                                  ? kDeleteIcon
++                                  : kTrashCanRefreshOldIcon)
++                           : kTrashCanRefreshThoriumIcon)
+           .SetEnabled(is_incognito ||
+                       (!is_guest_session && !profile->IsSystemProfile()))
+           .Build());
+diff --git a/chrome/browser/ui/extensions/extensions_toolbar_view_model.cc b/chrome/browser/ui/extensions/extensions_toolbar_view_model.cc
+index 2ec1cf51cd517..7676198f2faee 100644
+--- a/chrome/browser/ui/extensions/extensions_toolbar_view_model.cc
++++ b/chrome/browser/ui/extensions/extensions_toolbar_view_model.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "chrome/browser/ui/extensions/extensions_toolbar_view_model.h"
+ 
++#include "base/command_line.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "build/build_config.h"
+ #include "chrome/browser/extensions/extension_tab_util.h"
+@@ -176,9 +177,14 @@ const gfx::VectorIcon& ExtensionsToolbarViewModel::GetToolbarButtonIcon(
+     ExtensionsToolbarButtonState state) {
+   switch (state) {
+     case ExtensionsToolbarButtonState::kDefault:
+-      return features::IsRoundedIconsEnabled()
+-                 ? vector_icons::kChromeExtensionIcon
+-                 : vector_icons::kExtensionChromeRefreshOldIcon;
++      return base::CommandLine::ForCurrentProcess()->HasSwitch(
++                 "disable-thorium-icons")
++                 ? (features::IsRoundedIconsEnabled()
++                        ? vector_icons::kChromeExtensionIcon
++                        : vector_icons::kExtensionChromeRefreshOldIcon)
++                 : (features::IsRoundedIconsEnabled()
++                        ? vector_icons::kChromeExtensionIcon
++                        : vector_icons::kExtensionChromeRefreshThoriumIcon);
+     case ExtensionsToolbarButtonState::kAllExtensionsBlocked:
+       return features::IsRoundedIconsEnabled()
+                  ? vector_icons::kChromeExtensionOffIcon
+diff --git a/chrome/browser/ui/toolbar/app_menu_model.cc b/chrome/browser/ui/toolbar/app_menu_model.cc
+index 95ad4098919a8..82f91a9db81d1 100644
+--- a/chrome/browser/ui/toolbar/app_menu_model.cc
++++ b/chrome/browser/ui/toolbar/app_menu_model.cc
+@@ -771,13 +771,18 @@ void ProfileSubMenuModel::BuildCustomizeProfileRow(Profile* profile) {
+ }
+ 
+ void ProfileSubMenuModel::BuildCloseProfileRow(Profile* profile) {
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   AddItemWithIcon(IDC_CLOSE_PROFILE,
+                   l10n_util::GetPluralStringFUTF16(IDS_CLOSE_PROFILE,
+                                                    CountBrowsersFor(profile)),
+                   ui::ImageModel::FromVectorIcon(
+-                      features::IsRoundedIconsEnabled()
+-                          ? vector_icons::kCloseIcon
+-                          : vector_icons::kCloseChromeRefreshOldIcon,
++                      disable_thorium_icons
++                          ? (features::IsRoundedIconsEnabled()
++                                 ? vector_icons::kCloseIcon
++                                 : vector_icons::kCloseChromeRefreshOldIcon)
++                          : vector_icons::kCloseChromeRefreshThoriumIcon,
+                       ui::kColorMenuIcon, kDefaultIconSize));
+ }
+ 
+@@ -1209,9 +1214,14 @@ void ExtensionsMenuModel::Build(Browser* browser) {
+   AddItemWithStringIdAndVectorIcon(
+       this, IDC_EXTENSIONS_SUBMENU_MANAGE_EXTENSIONS,
+       IDS_EXTENSIONS_SUBMENU_MANAGE_EXTENSIONS_ITEM,
+-      features::IsRoundedIconsEnabled()
+-          ? vector_icons::kChromeExtensionIcon
+-          : vector_icons::kExtensionChromeRefreshOldIcon);
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons")
++          ? (features::IsRoundedIconsEnabled()
++                 ? vector_icons::kChromeExtensionIcon
++                 : vector_icons::kExtensionChromeRefreshOldIcon)
++          : (features::IsRoundedIconsEnabled()
++                 ? vector_icons::kChromeExtensionIcon
++                 : vector_icons::kExtensionChromeRefreshThoriumIcon));
+   SetElementIdentifierAt(
+       GetIndexOfCommandId(IDC_EXTENSIONS_SUBMENU_MANAGE_EXTENSIONS).value(),
+       kManageExtensionsMenuItem);
+@@ -2051,6 +2061,9 @@ void AppMenuModel::Build() {
+   // Build (and, by extension, Init) should only be called once.
+   DCHECK_EQ(0u, GetItemCount());
+ 
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   if (app_menu_icon_controller_ &&
+       app_menu_icon_controller_->GetTypeAndSeverity().type ==
+           AppMenuIconController::IconType::kUpgradeNotification) {
+@@ -2100,8 +2113,12 @@ void AppMenuModel::Build() {
+   if (!browser_->profile()->IsGuestSession()) {
+     AddItemWithStringIdAndVectorIcon(
+         this, IDC_NEW_INCOGNITO_WINDOW, IDS_NEW_INCOGNITO_WINDOW,
+-        features::IsRoundedIconsEnabled() ? kIncognitoIcon
+-                                          : kIncognitoRefreshMenuOldIcon);
++        disable_thorium_icons
++            ? (features::IsRoundedIconsEnabled() ? kIncognitoIcon
++                                                 : kIncognitoRefreshMenuOldIcon)
++            : (features::IsRoundedIconsEnabled()
++                   ? kIncognitoThoriumIcon
++                   : kIncognitoRefreshMenuThoriumIcon));
+     SetElementIdentifierAt(
+         GetIndexOfCommandId(IDC_NEW_INCOGNITO_WINDOW).value(),
+         kIncognitoMenuItem);
+@@ -2189,9 +2206,13 @@ void AppMenuModel::Build() {
+       !extensions::ui_util::HasManageableExtensions(browser_->profile())) {
+     AddItemWithStringIdAndVectorIcon(
+         this, IDC_FIND_EXTENSIONS, IDS_FIND_EXTENSIONS,
+-        features::IsRoundedIconsEnabled()
+-            ? vector_icons::kChromeExtensionIcon
+-            : vector_icons::kExtensionChromeRefreshOldIcon);
++        disable_thorium_icons
++            ? (features::IsRoundedIconsEnabled()
++                   ? vector_icons::kChromeExtensionIcon
++                   : vector_icons::kExtensionChromeRefreshOldIcon)
++            : (features::IsRoundedIconsEnabled()
++                   ? vector_icons::kChromeExtensionIcon
++                   : vector_icons::kExtensionChromeRefreshThoriumIcon));
+     SetElementIdentifierAt(GetIndexOfCommandId(IDC_FIND_EXTENSIONS).value(),
+                            ExtensionsMenuModel::kVisitChromeWebStoreMenuItem);
+   } else {
+@@ -2199,16 +2220,23 @@ void AppMenuModel::Build() {
+     AddSubMenuWithStringIdAndVectorIcon(
+         this, IDC_EXTENSIONS_SUBMENU, IDS_EXTENSIONS_SUBMENU,
+         sub_menus_.back().get(),
+-        features::IsRoundedIconsEnabled()
+-            ? vector_icons::kChromeExtensionIcon
+-            : vector_icons::kExtensionChromeRefreshOldIcon);
++        disable_thorium_icons
++            ? (features::IsRoundedIconsEnabled()
++                   ? vector_icons::kChromeExtensionIcon
++                   : vector_icons::kExtensionChromeRefreshOldIcon)
++            : (features::IsRoundedIconsEnabled()
++                   ? vector_icons::kChromeExtensionIcon
++                   : vector_icons::kExtensionChromeRefreshThoriumIcon));
+     SetElementIdentifierAt(GetIndexOfCommandId(IDC_EXTENSIONS_SUBMENU).value(),
+                            kExtensionsMenuItem);
+   }
+ 
+   AddItemWithStringIdAndVectorIcon(
+       this, IDC_CLEAR_BROWSING_DATA, IDS_CLEAR_BROWSING_DATA,
+-      kTrashCanRegularIcon);
++      disable_thorium_icons
++          ? (features::IsRoundedIconsEnabled() ? kDeleteIcon
++                                               : kTrashCanRefreshOldIcon)
++          : kTrashCanRegularIcon);
+   SetElementIdentifierAt(GetIndexOfCommandId(IDC_CLEAR_BROWSING_DATA).value(),
+                          kClearBrowsingDataMenuItem);
+ 
+diff --git a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
+index 5b4a2131316f4..17bec4a17837f 100644
+--- a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
++++ b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "chrome/browser/ui/views/extensions/extensions_menu_entry_view.h"
+ 
++#include "base/command_line.h"
+ #include "base/metrics/user_metrics.h"
+ #include "base/metrics/user_metrics_action.h"
+ #include "chrome/app/vector_icons/vector_icons.h"
+@@ -63,12 +64,17 @@ views::Builder<HoverButton> GetSitePermissionsButtonBuilder(
+   } else {
+     // Add right-aligned arrow icon for non-enterprise extensions when the
+     // button is not disabled.
++    static const bool disable_thorium_icons =
++        base::CommandLine::ForCurrentProcess()->HasSwitch(
++            "disable-thorium-icons");
+     auto arrow_icon = ui::ImageModel::FromVectorIcon(
+-        features::IsThorium2024()
+-            ? vector_icons::kSubmenuArrowOldIcon
+-            : features::IsRoundedIconsEnabled()
+-                ? vector_icons::kKeyboardArrowRightFlippableIcon
+-                : vector_icons::kSubmenuArrowChromeRefreshOldIcon,
++        disable_thorium_icons
++            ? (features::IsRoundedIconsEnabled()
++                   ? vector_icons::kKeyboardArrowRightFlippableIcon
++                   : vector_icons::kSubmenuArrowChromeRefreshOldIcon)
++            : features::IsThorium2024()
++                  ? vector_icons::kSubmenuArrowOldIcon
++                  : vector_icons::kSubmenuArrowChromeRefreshThoriumIcon,
+         kColorExtensionMenuIcon, small_icon_size);
+ 
+     button_builder.SetHorizontalAlignment(gfx::ALIGN_RIGHT)
+diff --git a/chrome/browser/ui/views/page_info/page_info_main_view.cc b/chrome/browser/ui/views/page_info/page_info_main_view.cc
+index eb13023555566..b922957aebc32 100644
+--- a/chrome/browser/ui/views/page_info/page_info_main_view.cc
++++ b/chrome/browser/ui/views/page_info/page_info_main_view.cc
+@@ -7,6 +7,7 @@
+ #include <memory>
+ #include <optional>
+ 
++#include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/i18n/message_formatter.h"
+ #include "base/strings/utf_string_conversions.h"
+@@ -200,9 +201,12 @@ void PageInfoMainView::SetCookieInfo(const CookiesInfo& cookie_info) {
+           base::BindRepeating(&PageInfoNavigationHandler::OpenCookiesPage,
+                               base::Unretained(navigation_handler_)),
+           PageInfoViewFactory::GetImageModel(
+-              features::IsRoundedIconsEnabled()
+-                  ? vector_icons::kCookieIcon
+-                  : vector_icons::kCookieChromeRefreshOldIcon),
++              base::CommandLine::ForCurrentProcess()->HasSwitch(
++                  "disable-thorium-icons")
++                  ? (features::IsRoundedIconsEnabled()
++                         ? vector_icons::kCookieIcon
++                         : vector_icons::kCookieChromeRefreshOldIcon)
++                  : vector_icons::kCookieChromeRefreshThoriumIcon),
+           l10n_util::GetStringUTF16(IDS_PAGE_INFO_COOKIES_HEADER),
+           /*subtitle_text=*/std::u16string(),
+           PageInfoViewFactory::GetOpenSubpageIcon()));
+diff --git a/chrome/browser/ui/views/page_info/page_info_view_factory.cc b/chrome/browser/ui/views/page_info/page_info_view_factory.cc
+index 7bca0c5935174..a6031c272a9fd 100644
+--- a/chrome/browser/ui/views/page_info/page_info_view_factory.cc
++++ b/chrome/browser/ui/views/page_info/page_info_view_factory.cc
+@@ -7,6 +7,7 @@
+ #include <memory>
+ #include <string>
+ 
++#include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/strings/utf_string_conversions.h"
+@@ -913,11 +914,19 @@ const ui::ImageModel PageInfoViewFactory::GetOpenSubpageIcon() {
+   // GetIconSize() does not work for subpage icons because the default size of
+   // features::IsRoundedIconsEnabled() ? vector_icons::kArrowRightFlippableIcon
+   // : kSubmenuArrowOldIcon is 8 rather than 16.
+-  const int kIconSize = features::IsThorium2024() ? 9 : 20;
++  const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
++  const int kIconSize =
++      disable_thorium_icons ? 20 : features::IsThorium2024() ? 9 : 20;
+   return ui::ImageModel::FromVectorIcon(
+-      features::IsRoundedIconsEnabled() && !features::IsThorium2024()
+-          ? vector_icons::kKeyboardArrowRightFlippableIcon
+-          : vector_icons::kSubmenuArrowChromeRefreshOldIcon,
++      disable_thorium_icons
++          ? (features::IsRoundedIconsEnabled()
++                 ? vector_icons::kKeyboardArrowRightFlippableIcon
++                 : vector_icons::kSubmenuArrowChromeRefreshOldIcon)
++          : (features::IsRoundedIconsEnabled() && !features::IsThorium2024()
++                 ? vector_icons::kKeyboardArrowRightFlippableIcon
++                 : vector_icons::kSubmenuArrowChromeRefreshThoriumIcon),
+       ui::kColorIcon, kIconSize);
+ }
+ 
+diff --git a/chrome/browser/ui/views/profiles/profile_menu_view.cc b/chrome/browser/ui/views/profiles/profile_menu_view.cc
+index 990eab66ec0c1..0fd9167999671 100644
+--- a/chrome/browser/ui/views/profiles/profile_menu_view.cc
++++ b/chrome/browser/ui/views/profiles/profile_menu_view.cc
+@@ -8,6 +8,7 @@
+ #include <string>
+ #include <utility>
+ 
++#include "base/command_line.h"
+ #include "ash/constants/web_app_id_constants.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+@@ -1151,12 +1152,17 @@ void ProfileMenuView::MaybeBuildCloseBrowsersButton() {
+     }
+   }
+ 
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   AddFeatureButton(
+       l10n_util::GetPluralStringFUTF16(button_title_id, window_count),
+       std::move(callback),
+-      features::IsRoundedIconsEnabled()
+-          ? vector_icons::kCloseIcon
+-          : vector_icons::kCloseChromeRefreshOldIcon);
++      disable_thorium_icons
++          ? (features::IsRoundedIconsEnabled()
++                 ? vector_icons::kCloseIcon
++                 : vector_icons::kCloseChromeRefreshOldIcon)
++          : vector_icons::kCloseChromeRefreshThoriumIcon);
+ }
+ 
+ void ProfileMenuView::MaybeBuildSignoutButton() {
+diff --git a/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc b/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc
+index 77612f77f3acb..c4bea2e6332bd 100644
+--- a/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc
++++ b/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2013 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -6,6 +6,7 @@
+ 
+ #include <set>
+ 
++#include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/location.h"
+@@ -146,13 +147,19 @@ void BrowserAppMenuButton::UpdateThemeBasedState() {
+ }
+ 
+ void BrowserAppMenuButton::UpdateIcon() {
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   const gfx::VectorIcon& icon =
+       ui::TouchUiController::Get()->touch_ui()
+           ? features::IsRoundedIconsEnabled() ? kMoreVertIcon
+                                               : kBrowserToolsTouchOldIcon
+-      : features::IsRoundedIconsEnabled() ? kMoreVertIcon
+-                                          : kBrowserToolsChromeRefreshOldIcon;
+-  const int icon_size = GetIconSize();
++      : features::IsRoundedIconsEnabled()
++          ? kMoreVertIcon
++          : disable_thorium_icons ? kBrowserToolsChromeRefreshOldIcon
++                                  : kBrowserToolsChromeRefreshThoriumIcon;
++  // Fix Thorium hamburger menu size.
++  constexpr int icon_size = 22;
+ 
+   for (auto state : kButtonStates) {
+     SkColor icon_color = GetForegroundColor(state);
+diff --git a/chrome/browser/ui/views/toolbar/home_button.cc b/chrome/browser/ui/views/toolbar/home_button.cc
+index d23ce42d48414..f3994c578a924 100644
+--- a/chrome/browser/ui/views/toolbar/home_button.cc
++++ b/chrome/browser/ui/views/toolbar/home_button.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2013 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -7,6 +7,7 @@
+ #include <memory>
+ #include <string_view>
+ 
++#include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+@@ -153,9 +154,14 @@ HomeButton::HomeButton(BrowserWindowInterface* browser_window_interface,
+   SetProperty(views::kElementIdentifierKey, kToolbarHomeButtonElementId);
+   SetTriggerableEventFlags(ui::EF_LEFT_MOUSE_BUTTON |
+                            ui::EF_MIDDLE_MOUSE_BUTTON);
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   SetVectorIcons(features::IsRoundedIconsEnabled()
+                      ? kHomeIcon
+-                     : kNavigateHomeChromeRefreshOldIcon,
++                     : disable_thorium_icons
++                           ? kNavigateHomeChromeRefreshOldIcon
++                           : kNavigateHomeChromeRefreshThoriumIcon,
+                  features::IsRoundedIconsEnabled() ? kHomeIcon
+                                                    : kNavigateHomeTouchOldIcon);
+   SetTooltipText(l10n_util::GetStringUTF16(IDS_TOOLTIP_HOME));
+diff --git a/chrome/browser/ui/views/toolbar/reload_button.cc b/chrome/browser/ui/views/toolbar/reload_button.cc
+index a2ed2085675b2..7e7270382e950 100644
+--- a/chrome/browser/ui/views/toolbar/reload_button.cc
++++ b/chrome/browser/ui/views/toolbar/reload_button.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2013 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -6,6 +6,7 @@
+ 
+ #include <stddef.h>
+ 
++#include "base/command_line.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "build/build_config.h"
+ #include "chrome/app/chrome_command_ids.h"
+@@ -78,13 +79,19 @@ ReloadButton::ReloadButton(
+       command_updater_(command_updater),
+       reload_icon_(features::IsRoundedIconsEnabled()
+                        ? vector_icons::kRefreshIcon
+-                       : vector_icons::kReloadChromeRefreshOldIcon),
++                       : base::CommandLine::ForCurrentProcess()->HasSwitch(
++                             "disable-thorium-icons")
++                             ? vector_icons::kReloadChromeRefreshOldIcon
++                             : vector_icons::kReloadChromeRefreshThoriumIcon),
+       reload_touch_icon_(features::IsRoundedIconsEnabled()
+                              ? kRefreshIcon
+                              : kReloadTouchOldIcon),
+       stop_icon_(features::IsRoundedIconsEnabled()
+                      ? kCloseIcon
+-                     : kNavigateStopChromeRefreshOldIcon),
++                     : base::CommandLine::ForCurrentProcess()->HasSwitch(
++                           "disable-thorium-icons")
++                           ? kNavigateStopChromeRefreshOldIcon
++                           : kNavigateStopChromeRefreshThoriumIcon),
+       stop_touch_icon_(features::IsRoundedIconsEnabled()
+                            ? kCloseIcon
+                            : kNavigateStopTouchOldIcon),
+diff --git a/chrome/browser/ui/views/toolbar/toolbar_controller.cc b/chrome/browser/ui/views/toolbar/toolbar_controller.cc
+index 1122043b3895c..f0425a9d3aeab 100644
+--- a/chrome/browser/ui/views/toolbar/toolbar_controller.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_controller.cc
+@@ -10,6 +10,7 @@
+ #include <variant>
+ #include <vector>
+ 
++#include "base/command_line.h"
+ #include "base/containers/adapters.h"
+ #include "base/metrics/user_metrics.h"
+ #include "base/metrics/user_metrics_action.h"
+@@ -324,12 +325,18 @@ ToolbarController::GetDefaultResponsiveElements(Browser* browser) {
+            ToolbarController::ElementIdInfo(
+                kToolbarAvatarButtonElementId,
+                IDS_OVERFLOW_MENU_ITEM_TEXT_PROFILE,
+-               is_incognito ? (&(features::IsRoundedIconsEnabled()
+-                                     ? kIncognitoIcon
+-                                     : kIncognitoRefreshMenuOldIcon))
+-                            : (&(features::IsRoundedIconsEnabled()
+-                                     ? kAccountCircleIcon
+-                                     : kUserAccountAvatarRefreshOldIcon)),
++               is_incognito
++                   ? (&(base::CommandLine::ForCurrentProcess()->HasSwitch(
++                            "disable-thorium-icons")
++                            ? (features::IsRoundedIconsEnabled()
++                                   ? kIncognitoIcon
++                                   : kIncognitoRefreshMenuOldIcon)
++                            : (features::IsRoundedIconsEnabled()
++                                   ? kIncognitoThoriumIcon
++                                   : kIncognitoRefreshMenuThoriumIcon)))
++                   : (&(features::IsRoundedIconsEnabled()
++                            ? kAccountCircleIcon
++                            : kUserAccountAvatarRefreshOldIcon)),
+                kToolbarAvatarButtonElementId, kToolbarAvatarBubbleElementId),
+            /*is_section_end=*/false)});
+ 
+diff --git a/ui/views/bubble/bubble_frame_view.cc b/ui/views/bubble/bubble_frame_view.cc
+index dc2df50dd75f8..f5aa0de7661c5 100644
+--- a/ui/views/bubble/bubble_frame_view.cc
++++ b/ui/views/bubble/bubble_frame_view.cc
+@@ -7,6 +7,7 @@
+ #include <algorithm>
+ #include <optional>
+ 
++#include "base/command_line.h"
+ #include "base/check.h"
+ #include "build/build_config.h"
+ #include "components/vector_icons/vector_icons.h"
+@@ -178,9 +179,13 @@ std::unique_ptr<Label> BubbleFrameView::CreateDefaultTitleLabel(
+ std::unique_ptr<Button> BubbleFrameView::CreateCloseButton(
+     Button::PressedCallback callback) {
+   auto close_button = CreateVectorImageButtonWithNativeTheme(
+-      std::move(callback), features::IsRoundedIconsEnabled()
+-                               ? vector_icons::kCloseIcon
+-                               : vector_icons::kCloseChromeRefreshOldIcon);
++      std::move(callback),
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons")
++          ? (features::IsRoundedIconsEnabled()
++                 ? vector_icons::kCloseIcon
++                 : vector_icons::kCloseChromeRefreshOldIcon)
++          : vector_icons::kCloseChromeRefreshThoriumIcon);
+   close_button->SetTooltipText(l10n_util::GetStringUTF16(IDS_APP_CLOSE));
+   close_button->GetViewAccessibility().SetName(
+       l10n_util::GetStringUTF16(IDS_APP_CLOSE));
+diff --git a/ui/views/controls/menu/menu_item_view.cc b/ui/views/controls/menu/menu_item_view.cc
+index 559b43a5ee39d..d580c90c6cfa5 100644
+--- a/ui/views/controls/menu/menu_item_view.cc
++++ b/ui/views/controls/menu/menu_item_view.cc
+@@ -15,6 +15,7 @@
+ #include <utility>
+ 
+ #include "base/auto_reset.h"
++#include "base/command_line.h"
+ #include "base/containers/adapters.h"
+ #include "base/i18n/case_conversion.h"
+ #include "base/strings/utf_string_conversions.h"
+@@ -1651,12 +1652,17 @@ void MenuItemView::UpdateSelectionBasedState(bool paint_as_selected) {
+   last_paint_as_selected_ = paint_as_selected;
+   const Colors colors = CalculateColors(paint_as_selected);
+   if (submenu_arrow_image_view_) {
++    static const bool disable_thorium_icons =
++        base::CommandLine::ForCurrentProcess()->HasSwitch(
++            "disable-thorium-icons");
+     const gfx::VectorIcon& submenu_arrow_icon =
+-        features::IsThorium2024()
+-            ? vector_icons::kSubmenuArrowOldIcon
+-            : features::IsRoundedIconsEnabled()
+-                  ? vector_icons::kKeyboardArrowRightFlippableIcon
+-                  : vector_icons::kSubmenuArrowChromeRefreshOldIcon;
++        disable_thorium_icons
++            ? (features::IsRoundedIconsEnabled()
++                   ? vector_icons::kKeyboardArrowRightFlippableIcon
++                   : vector_icons::kSubmenuArrowChromeRefreshOldIcon)
++            : features::IsThorium2024()
++                  ? vector_icons::kSubmenuArrowOldIcon
++                  : vector_icons::kSubmenuArrowChromeRefreshThoriumIcon;
+     submenu_arrow_image_view_->SetImage(
+         ui::ImageModel::FromVectorIcon(submenu_arrow_icon, colors.icon_color));
+   }

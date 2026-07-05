@@ -1,0 +1,36 @@
+diff --git a/chrome/browser/themes/theme_helper_win.cc b/chrome/browser/themes/theme_helper_win.cc
+index c78bb18ef2703..4e9f3eeeba689 100644
+--- a/chrome/browser/themes/theme_helper_win.cc
++++ b/chrome/browser/themes/theme_helper_win.cc
+@@ -1,9 +1,10 @@
+-// Copyright 2016 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+ #include "chrome/browser/themes/theme_helper_win.h"
+ 
++#include "base/command_line.h"
+ #include "chrome/browser/themes/custom_theme_supplier.h"
+ #include "chrome/browser/themes/theme_properties.h"
+ #include "chrome/browser/win/mica_titlebar.h"
+@@ -19,5 +20,5 @@ int ThemeHelperWin::GetDefaultDisplayProperty(int id) const {
+ 
+ bool ThemeHelperWin::ShouldUseNativeFrame(
+     const CustomThemeSupplier* theme_supplier) const {
+-  return true;
++  return !base::CommandLine::ForCurrentProcess()->HasSwitch("disable-aero");
+ }
+diff --git a/ui/views/win/hwnd_message_handler.cc b/ui/views/win/hwnd_message_handler.cc
+index d87a94460cda9..da7ffbbf61cac 100644
+--- a/ui/views/win/hwnd_message_handler.cc
++++ b/ui/views/win/hwnd_message_handler.cc
+@@ -991,7 +991,7 @@ void HWNDMessageHandler::FrameTypeChanged() {
+   if (!custom_window_region_.is_valid() && IsFrameSystemDrawn()) {
+     dwm_transition_desired_ = true;
+   }
+-  if (!dwm_transition_desired_ || !IsFullscreen()) {
++  if ((!dwm_transition_desired_ || !IsFullscreen()) && IsFrameSystemDrawn()) {
+     PerformDwmTransition();
+   }
+ }

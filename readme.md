@@ -2,8 +2,8 @@
 
 Thorium Autobuild Win reorganizes Thorium's Chromium changes into a standard patch-and-overlay layout and provides a Windows build pipeline on top of the `ungoogled-chromium-windows` submodule.
 
-**Pinned Chromium version**: `144.0.7559.256` (see `chromium_version.txt`)
-**Submodule**: `ungoogled-chromium-windows` at `144.0.7559.132-1.1`
+**Pinned Chromium version**: `150.0.7871.96` (see `chromium_version.txt`)
+**Submodule**: `ungoogled-chromium-windows` at `150.0.7871.47-1.1`
 
 ## Layout
 
@@ -49,9 +49,9 @@ Chromium source (git clone)
   → Apply patches/series.external (external patches: ungoogled-windows, cromite, etc.)
   → Copy overlay/ into source tree
   → Apply patches/series (Thorium patches)
-  → Sync Brand Strings (patch_scripts/sync_brand_strings.py)
-      • Phase 1: replace brand strings in GRD/GRDP files
-      • Phase 2: synchronise XTB translations with new IDs
+  → Sync Brand Strings (patch_scripts/grd_rebase/sync_grd_strings.py)
+      • Phase 1: replace brand strings in GRD/GRDP files (config-driven auto-discovery)
+      • Phase 2: synchronise XTB translations with new IDs (conflict detection)
   → GN gen + Ninja build
 ```
 
@@ -112,18 +112,20 @@ with per-patch descriptions and purpose.
 Replacing `Google Chrome` → `Thorium`, `Chromium` → `Thorium`, etc. in 
 GRD/GRDP files. This script runs after all Thorium patches have been applied:
 
-- **Phase 1**: Scans GRD/GRDP `<message>` blocks whose resource IDs match
-  `BRAND_STRING_IDS` (2337 IDs from `brand_string_ids.py`) and applies brand
-  substitutions to message bodies and `desc`/`meaning` attributes.
+- **Phase 1**: Scans `file_allowlist.csv` for GRD/GRDP files, auto-discovers
+  messages that change after brand substitution, and applies replacements to
+  message bodies and `desc`/`meaning` attributes. Feature-patch messages
+  (defined in `feature_patch_message_ownership.csv`) are excluded.
 - **Phase 2**: Computes pre- and post-replacement translation IDs using grit's
   MD5 fingerprint algorithm, then synchronises every language's XTB file with
-  the new translation entries.
+  the new translation entries. Converged-ID conflicts and missing translations
+  are detected and reported.
 
 This approach keeps the branding patches minimal — they only need to cover
 structural changes (e.g. adding `<part>` includes, renaming strings), while
 the actual text substitution is done in code.
 
-See [`patch_scripts/sync_brand_strings.md`](./patch_scripts/sync_brand_strings.md) for more information.
+See [`patch_scripts/grd_rebase/README.md`](./patch_scripts/grd_rebase/README.md) for more information.
 
 ## Source Pruning
 

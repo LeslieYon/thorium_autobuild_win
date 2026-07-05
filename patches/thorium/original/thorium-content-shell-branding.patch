@@ -1,0 +1,230 @@
+diff --git a/components/BUILD.gn b/components/BUILD.gn
+index aa7d37c13421c..1be24e3c49552 100644
+--- a/components/BUILD.gn
++++ b/components/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -1238,8 +1238,8 @@ if (use_blink) {
+     ]
+ 
+     if (is_mac) {
+-      data_deps += [ "//content/shell:content_shell" ]
+-      data += [ "$root_out_dir/Content Shell.app/" ]
++      data_deps += [ "//content/shell:thorium_shell" ]
++      data += [ "$root_out_dir/Thorium Shell.app/" ]
+     }
+ 
+     if (toolkit_views && !is_mac && !is_castos) {
+diff --git a/content/shell/BUILD.gn b/content/shell/BUILD.gn
+index 1ab8f3cac2e00..5c794cb59b5f6 100644
+--- a/content/shell/BUILD.gn
++++ b/content/shell/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -46,8 +46,8 @@ if (is_android) {
+ shell_use_toolkit_views = toolkit_views && !is_castos
+ 
+ declare_args() {
+-  content_shell_product_name = "Content Shell"
+-  content_shell_version = "999.77.34.5"
++  content_shell_product_name = "Thorium Shell"
++  content_shell_version = "999.7.3434.555"
+   content_shell_major_version = "999"
+ }
+ 
+@@ -620,7 +620,7 @@ repack("pak") {
+ }
+ 
+ if (is_android) {
+-  group("content_shell") {
++  group("thorium_shell") {
+     testonly = true
+     deps = [ "//content/shell/android:content_shell_apk" ]
+   }
+@@ -634,7 +634,7 @@ if (is_android) {
+       content_shell_version,
+     ]
+   }
+-  mac_app_bundle("content_shell") {
++  mac_app_bundle("thorium_shell") {
+     testonly = true
+     output_name = content_shell_product_name
+     sources = [ "app/shell_main_mac.cc" ]
+@@ -752,7 +752,7 @@ if (is_android) {
+     }
+   }
+ } else {
+-  executable("content_shell") {
++  executable("thorium_shell") {
+     testonly = true
+ 
+     sources = [ "app/shell_main.cc" ]
+@@ -814,7 +814,7 @@ if (is_android) {
+     fuchsia_component("content_shell_component") {
+       testonly = true
+       manifest = "fuchsia/content_shell.cml"
+-      data_deps = [ ":content_shell" ]
++      data_deps = [ ":thorium_shell" ]
+       visibility = [ ":*" ]
+     }
+ 
+@@ -1098,7 +1098,7 @@ if (is_android) {
+       "//content/test/data/media/",
+     ]
+     data_deps = [
+-      ":content_shell",
++      ":thorium_shell",
+       "//build/android:devil_chromium_py",
+       "//build/android:test_runner_py",
+       "//testing:test_scripts_shared",
+@@ -1110,7 +1110,7 @@ if (is_android) {
+ group("content_shell_crash_test") {
+   testonly = true
+   data_deps = [
+-    ":content_shell",
++    ":thorium_shell",
+     "//testing:test_scripts_shared",
+     "//third_party/angle:includes",
+   ]
+diff --git a/content/shell/android/BUILD.gn b/content/shell/android/BUILD.gn
+index a3bedcddfa313..0481e0c360256 100644
+--- a/content/shell/android/BUILD.gn
++++ b/content/shell/android/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -227,7 +227,7 @@ template("content_shell_apk_tmpl") {
+ 
+ content_shell_apk_tmpl("content_shell_apk") {
+   target_type = "android_apk"
+-  apk_name = "ContentShell"
++  apk_name = "Thorium_Shell"
+   android_manifest = content_shell_manifest
+   android_manifest_dep = ":content_shell_manifest"
+   shared_libraries = [ ":libcontent_shell_content_view" ]
+@@ -237,7 +237,7 @@ content_shell_apk_tmpl("content_shell_apk") {
+ 
+ content_shell_apk_tmpl("content_shell_test_apk") {
+   target_type = "instrumentation_test_apk"
+-  apk_name = "ContentShellTest"
++  apk_name = "Thorium_Shell_Test"
+   android_manifest = content_shell_test_manifest
+   android_manifest_dep = ":content_shell_test_manifest"
+   shared_libraries = [ ":libcontent_native_test" ]
+diff --git a/content/shell/android/shell_apk/AndroidManifest.xml.jinja2 b/content/shell/android/shell_apk/AndroidManifest.xml.jinja2
+index 368b94da51aac..98c59a42aefb1 100644
+--- a/content/shell/android/shell_apk/AndroidManifest.xml.jinja2
++++ b/content/shell/android/shell_apk/AndroidManifest.xml.jinja2
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ 
+ <!--
+-Copyright 2012 The Chromium Authors
++Copyright 2026 The Chromium Authors and Alex313031
+ Use of this source code is governed by a BSD-style license that can be
+ found in the LICENSE file.
+ -->
+@@ -29,7 +29,7 @@ found in the LICENSE file.
+     <application android:name="org.chromium.content_shell_apk.ContentShellApplication"
+             android:icon="@mipmap/app_icon"
+             android:zygotePreloadName="org.chromium.content_public.app.ZygotePreload"
+-            android:label="{% block application_label %}Content Shell{% endblock %}">
++            android:label="{% block application_label %}Thorium Shell{% endblock %}">
+         <activity android:name="org.chromium.content_shell_apk.ContentShellActivity"
+                   android:launchMode="singleTask"
+                   android:theme="@android:style/Theme.Holo.Light.NoActionBar"
+diff --git a/content/shell/app/shell.rc b/content/shell/app/shell.rc
+index 0837469134df6..6cf1319b88bfc 100644
+--- a/content/shell/app/shell.rc
++++ b/content/shell/app/shell.rc
+@@ -43,7 +43,8 @@ END
+ 
+ // Icon with lowest ID value placed first to ensure application icon
+ // remains consistent on all systems.
+-IDR_MAINFRAME ICON "content_shell.ico"
++// IDI_THORIUM_SHELL ICON "thorium_shell.ico"
++IDR_MAINFRAME ICON "thorium_shell.ico"
+ 
+ #ifdef APSTUDIO_INVOKED
+ /////////////////////////////////////////////////////////////////////////////
+diff --git a/content/shell/app/shell_main_delegate.cc b/content/shell/app/shell_main_delegate.cc
+index 9ab00913acf58..f56291adf6171 100644
+--- a/content/shell/app/shell_main_delegate.cc
++++ b/content/shell/app/shell_main_delegate.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -165,7 +165,7 @@ void InitLogging(const base::CommandLine& command_line) {
+ #else
+       base::PathService::Get(base::DIR_EXE, &log_filename);
+ #endif
+-      log_filename = log_filename.AppendASCII("content_shell.log");
++      log_filename = log_filename.AppendASCII("thorium_shell.log");
+     }
+   }
+ 
+diff --git a/content/shell/browser/shell_platform_delegate_views.cc b/content/shell/browser/shell_platform_delegate_views.cc
+index 0c52b54f11aaa..02b15082cd391 100644
+--- a/content/shell/browser/shell_platform_delegate_views.cc
++++ b/content/shell/browser/shell_platform_delegate_views.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2020 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -375,8 +375,8 @@ void ShellPlatformDelegate::CreatePlatformWindow(
+   params.bounds = gfx::Rect(initial_size);
+   params.delegate = delegate.release();
+ #if BUILDFLAG(IS_LINUX)
+-  params.wm_class_class = "chromium-content_shell";
+-  params.wm_class_name = params.wm_class_class;
++  params.wm_class_class = "thorium_shell";
++  params.wm_class_name = "Thorium Shell";
+ #endif  // BUILDFLAG(IS_LINUX)
+   shell_data.window_widget->Init(std::move(params));
+ #endif  // BUILDFLAG(IS_CHROMEOS)
+diff --git a/content/test/BUILD.gn b/content/test/BUILD.gn
+index 94aaa3396b101..1dbec16f1de78 100644
+--- a/content/test/BUILD.gn
++++ b/content/test/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -2400,8 +2400,8 @@ test("content_browsertests") {
+       "../renderer/render_view_browsertest_mac.mm",
+     ]
+     deps += [ "//third_party/ocmock" ]
+-    data_deps += [ "//content/shell:content_shell" ]
+-    data += [ "$root_out_dir/Content Shell.app/" ]
++    data_deps += [ "//content/shell:thorium_shell" ]
++    data += [ "$root_out_dir/Thorium Shell.app/" ]
+     weak_frameworks = [ "ScreenCaptureKit.framework" ]  # macOS 12.3
+   }
+ 
+@@ -2453,7 +2453,7 @@ test("content_browsertests") {
+       "//mojo/public/cpp/platform",
+       "//mojo/public/mojom/base",
+     ]
+-    data_deps += [ "//content/shell:content_shell" ]
++    data_deps += [ "//content/shell:thorium_shell" ]
+     if (use_ozone) {
+       deps += [ "//ui/ozone" ]
+     }

@@ -1,0 +1,45 @@
+diff --git a/chrome/browser/ui/browser_ui_prefs.cc b/chrome/browser/ui/browser_ui_prefs.cc
+index c5d48d196da2f..e70d2a0e85e0d 100644
+--- a/chrome/browser/ui/browser_ui_prefs.cc
++++ b/chrome/browser/ui/browser_ui_prefs.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -118,7 +118,7 @@ void RegisterBrowserUserPrefs(user_prefs::PrefRegistrySyncable* registry) {
+ 
+   registry->RegisterBooleanPref(prefs::kHomePageIsNewTabPage, true,
+                                 pref_registration_flags);
+-  registry->RegisterBooleanPref(prefs::kShowHomeButton, false,
++  registry->RegisterBooleanPref(prefs::kShowHomeButton, true,
+                                 pref_registration_flags);
+   registry->RegisterBooleanPref(prefs::kSplitViewDragAndDropEnabled, true,
+                                 pref_registration_flags);
+@@ -146,20 +146,21 @@ void RegisterBrowserUserPrefs(user_prefs::PrefRegistrySyncable* registry) {
+   registry->RegisterDictionaryPref(prefs::kBrowserWindowPlacementPopup);
+   registry->RegisterDictionaryPref(prefs::kAppWindowPlacement);
+   registry->RegisterBooleanPref(
+-      prefs::kEnableDoNotTrack, false,
++      prefs::kEnableDoNotTrack, true,
+       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+ #if !BUILDFLAG(IS_CHROMEOS) && !BUILDFLAG(IS_ANDROID)
+   registry->RegisterBooleanPref(prefs::kPrintPreviewUseSystemDefaultPrinter,
+                                 false);
+ #endif
+-  registry->RegisterStringPref(prefs::kWebRTCIPHandlingPolicy,
+-                               blink::kWebRTCIPHandlingDefault);
++  registry->RegisterStringPref(
++      prefs::kWebRTCIPHandlingPolicy,
++      blink::kWebRTCIPHandlingDefaultPublicAndPrivateInterfaces);
+   registry->RegisterListPref(prefs::kWebRTCIPHandlingUrl, base::ListValue());
+   registry->RegisterBooleanPref(prefs::kWebRTCPostQuantumKeyAgreement, false);
+   registry->RegisterStringPref(prefs::kWebRTCUDPPortRange, std::string());
+   registry->RegisterBooleanPref(prefs::kWebRtcEventLogCollectionAllowed, false);
+   registry->RegisterListPref(prefs::kWebRtcLocalIpsAllowedUrls);
+-  registry->RegisterBooleanPref(prefs::kWebRtcTextLogCollectionAllowed, true);
++  registry->RegisterBooleanPref(prefs::kWebRtcTextLogCollectionAllowed, false);
+   registry->RegisterListPref(
+       prefs::kWebRTCDiagnosticLogCollectionAllowedForOrigins,
+       base::ListValue());

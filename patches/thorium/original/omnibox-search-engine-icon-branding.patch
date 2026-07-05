@@ -1,0 +1,61 @@
+diff --git a/chrome/browser/ui/omnibox/omnibox_view.cc b/chrome/browser/ui/omnibox/omnibox_view.cc
+index 7e3598c69ed60..fde844bca19dc 100644
+--- a/chrome/browser/ui/omnibox/omnibox_view.cc
++++ b/chrome/browser/ui/omnibox/omnibox_view.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -27,7 +27,6 @@
+ #include "components/omnibox/browser/location_bar_model.h"
+ #include "components/omnibox/browser/omnibox_field_trial.h"
+ #include "components/omnibox/common/omnibox_feature_configs.h"
+-#include "components/search/search.h"
+ #include "components/search_engines/template_url_service.h"
+ #include "extensions/buildflags/buildflags.h"
+ #include "ui/base/window_open_disposition.h"
+@@ -123,24 +122,9 @@ ui::ImageModel OmniboxView::GetIcon(int dip_size,
+                                      ->GetTemplateURLService()
+                                      ->GetTemplateURLForKeyword(match.keyword)
+                                : nullptr;
+-    // For search queries, display match's search engine's favicon. If the
+-    // search engine is google, return the icon instead of favicon for
+-    // search queries with the chrome refresh feature.
+-    if ((turl &&
+-         search::TemplateURLIsGoogle(turl, controller()
+-                                               ->client()
+-                                               ->GetTemplateURLService()
+-                                               ->search_terms_data())) ||
+-        (!turl && search::DefaultSearchProviderIsGoogle(
+-                      controller()->client()->GetTemplateURLService()))) {
+-      // For non-chrome builds this would return an empty image model. In
+-      // those cases revert to using the favicon.
+-      ui::ImageModel icon =
+-          controller()->edit_model()->GetSuperGIcon(dip_size, dark_mode);
+-      if (!icon.IsEmpty()) {
+-        return icon;
+-      }
+-    } else if (turl && turl->CreatedByEnterpriseSearchAggregatorPolicy()) {
++    // For search queries, display match's search engine's favicon. Return the
++    // favicon for search queries with the chrome refresh feature.
++    if (turl && turl->CreatedByEnterpriseSearchAggregatorPolicy()) {
+       // If the search engine is enterprise search aggregator, return the icon
+       // from the bitmap instead of favicon.
+       const SkBitmap* bitmap =
+@@ -157,10 +141,10 @@ ui::ImageModel OmniboxView::GetIcon(int dip_size,
+         return ui::ImageModel::FromImage(icon);
+       }
+     }
+-    favicon = turl ? controller()->client()->GetFaviconForKeywordSearchProvider(
+-                         turl, std::move(on_icon_fetched))
+-                   : controller()->client()->GetFaviconForDefaultSearchProvider(
+-                         std::move(on_icon_fetched));
++    if (turl) {
++      favicon = controller()->client()->GetFaviconForKeywordSearchProvider(
++          turl, std::move(on_icon_fetched));
++    }
+ 
+   } else if (match.type != AutocompleteMatchType::HISTORY_CLUSTER) {
+     // The starter pack suggestions are a unique case. These suggestions

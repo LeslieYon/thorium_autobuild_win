@@ -1,0 +1,40 @@
+diff --git a/sandbox/linux/BUILD.gn b/sandbox/linux/BUILD.gn
+index 1fe96111cefaa..6ce8b52a15fc0 100644
+--- a/sandbox/linux/BUILD.gn
++++ b/sandbox/linux/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -298,6 +298,9 @@ if (is_linux || is_chromeos) {
+       "suid/process_util_linux.c",
+       "suid/sandbox.c",
+     ]
++
++    cflags = [ "-fPIE" ]
++    ldflags = [ "-pie" ]
+   }
+ }
+ 
+diff --git a/sandbox/policy/linux/bpf_audio_policy_linux.cc b/sandbox/policy/linux/bpf_audio_policy_linux.cc
+index e1716b97e8f21..675a5a402487a 100644
+--- a/sandbox/policy/linux/bpf_audio_policy_linux.cc
++++ b/sandbox/policy/linux/bpf_audio_policy_linux.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2018 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -71,6 +71,9 @@ ResultExpr AudioProcessPolicy::EvaluateSyscall(int system_call_number) const {
+ #endif
+ #if defined(__NR_uname)
+     case __NR_uname:
++#endif
++#if defined(__NR_sched_getaffinity)
++    case __NR_sched_getaffinity:
+ #endif
+       return Allow();
+ #if defined(__NR_futex)

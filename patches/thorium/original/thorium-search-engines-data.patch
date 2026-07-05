@@ -1,0 +1,124 @@
+diff --git a/third_party/search_engines_data/resources/definitions/prepopulated_engines.json b/third_party/search_engines_data/resources/definitions/prepopulated_engines.json
+index 0865e26..d7e0633 100644
+--- a/third_party/search_engines_data/resources/definitions/prepopulated_engines.json
++++ b/third_party/search_engines_data/resources/definitions/prepopulated_engines.json
+@@ -1,4 +1,4 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors, Alex313031, and tomByrer
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -28,7 +28,7 @@
+     // existing data should get a new version. Otherwise, existing data may
+     // continue to be used and updates made here will not always appear.
+     // Also then run tools/search_engine_choice/generate_search_engine_icons.py.
+-    "kCurrentDataVersion": 206
++    "kCurrentDataVersion": 207
+   },
+ 
+   // The following engines are included in country lists and are added to the
+@@ -50,7 +50,7 @@
+     },
+ 
+     "bing": {
+-      "name": "Microsoft Bing",
++      "name": "Bing",
+       "keyword": "bing.com",
+       "favicon_url": "https://www.bing.com/favicon.ico",
+       "base_builtin_resource_id": "SEARCH_ENGINE_BING",
+@@ -321,7 +321,7 @@
+     },
+ 
+     "panda": {
+-      "name": "WWF Panda Search",
++      "name": "Panda Search",
+       "keyword": "panda-search.org",
+       "favicon_url": "https://panda-search.org/favicon.ico",
+       "base_builtin_resource_id": "SEARCH_ENGINE_PANDA",
+diff --git a/third_party/search_engines_data/resources/definitions/regional_settings.json b/third_party/search_engines_data/resources/definitions/regional_settings.json
+index b73c17e..9bae165 100644
+--- a/third_party/search_engines_data/resources/definitions/regional_settings.json
++++ b/third_party/search_engines_data/resources/definitions/regional_settings.json
+@@ -328,7 +328,10 @@
+         "&bing",
+         "&sogou",
+         "&so_360",
+-        "&google"
++        "&google",
++        "&brave",
++        "&duckduckgo",
++        "&ecosia"
+       ]
+     },
+     "CO": {
+@@ -494,6 +497,7 @@
+       "search_engines": [
+         "&google",
+         "&bing",
++        "&brave",
+         "&yahoo_uk",
+         "&duckduckgo",
+         "&ecosia"
+@@ -526,7 +530,10 @@
+         "&bing",
+         "&yahoo_hk",
+         "&baidu",
+-        "&so_360"
++        "&so_360",
++        "&brave",
++        "&duckduckgo",
++        "&ecosia"
+       ]
+     },
+     "HN": {
+@@ -835,7 +842,8 @@
+         "&bing",
+         "&yahoo_mx",
+         "&duckduckgo",
+-        "&ecosia"
++        "&ecosia",
++        "&brave"
+       ]
+     },
+     "MY": {
+@@ -1012,7 +1020,9 @@
+         "&google",
+         "&bing",
+         "&duckduckgo",
+-        "&mail_ru"
++        "&mail_ru",
++        "&brave",
++        "&ecosia"
+       ]
+     },
+     "RW": {
+@@ -1165,6 +1175,8 @@
+         "&bing",
+         "&yahoo",
+         "&duckduckgo",
++        "&brave",
++        "&ecosia",
+         "&yandex_com"
+       ]
+     },
+@@ -1183,6 +1195,8 @@
+         "&bing",
+         "&yahoo_es",
+         "&duckduckgo",
++        "&brave",
++        "&ecosia",
+         "&yandex_com"
+       ]
+     },
+@@ -1226,7 +1240,10 @@
+       "search_engines": [
+         "&google",
+         "&bing",
+-        "&yahoo"
++        "&yahoo",
++        "&duckduckgo",
++        "&brave",
++        "&ecosia"
+       ]
+     }
+   }

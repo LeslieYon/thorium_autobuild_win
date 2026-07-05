@@ -1,8 +1,8 @@
 diff --git a/chrome/updater/BUILD.gn b/chrome/updater/BUILD.gn
-index ae9d83075d2eb..64efb84497a14 100644
+index 57c149a40d19a..845daf60d8d77 100644
 --- a/chrome/updater/BUILD.gn
 +++ b/chrome/updater/BUILD.gn
-@@ -377,6 +377,7 @@ if (is_win || is_mac || is_linux) {
+@@ -390,6 +390,7 @@ if (is_win || is_mac || is_linux) {
          "//chrome/installer/util:constants",
          "//chrome/installer/util:metainstaller_utils",
          "//chrome/installer/util:work_item",
@@ -11,7 +11,7 @@ index ae9d83075d2eb..64efb84497a14 100644
          "//chrome/updater/app/server/win:updater_idl_system",
          "//chrome/updater/app/server/win:updater_idl_user",
 diff --git a/chrome/updater/win/installer/installer.cc b/chrome/updater/win/installer/installer.cc
-index 543e55df64519..bd732c5103745 100644
+index 6b38555ee58fc..10a236cec96f2 100644
 --- a/chrome/updater/win/installer/installer.cc
 +++ b/chrome/updater/win/installer/installer.cc
 @@ -11,6 +11,11 @@
@@ -26,23 +26,23 @@ index 543e55df64519..bd732c5103745 100644
  #include "chrome/updater/win/installer/installer.h"
  
  #include <shellapi.h>
-@@ -31,6 +36,7 @@
+@@ -32,6 +37,7 @@
  #include "base/memory/ref_counted.h"
  #include "base/path_service.h"
  #include "base/strings/strcat.h"
 +#include "base/strings/stringprintf.h"
  #include "base/strings/utf_string_conversions.h"
  #include "base/synchronization/waitable_event.h"
- #include "base/task/thread_pool.h"
-@@ -45,6 +51,7 @@
+ #include "base/task/single_thread_task_runner.h"
+@@ -47,6 +53,7 @@
  #include "base/win/scoped_localalloc.h"
  #include "base/win/windows_version.h"
  #include "chrome/installer/util/lzma_util.h"
 +#include "chrome/install_static/install_modes.h"
  #include "chrome/updater/branded_constants.h"
  #include "chrome/updater/constants.h"
- #include "chrome/updater/ping_configurator.h"
-@@ -75,11 +82,19 @@ namespace {
+ #include "chrome/updater/get_updater_scope.h"
+@@ -78,11 +85,19 @@ namespace {
  // program file image used to create this process. The implementation of this
  // function only handles UTF8 tags.
  std::string ExtractTag() {

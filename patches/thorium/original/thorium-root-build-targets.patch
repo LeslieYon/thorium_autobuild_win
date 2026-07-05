@@ -1,0 +1,166 @@
+diff --git a/BUILD.gn b/BUILD.gn
+index 6fb99965414bf..60980504b38d3 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -74,6 +74,106 @@ if (is_official_build) {
+   assert(!is_component_build)
+ }
+ 
++# Thorium target that simply pulls in the chrome target as a dependency.
++group("thorium") {
++  if (!is_android) {
++    public_deps = [ "//chrome:chrome" ]
++  } else {
++    public_deps = [ "//chrome/android:chrome_public_apk" ]
++  }
++
++  if (is_win) {
++    public_deps += [ "//chrome:chrome_dll" ]
++  }
++
++  if (is_linux || is_chromeos || is_win || is_mac || is_android) {
++    public_deps += [ ":thorium_sandbox" ]
++  }
++}
++
++# Simply to rename the sandbox target.
++group("thorium_sandbox") {
++  if (is_linux || is_chromeos) {
++    public_deps = [ "//sandbox/linux:chrome_sandbox" ]
++  } else if (is_win) {
++    public_deps = [ "//sandbox/win:sandbox" ]
++  } else {
++    public_deps = [ "//sandbox:sandbox" ]
++  }
++}
++
++# Target to build platform-specific installers.
++group("thorium_installer") {
++  testonly = true
++  deps = [ ":thorium_all" ]
++  public_deps = [ "//chrome/installer/util:constants" ]
++  if (is_win) {
++    public_deps += [
++      "//chrome/installer/mini_installer:mini_installer",
++      "//chrome/installer/setup:setup",
++    ]
++  } else if (is_linux) {
++    public_deps += [ "//chrome/installer/linux:stable" ]
++  } else if (is_mac) {
++    public_deps += [ "//chrome/installer/mac:mac" ]
++  } else if (is_android) {
++    public_deps += [ "//chrome/android:chrome_public_apk" ]
++  }
++}
++
++# Thorium target that builds everything for a release build according to the
++# platform.
++group("thorium_all") {
++  testonly = true
++
++  deps = [ ":thorium" ]
++
++  if (is_win || is_linux || is_mac) {
++    deps += [
++      "//chrome/test/chromedriver:chromedriver",
++      "//components/policy:policy_templates",
++      "//content/shell:thorium_shell",
++      "//media/cdm/library_cdm/clear_key_cdm:clear_key_cdm",
++    ]
++    if (is_debug) {
++      deps += [ "//ui/views/examples:thorium_ui_debug_shell" ]
++    }
++  }
++
++  if (is_linux || is_chromeos) {
++    deps += [ "//chrome/test/chromedriver:chromedriver" ]
++  }
++
++  if (is_win) {
++    deps += [
++      "//chrome:chrome_dll",
++      "//components/policy:pack_policy_templates",
++    ]
++  }
++
++  if (is_debug || is_mac) {
++    if (is_mac) {
++      deps += [ "//third_party/breakpad:minidump_stackwalk" ]
++    } else if (!is_win || host_os != "win") {
++      deps += [
++        "//third_party/breakpad:minidump_stackwalk($host_system_allocator_toolchain)",
++      ]
++    }
++  }
++
++  if (is_android) {
++    deps += [
++      "//chrome/android:chrome_public_apk",
++      "//content/shell/android:content_shell_apk",
++    ]
++    if (current_cpu == "arm") {
++      deps += [ "//android_webview:system_webview_apk" ]
++    } else if (current_cpu == "arm64") {
++      deps += [ "//android_webview:system_webview_apk" ]
++    }
++  }
++  public_deps = deps
++}
+ # The `gn_all` target is used to list all of the main targets in the build, so
+ # that we can figure out which BUILD.gn files to process, following the process
+ # described at the top of this file.
+@@ -194,7 +294,7 @@ group("gn_all") {
+         "//components/viz:viz_perftests",
+         "//components/viz:viz_unittests",
+         "//content/browser/interest_group/tools:adjustable_auction",
+-        "//content/shell:content_shell",
++        "//content/shell:thorium_shell",
+         "//content/test:content_browsertests",
+         "//content/test:content_unittests",
+         "//device:device_unittests",
+@@ -316,7 +416,7 @@ group("gn_all") {
+         "//ui/views:views_unittests",
+         "//ui/views/examples:views_examples",
+         "//ui/views/examples:views_examples_unittests",
+-        "//ui/views/examples:views_examples_with_content",
++        "//ui/views/examples:thorium_ui_debug_shell",
+       ]
+     }
+ 
+@@ -1187,7 +1287,7 @@ if (use_blink && !is_cronet_build) {
+     data_deps = [
+       ":layout_test_data_mojo_bindings",
+       ":layout_test_data_mojo_bindings_lite",
+-      "//content/shell:content_shell",
++      "//content/shell:thorium_shell",
+       "//content/test:mojo_bindings_web_test_mojom_js_data_deps",
+       "//content/test:mojo_web_test_bindings_js_data_deps",
+       "//device/bluetooth/public/mojom:fake_bluetooth_interfaces_js_data_deps",
+@@ -1492,9 +1592,9 @@ if (use_blink && !is_cronet_build) {
+ # modulemaps requires building targets on linux-x86
+ if (!running_modularize) {
+   # TODO(cassew): Add more OS's that don't support x86.
+-  is_valid_x86_target =
+-      target_os != "ios" && target_os != "mac" &&
+-      (target_os != "linux" || use_libfuzzer || !build_with_chromium)
++  # 32-bit Linux builds enabled by Thorium.
++  is_valid_x86_target = target_os != "ios" && target_os != "mac" ||
++                        (use_libfuzzer || !build_with_chromium)
+ 
+   # Note: v8_target_cpu == arm allows using the V8 arm simulator on x86 for
+   # fuzzing.
+@@ -1557,7 +1657,7 @@ if (!is_ios && !is_android && !is_castos && !is_cronet_build) {
+     write_runtime_deps = "${root_out_dir}/${target_name}.runtime_deps"
+ 
+     data_deps = [
+-      "//content/shell:content_shell",
++      "//content/shell:thorium_shell",
+       "//third_party/blink/public/mojom:mojom_modules_js",
+       "//v8:d8",
+     ]

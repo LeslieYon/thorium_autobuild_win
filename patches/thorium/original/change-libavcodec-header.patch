@@ -1,25 +1,5 @@
-From 4fdafc8267ae9842f070bfba5ac94faaea14535e Mon Sep 17 00:00:00 2001
-From: Sta Zhu <zhusidayoyo@hotmail.com>
-Date: Sun, 11 May 2025 21:10:06 +0800
-Subject: [PATCH] Video: Update `libavcodec` header
-
-The recent ffmpeg changes doesn't match with chromium include
-configs, need to change the header manually to fix this.
----
- third_party/ffmpeg/libavcodec/hevc/cabac.c         |  2 +-
- third_party/ffmpeg/libavcodec/hevc/dsp_template.c  | 10 +++++-----
- third_party/ffmpeg/libavcodec/hevc/filter.c        |  2 +-
- third_party/ffmpeg/libavcodec/hevc/hevcdec.c       | 26 +++++++++++++-------------
- third_party/ffmpeg/libavcodec/hevc/mvs.c           |  2 +-
- third_party/ffmpeg/libavcodec/hevc/parse.c         |  4 ++--
- third_party/ffmpeg/libavcodec/hevc/parser.c        |  8 +++++---
- third_party/ffmpeg/libavcodec/hevc/pred_template.c |  2 +-
- third_party/ffmpeg/libavcodec/hevc/ps.c            |  6 +++---
- third_party/ffmpeg/libavcodec/hevc/ps_enc.c        |  4 ++--
- third_party/ffmpeg/libavcodec/hevc/refs.c          |  6 +++---
- third_party/ffmpeg/libavcodec/hevc/sei.c           |  4 ++--
- 12 files changed, 38 insertions(+), 38 deletions(-)
-
+diff --git a/libavcodec/hevc/cabac.c b/libavcodec/hevc/cabac.c
+index 55d5741f87..f6bde3028f 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/cabac.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/cabac.c
 @@ -24,7 +24,7 @@
@@ -31,6 +11,8 @@ configs, need to change the header manually to fix this.
  #include "data.h"
  #include "hevc.h"
  #include "hevcdec.h"
+diff --git a/libavcodec/hevc/dsp_template.c b/libavcodec/hevc/dsp_template.c
+index e7b21127ba..d902a0ca6b 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
 @@ -20,13 +20,13 @@
@@ -51,7 +33,7 @@ configs, need to change the header manually to fix this.
  
  static void FUNC(put_pcm)(uint8_t *_dst, ptrdiff_t stride, int width, int height,
                            GetBitContext *gb, int pcm_bit_depth)
-@@ -817,7 +817,7 @@ static void FUNC(put_hevc_epel_bi_w_hv)(uint8_t *_dst, ptrdiff_t _dststride,
+@@ -836,7 +836,7 @@ static void FUNC(put_hevc_epel_bi_w_hv)(uint8_t *_dst, ptrdiff_t _dststride,
  #define TQ2 pix[2  * xstride + 3 * ystride]
  #define TQ3 pix[3  * xstride + 3 * ystride]
  
@@ -60,6 +42,8 @@ configs, need to change the header manually to fix this.
  
  static void FUNC(hevc_loop_filter_luma)(uint8_t *_pix,
                                          ptrdiff_t _xstride, ptrdiff_t _ystride,
+diff --git a/libavcodec/hevc/filter.c b/libavcodec/hevc/filter.c
+index 68ae0e9ef6..e897ad5d58 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/filter.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/filter.c
 @@ -26,7 +26,7 @@
@@ -71,6 +55,8 @@ configs, need to change the header manually to fix this.
  
  #define LUMA 0
  #define CB 1
+diff --git a/libavcodec/hevc/hevcdec.c b/libavcodec/hevc/hevcdec.c
+index 473899abc5..a0bc2537fb 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
 @@ -39,24 +39,24 @@
@@ -112,6 +98,8 @@ configs, need to change the header manually to fix this.
  
  static const uint8_t hevc_pel_weight[65] = { [2] = 0, [4] = 1, [6] = 2, [8] = 3, [12] = 4, [16] = 5, [24] = 6, [32] = 7, [48] = 8, [64] = 9 };
  
+diff --git a/libavcodec/hevc/mvs.c b/libavcodec/hevc/mvs.c
+index 55f115ad0c..61c9e4e086 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/mvs.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/mvs.c
 @@ -23,7 +23,7 @@
@@ -123,6 +111,8 @@ configs, need to change the header manually to fix this.
  
  static const uint8_t l0_l1_cand_idx[12][2] = {
      { 0, 1, },
+diff --git a/libavcodec/hevc/parse.c b/libavcodec/hevc/parse.c
+index 29f21a5966..2f519380fb 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/parse.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/parse.c
 @@ -16,8 +16,8 @@
@@ -136,6 +126,8 @@ configs, need to change the header manually to fix this.
  #include "hevc.h"
  #include "parse.h"
  
+diff --git a/libavcodec/hevc/parser.c b/libavcodec/hevc/parser.c
+index 62bcd91172..af03925bad 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/parser.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/parser.c
 @@ -23,14 +23,14 @@
@@ -157,6 +149,8 @@ configs, need to change the header manually to fix this.
  
  #define START_CODE 0x000001 ///< start_code_prefix_one_3bytes
  
+diff --git a/libavcodec/hevc/pred_template.c b/libavcodec/hevc/pred_template.c
+index e6069fd267..86870ed681 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/pred_template.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/pred_template.c
 @@ -22,7 +22,7 @@
@@ -167,7 +161,9 @@ configs, need to change the header manually to fix this.
 +#include "libavcodec/bit_depth_template.c"
  #include "pred.h"
  
- #define POS(x, y) src[(x) + stride * (y)]
+ static void FUNC(ref_filter_3tap)(uint8_t *filtered_left,
+diff --git a/libavcodec/hevc/ps.c b/libavcodec/hevc/ps.c
+index f090a31803..6d3791ac9d 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/ps.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/ps.c
 @@ -25,11 +25,11 @@
@@ -185,6 +181,8 @@ configs, need to change the header manually to fix this.
  #include "libavutil/refstruct.h"
  
  static const uint8_t default_scaling_list_intra[] = {
+diff --git a/libavcodec/hevc/ps_enc.c b/libavcodec/hevc/ps_enc.c
+index 7fbcb3ba4e..4e44f849ba 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
 @@ -18,9 +18,9 @@
@@ -199,6 +197,8 @@ configs, need to change the header manually to fix this.
  
  static void write_ptl_layer(PutBitContext *pb, PTLCommon *ptl)
  {
+diff --git a/libavcodec/hevc/refs.c b/libavcodec/hevc/refs.c
+index 55db706a8a..248061fad7 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/refs.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/refs.c
 @@ -25,11 +25,11 @@
@@ -216,6 +216,8 @@ configs, need to change the header manually to fix this.
  #include "libavutil/refstruct.h"
  
  void ff_hevc_unref_frame(HEVCFrame *frame, int flags)
+diff --git a/libavcodec/hevc/sei.c b/libavcodec/hevc/sei.c
+index e12803f1d3..83c726a217 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/sei.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/sei.c
 @@ -22,8 +22,8 @@
@@ -229,7 +231,3 @@ configs, need to change the header manually to fix this.
  #include "ps.h"
  #include "sei.h"
  
--- 
-2.45.2.windows.1
-
-

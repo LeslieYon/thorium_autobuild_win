@@ -1,0 +1,37 @@
+diff --git a/components/webui/chrome_urls/resources/app.html.ts b/components/webui/chrome_urls/resources/app.html.ts
+index 1ea42f51009fb..635eaba222f21 100644
+--- a/components/webui/chrome_urls/resources/app.html.ts
++++ b/components/webui/chrome_urls/resources/app.html.ts
+@@ -1,4 +1,4 @@
+-// Copyright 2024 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -9,7 +9,8 @@ import type {ChromeUrlsAppElement} from './app.js';
+ export function getHtml(this: ChromeUrlsAppElement) {
+   // clang-format off
+   return html`
+-<h2>List of Chrome URLs</h2>
++<h1>Thorium URLs</h1>
++<h2>List of Thorium chrome:// URLs</h2>
+ <ul>
+   ${this.webuiUrlInfos_.map(info => html`
+     ${this.isChromeUrlsUrl_(info) ?
+@@ -19,6 +20,7 @@ export function getHtml(this: ChromeUrlsAppElement) {
+         html`<li>${info.url}</li>`
+       }`
+     }`)}
++    <li><a href="chrome://robot/">chrome://robot</a></li>
+ </ul>
+ ${this.internalUrlInfos_.length ? html`
+   <h2 id="internal-debugging-pages">Internal Debugging Page URLs</h2>
+@@ -38,7 +40,7 @@ ${this.internalUrlInfos_.length ? html`
+       }`)}
+   </ul>` : ''}
+ ${this.commandUrls_.length ? html`
+-  <h2>Command URLs for Debug</h2>
++  <h2>Command URLs for Debugging</h2>
+   <p>
+     The following URLs are for debugging purposes only. Because they crash or
+     hang the renderer, they're not linked directly; you can type them into the

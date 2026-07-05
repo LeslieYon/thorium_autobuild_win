@@ -1,0 +1,135 @@
+diff --git a/chrome/app/chrome_exe.ver b/chrome/app/chrome_exe.ver
+index a2d39013f5a5d..000e0052c7a7b 100644
+--- a/chrome/app/chrome_exe.ver
++++ b/chrome/app/chrome_exe.ver
+@@ -1,2 +1,2 @@
+-INTERNAL_NAME=chrome_exe
+-ORIGINAL_FILENAME=chrome.exe
++INTERNAL_NAME=thorium_exe
++ORIGINAL_FILENAME=thorium.exe
+diff --git a/chrome/app/chrome_exe.vsprops b/chrome/app/chrome_exe.vsprops
+index 95b044a1328ff..23675b3ca95c8 100644
+--- a/chrome/app/chrome_exe.vsprops
++++ b/chrome/app/chrome_exe.vsprops
+@@ -12,7 +12,7 @@
+ 	<Tool
+ 		Name="VCLinkerTool"
+ 		DelayLoadDLLs="ole32.dll;oleaut32.dll"
+-		OutputFile="$(OutDir)\chrome.exe"
++		OutputFile="$(OutDir)\thorium.exe"
+ 		ProgramDatabaseFile="$(OutDir)\$(ProjectName).pdb"
+ 	/>
+ 	<Tool
+diff --git a/chrome/app/resources/manpage.1.in b/chrome/app/resources/manpage.1.in
+index 25d3a92a98a6a..fbb5bbd913886 100644
+--- a/chrome/app/resources/manpage.1.in
++++ b/chrome/app/resources/manpage.1.in
+@@ -1,32 +1,32 @@
+ .\" This file is processed to generate manpages in the
+ .\" build diretory.
+-.TH @@PACKAGE 1 "" "" "USER COMMANDS"
++.TH @@PACKAGE@@ 1 "" "" "USER COMMANDS"
+ 
+ .SH NAME
+-@@PACKAGE \- the web browser from Google
++@@PACKAGE@@ \- the web browser from Alex313031
+ 
+ .SH SYNOPSIS
+-.B @@PACKAGE
++.B @@PACKAGE@@
+ [\fIOPTION\fR] [\fIPATH\fR|\fIURL\fR]
+ 
+ .SH DESCRIPTION
+-See the Google Chrome help center for help on using the browser.
++See the Thorium Repository for help on using the browser.
+ .IP
+-<https://support.google.com/chrome/>
++<https://github.com/Alex313031/thorium/>
+ .PP
+ This manpage only describes invocation, environment, and arguments.
+ 
+ .SH OPTIONS
+-@@MENUNAME has hundreds of undocumented command-line flags that are added
++@@MENUNAME@@ has hundreds of undocumented command-line flags that are added
+ and removed at the whim of the developers.  Here, we document relatively
+ stable flags.
+ .TP
+ \fB\-\-user\-data\-dir\fR=\fIDIR\fR
+ Specifies the directory that user data (your "profile") is kept in.
+ Defaults to
+-.I $HOME/.config/@@PACKAGE .
+-Separate instances of @@MENUNAME must use separate user data directories;
+-repeated invocations of @@PACKAGE will reuse an existing process for
++.I $HOME/.config/@@PACKAGE@@ .
++Separate instances of @@MENUNAME@@ must use separate user data directories;
++repeated invocations of @@PACKAGE@@ will reuse an existing process for
+ a given user data directory.
+ 
+ .TP
+@@ -102,7 +102,7 @@ password store.  \fIgnome\fR selects Gnome keyring.  \fIkwallet\fR selects
+ Show version information.
+ 
+ .PP
+-As a GTK+ app, @@MENUNAME also obeys GTK+ command-line flags, such
++As a GTK+ app, @@MENUNAME@@ also obeys GTK+ command-line flags, such
+ as
+ .BR \-\-display .
+ See the GTK documentation for more:
+@@ -112,7 +112,7 @@ See the GTK documentation for more:
+ <http://library.gnome.org/devel/gtk/stable/gtk-x11.html>
+ 
+ .SH ENVIRONMENT
+-@@MENUNAME obeys the following environment variables:
++@@MENUNAME@@ obeys the following environment variables:
+ 
+ .TP
+ .B all_proxy
+@@ -145,21 +145,21 @@ Comma separated list of hosts or patterns to bypass proxying.
+ 
+ .SH FILES
+ .TP
+-.I $HOME/.config/@@PACKAGE
++.I $HOME/.config/@@PACKAGE@@
+ Default directory for configuration data.
+ 
+ .TP
+-.I $HOME/.cache/@@PACKAGE
++.I $HOME/.cache/@@PACKAGE@@
+ Default directory for cache data.  (Why?  See
+ <http://standards.freedesktop.org/basedir-spec/latest/> .)
+ 
+ .SH BUGS
+ Bug tracker:
+ .IP
+-http://code.google.com/p/chromium/issues/list
++http://code.google.com/p/chromium/issues/list & https://github.com/Alex313031/thorium/issues
+ .PP
+ Be sure to do your search within "All Issues" before reporting bugs,
+ and be sure to pick the "Defect on Linux" template when filing a new one.
+ 
+ .SH AUTHOR
+-The Chromium team \- <http://www.chromium.org>
++The Chromium team and Alex313031 \- <http://www.chromium.org>
+diff --git a/chrome/app/theme/chromium/BRANDING b/chrome/app/theme/chromium/BRANDING
+index f8363d5b294fe..b06454a1f97c8 100644
+--- a/chrome/app/theme/chromium/BRANDING
++++ b/chrome/app/theme/chromium/BRANDING
+@@ -1,10 +1,10 @@
+-COMPANY_FULLNAME=The Chromium Authors
+-COMPANY_SHORTNAME=The Chromium Authors
+-PRODUCT_FULLNAME=Chromium
+-PRODUCT_SHORTNAME=Chromium
+-PRODUCT_INSTALLER_FULLNAME=Chromium Installer
+-PRODUCT_INSTALLER_SHORTNAME=Chromium Installer
+-COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors. All rights reserved.
+-MAC_BUNDLE_ID=org.chromium.Chromium
++COMPANY_FULLNAME=Alex313031
++COMPANY_SHORTNAME=Alex313031
++PRODUCT_FULLNAME=Thorium
++PRODUCT_SHORTNAME=Thorium
++PRODUCT_INSTALLER_FULLNAME=Thorium Installer
++PRODUCT_INSTALLER_SHORTNAME=Thorium Installer
++COPYRIGHT=Copyright @LASTCHANGE_YEAR@ The Chromium Authors and Alex313031.
++MAC_BUNDLE_ID=org.chromium.Thorium
+ MAC_CREATOR_CODE=Cr24
+ MAC_TEAM_ID=

@@ -1,6 +1,8 @@
+diff --git a/chrome/browser/ui/webui/BUILD.gn b/chrome/browser/ui/webui/BUILD.gn
+index 70818ce2da0e8..e5c35940f14d8 100644
 --- a/chrome/browser/ui/webui/BUILD.gn
 +++ b/chrome/browser/ui/webui/BUILD.gn
-@@ -23,6 +23,7 @@ source_set("configs") {
+@@ -32,6 +32,7 @@ source_set("configs") {
      "chrome_untrusted_web_ui_configs.h",
      "chrome_web_ui_configs.cc",
      "chrome_web_ui_configs.h",
@@ -8,58 +10,320 @@
    ]
  
    configs += [ "//build/config/compiler:wexit_time_destructors" ]
+diff --git a/chrome/browser/ui/webui/chrome_web_ui_configs.cc b/chrome/browser/ui/webui/chrome_web_ui_configs.cc
+index bced2aebb3495..8a9cd6e702764 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_configs.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_configs.cc
-@@ -45,6 +45,7 @@
- #include "chrome/browser/ui/webui/segmentation_internals/segmentation_internals_ui.h"
+@@ -55,6 +55,7 @@
  #include "chrome/browser/ui/webui/signin_internals_ui.h"
+ #include "chrome/browser/ui/webui/subresource_filter/subresource_filter_internals_ui.h"
  #include "chrome/browser/ui/webui/sync_internals/sync_internals_ui.h"
 +#include "chrome/browser/ui/webui/thorium_easter_eggs.h"
  #include "chrome/browser/ui/webui/translate_internals/translate_internals_ui.h"
  #include "chrome/browser/ui/webui/usb_internals/usb_internals_ui.h"
- #include "chrome/browser/ui/webui/user_actions/user_actions_ui.h"
-@@ -261,6 +262,7 @@ void RegisterChromeWebUIConfigs() {
-   map.AddWebUIConfig(std::make_unique<SignInInternalsUIConfig>());
+ #include "chrome/browser/ui/webui/version/version_ui.h"
+@@ -303,6 +304,9 @@ void RegisterChromeWebUIConfigs() {
+                      subresource_filter::SubresourceFilterInternalsUIConfig>());
    map.AddWebUIConfig(std::make_unique<SiteEngagementUIConfig>());
    map.AddWebUIConfig(std::make_unique<SyncInternalsUIConfig>());
++  map.AddWebUIConfig(std::make_unique<ThoriumAuthorsUIConfig>());
 +  map.AddWebUIConfig(std::make_unique<ThoriumWebUILoadUIConfig>());
++  map.AddWebUIConfig(std::make_unique<ThoriumRobotUIConfig>());
    map.AddWebUIConfig(std::make_unique<TranslateInternalsUIConfig>());
    map.AddWebUIConfig(std::make_unique<UsbInternalsUIConfig>());
-   map.AddWebUIConfig(std::make_unique<UserActionsUIConfig>());
-
+   map.AddWebUIConfig(std::make_unique<user_actions_ui::UserActionsUIConfig>());
+diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
+index c978f8f218b40..790e66f2c87d8 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -359,7 +359,8 @@ bool ChromeWebUIControllerFactory::IsWebUIAllowedToMakeNetworkRequests(
-       // https://crbug.com/859345
+@@ -353,6 +353,9 @@ bool ChromeWebUIControllerFactory::IsWebUIAllowedToMakeNetworkRequests(
        origin.host() == chrome::kChromeUIDownloadsHost ||
        // https://crbug.com/376417346
--      origin.host() == chrome::kChromeUIExtensionsHost;
-+      origin.host() == chrome::kChromeUIExtensionsHost ||
-+      origin.host() == chrome::kChromeUIEggsHost;
+       origin.host() == chrome::kChromeUIExtensionsHost ||
++      origin.host() == chrome::kChromeUIAuthorsHost ||
++      origin.host() == chrome::kChromeUIEggsHost ||
++      origin.host() == chrome::kChromeUIRobotHost ||
+       // https://crbug.com/509216218
+       origin.host() == chrome::kChromeUIDrivePickerHostHost;
  }
- 
- ChromeWebUIControllerFactory::ChromeWebUIControllerFactory() = default;
+diff --git a/chrome/browser/ui/webui/thorium_easter_eggs.h b/chrome/browser/ui/webui/thorium_easter_eggs.h
+new file mode 100644
+index 0000000000000..e183c1f64b82a
+--- /dev/null
++++ b/chrome/browser/ui/webui/thorium_easter_eggs.h
+@@ -0,0 +1,239 @@
++// Copyright 2026 Alex313031
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef THORIUM_EASTER_EGGS_H_
++#define THORIUM_EASTER_EGGS_H_
++
++#include "base/memory/ref_counted_memory.h"
++#include "base/strings/escape.h"
++#include "chrome/browser/profiles/profile.h"
++#include "chrome/common/webui_url_constants.h"
++#include "content/public/browser/url_data_source.h"
++#include "content/public/browser/web_ui.h"
++#include "content/public/browser/web_ui_controller.h"
++#include "content/public/browser/webui_config.h"
++#include "services/network/public/mojom/content_security_policy.mojom.h"
++#include "ui/base/resource/resource_bundle.h"
++#include "ui/webui/resources/grit/webui_resources.h"
++
++class ThoriumDataSource : public content::URLDataSource {
++ public:
++  ThoriumDataSource() {}
++  ThoriumDataSource(const ThoriumDataSource&) = delete;
++  ThoriumDataSource& operator=(const ThoriumDataSource&) = delete;
++  std::string GetSource() override;
++  std::string GetMimeType(const GURL& url) override;
++  std::string GetContentSecurityPolicy(network::mojom::CSPDirectiveName directive) override;
++  void StartDataRequest(const GURL& url,
++                        const content::WebContents::Getter& wc_getter,
++                        GotDataCallback callback) override;
++};
++
++std::string ThoriumDataSource::GetSource() { return chrome::kChromeUIEggsHost; }
++std::string ThoriumDataSource::GetMimeType(const GURL& url) { return "text/html"; }
++std::string ThoriumDataSource::GetContentSecurityPolicy(network::mojom::CSPDirectiveName directive) {
++  if (directive == network::mojom::CSPDirectiveName::ScriptSrc)
++    return "script-src 'unsafe-inline'";
++  return std::string();
++}
++void ThoriumDataSource::StartDataRequest(const GURL& url,
++                      const content::WebContents::Getter& wc_getter,
++                      GotDataCallback callback) {
++  std::string source = R"(
++    <html>
++    <head>
++      <title>Thorium Easter Eggs</title>
++      <meta name="color-scheme" content="light dark">
++      <meta name="viewport" content="width=device-width, initial-scale=1">
++      <link rel="shortcut icon" type="image/x-icon" href="chrome://theme/current-channel-logo@2x">
++    <style>
++      @import url(chrome://resources/css/text_defaults_md.css);
++      body { text-align: center; align-content: center; max-width: 75%; margin: auto;}
++      img { max-width: 75%; height: auto; }
++    </style>
++    </head>
++    <body>
++      <h2><u>Thorium Easter Eggs WebUI Page</u></h3>
++      <hr>
++      <p>
++        <img src="chrome://theme/IDR_PRODUCT_THORIUM_ELEMENT">
++        <hr>
++        <img src="chrome://theme/IDR_PRODUCT_THORIUM_ATOMIC">
++        <img src="chrome://theme/IDR_PRODUCT_CHROMIUM_QUESTION">
++        <img src="chrome://theme/IDR_PRODUCT_THORIUM_GUY">
++        <img src="chrome://theme/IDR_PRODUCT_CHROMIUM_BLANK">
++        <img src="chrome://theme/IDR_PRODUCT_AI_CHROME">
++      </p>
++    </body>
++    </html>
++  )";
++  std::move(callback).Run(base::MakeRefCounted<base::RefCountedString>(std::move(source)));
++}
++
++class ThoriumWebUILoad;
++class ThoriumWebUILoadUIConfig : public content::DefaultWebUIConfig<ThoriumWebUILoad> {
++  public:
++   ThoriumWebUILoadUIConfig() : DefaultWebUIConfig("chrome", chrome::kChromeUIEggsHost) {}
++};
++
++class ThoriumWebUILoad : public content::WebUIController {
++ public:
++  ThoriumWebUILoad(content::WebUI* web_ui) : content::WebUIController(web_ui) {
++    content::URLDataSource::Add(Profile::FromWebUI(web_ui), std::make_unique<ThoriumDataSource>());
++  }
++  ThoriumWebUILoad(const ThoriumWebUILoad&) = delete;
++  ThoriumWebUILoad& operator=(const ThoriumWebUILoad&) = delete;
++};
++
++class ThoriumRobotDataSource : public content::URLDataSource {
++ public:
++  ThoriumRobotDataSource() {}
++  ThoriumRobotDataSource(const ThoriumRobotDataSource&) = delete;
++  ThoriumRobotDataSource& operator=(const ThoriumRobotDataSource&) = delete;
++  std::string GetSource() override;
++  std::string GetMimeType(const GURL& url) override;
++  void StartDataRequest(const GURL& url,
++                        const content::WebContents::Getter& wc_getter,
++                        GotDataCallback callback) override;
++};
++
++std::string ThoriumRobotDataSource::GetSource() {
++  return chrome::kChromeUIRobotHost;
++}
++
++std::string ThoriumRobotDataSource::GetMimeType(const GURL& url) {
++  return "text/html";
++}
++
++void ThoriumRobotDataSource::StartDataRequest(
++    const GURL& url,
++    const content::WebContents::Getter& wc_getter,
++    GotDataCallback callback) {
++  std::string source = R"(
++      <html>
++      <head>
++        <title>Thorium Robot</title>
++        <meta name="color-scheme" content="light dark">
++        <meta name="viewport" content="width=device-width, initial-scale=1">
++        <link rel="shortcut icon" type="image/x-icon" href="chrome://theme/current-channel-logo@2x">
++        <style>
++          @import url(chrome://resources/css/text_defaults_md.css);
++          body { text-align: center; align-content: center; min-height: 100vh; margin: auto; }
++          img { max-width: min(90vw, 512px); height: auto; }
++        </style>
++      </head>
++      <body>
++        <img alt="Thorium Robot" src="chrome://theme/IDR_PRODUCT_ROBOT">
++      </body>
++      </html>
++    )";
++  std::move(callback).Run(
++      base::MakeRefCounted<base::RefCountedString>(std::move(source)));
++}
++
++class ThoriumRobotUI;
++class ThoriumRobotUIConfig : public content::DefaultWebUIConfig<ThoriumRobotUI> {
++  public:
++   ThoriumRobotUIConfig() : DefaultWebUIConfig("chrome", chrome::kChromeUIRobotHost) {}
++};
++
++class ThoriumRobotUI : public content::WebUIController {
++ public:
++  ThoriumRobotUI(content::WebUI* web_ui) : content::WebUIController(web_ui) {
++    content::URLDataSource::Add(Profile::FromWebUI(web_ui), std::make_unique<ThoriumRobotDataSource>());
++  }
++  ThoriumRobotUI(const ThoriumRobotUI&) = delete;
++  ThoriumRobotUI& operator=(const ThoriumRobotUI&) = delete;
++};
++
++class ThoriumAuthorsDataSource : public content::URLDataSource {
++ public:
++  ThoriumAuthorsDataSource() {}
++  ThoriumAuthorsDataSource(const ThoriumAuthorsDataSource&) = delete;
++  ThoriumAuthorsDataSource& operator=(const ThoriumAuthorsDataSource&) = delete;
++  std::string GetSource() override;
++  std::string GetMimeType(const GURL& url) override;
++  std::string GetContentSecurityPolicy(
++      network::mojom::CSPDirectiveName directive) override;
++  void StartDataRequest(const GURL& url,
++                        const content::WebContents::Getter& wc_getter,
++                        GotDataCallback callback) override;
++};
++
++std::string ThoriumAuthorsDataSource::GetSource() {
++  return chrome::kChromeUIAuthorsHost;
++}
++
++std::string ThoriumAuthorsDataSource::GetMimeType(const GURL& url) {
++  return "text/html";
++}
++
++std::string ThoriumAuthorsDataSource::GetContentSecurityPolicy(
++    network::mojom::CSPDirectiveName directive) {
++  if (directive == network::mojom::CSPDirectiveName::ScriptSrc)
++    return "script-src 'unsafe-inline'";
++  return std::string();
++}
++
++void ThoriumAuthorsDataSource::StartDataRequest(
++    const GURL& url,
++    const content::WebContents::Getter& wc_getter,
++    GotDataCallback callback) {
++  std::string authors = base::EscapeForHTML(
++      ui::ResourceBundle::GetSharedInstance().LoadDataResourceString(
++          IDR_WEBUI_IMAGES_AUTHORS_TXT));
++  std::string source = R"(
++      <html>
++      <head>
++        <title>Thorium Authors</title>
++        <meta charset="utf-8">
++        <meta name="color-scheme" content="light dark">
++        <meta name="viewport" content="width=device-width, initial-scale=1">
++        <link rel="shortcut icon" type="image/x-icon" href="chrome://theme/current-channel-logo@2x">
++        <style>
++          @import url(chrome://resources/css/text_defaults_md.css);
++          body { margin: 0; }
++          main { box-sizing: border-box; max-width: 980px; margin: 0 auto; padding: 32px 24px 48px; }
++          h1 { font-size: 28px; font-weight: 500; margin: 0 0 18px; }
++          pre {
++            box-sizing: border-box;
++            margin: 0;
++            padding: 20px;
++            overflow: auto;
++            white-space: pre-wrap;
++            word-break: break-word;
++            border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
++            border-radius: 8px;
++            font: 13px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
++          }
++        </style>
++      </head>
++      <body>
++        <main>
++          <h1>Thorium Authors</h1>
++          <pre>)" + authors + R"(</pre>
++        </main>
++      </body>
++      </html>
++    )";
++  std::move(callback).Run(
++      base::MakeRefCounted<base::RefCountedString>(std::move(source)));
++}
++
++class ThoriumAuthorsUI;
++class ThoriumAuthorsUIConfig : public content::DefaultWebUIConfig<ThoriumAuthorsUI> {
++  public:
++   ThoriumAuthorsUIConfig() : DefaultWebUIConfig("chrome", chrome::kChromeUIAuthorsHost) {}
++};
++
++class ThoriumAuthorsUI : public content::WebUIController {
++ public:
++  ThoriumAuthorsUI(content::WebUI* web_ui) : content::WebUIController(web_ui) {
++    content::URLDataSource::Add(Profile::FromWebUI(web_ui), std::make_unique<ThoriumAuthorsDataSource>());
++  }
++  ThoriumAuthorsUI(const ThoriumAuthorsUI&) = delete;
++  ThoriumAuthorsUI& operator=(const ThoriumAuthorsUI&) = delete;
++};
++
++#endif  // THORIUM_EASTER_EGGS_H_
+diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_constants.cc
+index 307b2de1bdb81..64cb8f1ad8f7e 100644
 --- a/chrome/common/webui_url_constants.cc
 +++ b/chrome/common/webui_url_constants.cc
-@@ -74,6 +74,7 @@
- // These hosts will also be suggested by BuiltinProvider.
- base::span<const base::cstring_view> ChromeURLHosts() {
-   static constexpr auto kChromeURLHosts = std::to_array<base::cstring_view>({
-+      kChromeUIEggsHost,
+@@ -125,6 +125,9 @@ base::span<const base::cstring_view> ChromeURLHosts() {
        kChromeUIAboutHost,
        kChromeUIAccessibilityHost,
        kChromeUIActorInternalsHost,
++      kChromeUIAuthorsHost,
++      kChromeUIEggsHost,
++      kChromeUIRobotHost,
+ #if !BUILDFLAG(IS_ANDROID)
+       kChromeUIAppServiceInternalsHost,
+ #endif
+diff --git a/chrome/common/webui_url_constants.h b/chrome/common/webui_url_constants.h
+index 8288814da7d14..d1ae2653be3e5 100644
 --- a/chrome/common/webui_url_constants.h
 +++ b/chrome/common/webui_url_constants.h
-@@ -31,6 +31,8 @@ namespace chrome {
+@@ -33,6 +33,12 @@ namespace chrome {
  // Not all components have corresponding URLs and vice versa. Only add as
  // needed.
  // Please keep in alphabetical order, with OS/feature specific sections below.
++inline constexpr char kChromeUIAuthorsHost[] = "authors";
++inline constexpr char kChromeUIAuthorsURL[] = "chrome://authors/";
 +inline constexpr char kChromeUIEggsHost[] = "eggs";
 +inline constexpr char kChromeUIEggsURL[] = "chrome://eggs/";
++inline constexpr char kChromeUIRobotHost[] = "robot";
++inline constexpr char kChromeUIRobotURL[] = "chrome://robot/";
  inline constexpr char kChromeUIAboutHost[] = "about";
  inline constexpr char kChromeUIAboutURL[] = "chrome://about/";
  inline constexpr char kChromeUIAccessCodeCastHost[] = "access-code-cast";
+diff --git a/components/webui/about/resources/about_credits_reciprocal.tmpl b/components/webui/about/resources/about_credits_reciprocal.tmpl
+index 5096175e285c1..6d4a41ab2815f 100644
 --- a/components/webui/about/resources/about_credits_reciprocal.tmpl
 +++ b/components/webui/about/resources/about_credits_reciprocal.tmpl
 @@ -1,4 +1,4 @@
@@ -69,9 +333,11 @@
 +    {{thorium_project}} is based on {{opensource_project}} and is made available as source code
 +    <a href="{{thorium_link}}">here</a>. Chromium source code is available <a href="{{opensource_link}}">here</a>.
  </div>
+diff --git a/tools/licenses/licenses.py b/tools/licenses/licenses.py
+index d62ef1c2ddaa8..aaf8a20cd33c6 100755
 --- a/tools/licenses/licenses.py
 +++ b/tools/licenses/licenses.py
-@@ -1083,6 +1083,8 @@
+@@ -1114,6 +1114,8 @@ def GenerateCredits(args, metadatas):
    entries_contents = '\n'.join([entry['content'] for entry in entries])
  
    reciprocal_contents = EvaluateTemplate(reciprocal_template, {
@@ -80,6 +346,8 @@
        'opensource_project': 'Chromium',
        'opensource_link': 'https://source.chromium.org/chromium'
    },
+diff --git a/ui/webui/resources/BUILD.gn b/ui/webui/resources/BUILD.gn
+index 074b55e748dab..9cb5e00971323 100644
 --- a/ui/webui/resources/BUILD.gn
 +++ b/ui/webui/resources/BUILD.gn
 @@ -38,6 +38,7 @@ generate_grd("build_grd") {
@@ -98,4 +366,34 @@
    ]
  
    if ((!is_android && !is_ios) || is_desktop_android) {
-
+diff --git a/ui/webui/resources/text/BUILD.gn b/ui/webui/resources/text/BUILD.gn
+new file mode 100644
+index 0000000000000..21045cee4be90
+--- /dev/null
++++ b/ui/webui/resources/text/BUILD.gn
+@@ -0,0 +1,18 @@
++# Copyright 2026 The Chromium Authors and Alex313031
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++import("//ui/webui/resources/tools/generate_grd.gni")
++
++generate_grd("build_grdp") {
++  grd_prefix = "webui_images"
++  out_grd = "$target_gen_dir/resources.grdp"
++  input_files_base_dir = rebase_path(".", "//")
++  resource_path_prefix = "text"
++
++  input_files = [
++    # chrome://resources/text/thorium_version.txt
++    "thorium_version.txt",
++    "AUTHORS.txt",
++  ]
++}
+diff --git a/ui/webui/resources/text/thorium_version.txt b/ui/webui/resources/text/thorium_version.txt
+new file mode 100644
+index 0000000000000..efba1ea4cc003
+--- /dev/null
++++ b/ui/webui/resources/text/thorium_version.txt
+@@ -0,0 +1 @@
++placeholder grit thorium version text

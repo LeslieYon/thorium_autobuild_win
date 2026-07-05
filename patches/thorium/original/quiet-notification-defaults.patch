@@ -1,0 +1,28 @@
+diff --git a/chrome/browser/permissions/quiet_notification_permission_ui_state.cc b/chrome/browser/permissions/quiet_notification_permission_ui_state.cc
+index 105ec6f8aff76..e82d3dbe49c17 100644
+--- a/chrome/browser/permissions/quiet_notification_permission_ui_state.cc
++++ b/chrome/browser/permissions/quiet_notification_permission_ui_state.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2019 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -15,7 +15,7 @@ void QuietNotificationPermissionUiState::RegisterProfilePrefs(
+     user_prefs::PrefRegistrySyncable* registry) {
+   // TODO(crbug.com/40097905): Consider making this syncable.
+   registry->RegisterBooleanPref(prefs::kEnableQuietNotificationPermissionUi,
+-                                /*default_value=*/false);
++                                /*default_value=*/true);
+   registry->RegisterBooleanPref(prefs::kEnableQuietGeolocationPermissionUi,
+                                 /*default_value=*/false);
+   registry->RegisterBooleanPref(
+@@ -24,7 +24,7 @@ void QuietNotificationPermissionUiState::RegisterProfilePrefs(
+   registry->RegisterTimePref(prefs::kQuietNotificationPermissionUiDisabledTime,
+                              base::Time());
+   registry->RegisterBooleanPref(prefs::kEnableNotificationCPSS,
+-                                /*default_value=*/true);
++                                /*default_value=*/false);
+   registry->RegisterBooleanPref(prefs::kEnableGeolocationCPSS,
+                                 /*default_value=*/true);
+   registry->RegisterBooleanPref(

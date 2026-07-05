@@ -1,0 +1,26 @@
+diff --git a/ui/webui/resources/images/BUILD.gn b/ui/webui/resources/images/BUILD.gn
+index a95ee65fb1557..c7275ffa49c1a 100644
+--- a/ui/webui/resources/images/BUILD.gn
++++ b/ui/webui/resources/images/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2020 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -25,6 +25,7 @@ generate_grd("build_grdp") {
+     "error.svg",
+     "error_yellow900.svg",
+     "extension.svg",
++    "hazard.svg",
+     "icon_arrow_dropdown.svg",
+     "icon_cancel.svg",
+     "icon_copy_content.svg",
+@@ -34,6 +35,7 @@ generate_grd("build_grdp") {
+     "icon_tab.svg",
+     "icon_refresh.svg",
+     "icon_search.svg",
++    "infra.png",
+     "open_in_new.svg",
+     "select.png",
+     "throbber_medium.svg",

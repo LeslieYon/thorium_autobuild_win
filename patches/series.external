@@ -19,8 +19,13 @@ upstream-fixes/missing-dependencies.patch
 core/inox-patchset/0001-fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-with-prunned-binaries.patch
+core/ungoogled-chromium/disable-mei-preload.patch
+core/ungoogled-chromium/disable-ai.patch
 core/ungoogled-chromium/disable-privacy-sandbox.patch
 core/ungoogled-chromium/extensions-manifestv2.patch
+core/ungoogled-chromium/build-with-wasm-rollup.patch
+core/ungoogled-chromium/remove-navigation-source-param.patch
+core/bromite/disable-fetching-field-trials.patch
 extra/ungoogled-chromium/disable-ai-search-shortcuts.patch
 extra/ungoogled-chromium/disable-download-quarantine.patch
 
@@ -46,9 +51,10 @@ ungoogled-chromium/windows/windows-fix-licenses-gn-path.patch
 ungoogled-chromium/windows/windows-fix-building-with-rust.patch
 ungoogled-chromium/windows/windows-fix-remove-unused-preferences-fields.patch
 ungoogled-chromium/windows/windows-fix-missing-includes.patch
+ungoogled-chromium/windows/windows-fix-unsupported-llvm-flags.patch
 
 # --- thorium picked cromite patches ---
 #[cromite]
 # temporary disabled bacause conflict
 # Enable-Global-Privacy-Control.patch
-Override-the-MV2-deprecation.patch
+# Override-the-MV2-deprecation.patch

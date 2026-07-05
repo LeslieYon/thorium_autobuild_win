@@ -1,0 +1,116 @@
+diff --git a/chrome/browser/ui/browser_commands.cc b/chrome/browser/ui/browser_commands.cc
+index 98184befe73cc..e8333d166923c 100644
+--- a/chrome/browser/ui/browser_commands.cc
++++ b/chrome/browser/ui/browser_commands.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -189,7 +189,6 @@
+ #include "content/public/browser/web_contents.h"
+ #include "content/public/common/content_switches.h"
+ #include "content/public/common/url_constants.h"
+-#include "content/public/common/url_utils.h"
+ #include "extensions/buildflags/buildflags.h"
+ #include "pdf/buildflags.h"
+ #include "printing/buildflags/buildflags.h"
+@@ -757,11 +756,6 @@ int GetContentRestrictions(const BrowserWindowInterface* browser) {
+     CoreTabHelper* core_tab_helper =
+         CoreTabHelper::FromWebContents(current_tab);
+     content_restrictions = core_tab_helper->content_restrictions();
+-    NavigationEntry* last_committed_entry =
+-        current_tab->GetController().GetLastCommittedEntry();
+-    if (!content::IsSavableURL(last_committed_entry->GetURL())) {
+-      content_restrictions |= CONTENT_RESTRICTION_SAVE;
+-    }
+   }
+   return content_restrictions;
+ }
+@@ -2207,8 +2201,7 @@ bool CanSavePage(const BrowserWindowInterface* browser) {
+       policy::DownloadRestriction::ALL_FILES) {
+     return false;
+   }
+-  return (browser->GetType() != BrowserWindowInterface::Type::TYPE_DEVTOOLS) &&
+-         !(GetContentRestrictions(browser) & CONTENT_RESTRICTION_SAVE);
++  return true;
+ }
+ 
+ void Print(BrowserWindowInterface* browser) {
+diff --git a/components/offline_pages/core/offline_page_model.cc b/components/offline_pages/core/offline_page_model.cc
+index cbeac3f80bd8b..55a2b4bbacbf2 100644
+--- a/components/offline_pages/core/offline_page_model.cc
++++ b/components/offline_pages/core/offline_page_model.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2016 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -21,7 +21,7 @@ OfflinePageModel::SavePageParams::~SavePageParams() = default;
+ 
+ // static
+ bool OfflinePageModel::CanSaveURL(const GURL& url) {
+-  return url.is_valid() && url.SchemeIsHTTPOrHTTPS();
++  return url.is_valid();
+ }
+ 
+ OfflinePageModel::OfflinePageModel() = default;
+diff --git a/content/common/url_schemes.cc b/content/common/url_schemes.cc
+index 225e017909b88..f2eab738b0381 100644
+--- a/content/common/url_schemes.cc
++++ b/content/common/url_schemes.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -24,13 +24,22 @@ namespace {
+ bool g_registered_url_schemes = false;
+ 
+ const char* const kDefaultSavableSchemes[] = {
++  url::kAboutScheme,
++  url::kBlobScheme,
++  url::kContentScheme,
+   url::kHttpScheme,
+   url::kHttpsScheme,
+   url::kFileScheme,
+   url::kFileSystemScheme,
++  url::kFtpScheme,
+   kChromeDevToolsScheme,
+   kChromeUIScheme,
+-  url::kDataScheme
++  url::kDataScheme,
++  url::kJavaScriptScheme,
++  url::kMailToScheme,
++  url::kWsScheme,
++  url::kWssScheme,
++  kViewSourceScheme
+ };
+ 
+ // These lists are lazily initialized below and are leaked on shutdown to
+diff --git a/content/public/common/url_utils.cc b/content/public/common/url_utils.cc
+index 5812b103a6c12..53d6130007fe1 100644
+--- a/content/public/common/url_utils.cc
++++ b/content/public/common/url_utils.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2013 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -45,11 +45,7 @@ bool HasWebUIOrigin(const url::Origin& origin) {
+ }
+ 
+ bool IsSavableURL(const GURL& url) {
+-  for (auto& scheme : GetSavableSchemes()) {
+-    if (url.SchemeIs(scheme))
+-      return true;
+-  }
+-  return false;
++  return true;
+ }
+ 
+ bool IsURLHandledByNetworkStack(const GURL& url) {

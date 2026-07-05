@@ -1,0 +1,28 @@
+diff --git a/components/bookmarks/browser/bookmark_utils.cc b/components/bookmarks/browser/bookmark_utils.cc
+index f2adc35182b40..cfe22a5142318 100644
+--- a/components/bookmarks/browser/bookmark_utils.cc
++++ b/components/bookmarks/browser/bookmark_utils.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -451,7 +451,7 @@ bool DoesBookmarkContainWords(const std::u16string& title,
+ 
+ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+   registry->RegisterBooleanPref(
+-      prefs::kShowBookmarkBar, false,
++      prefs::kShowBookmarkBar, true,
+       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+   // `BookmarkBarVisibilityState::kOnlyShowOnNtp` is equivalent to
+   // `kShowBookmarkBar` set to false.
+@@ -464,7 +464,7 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+       prefs::kShowAppsShortcutInBookmarkBar, false,
+       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+   registry->RegisterBooleanPref(
+-      prefs::kShowTabGroupsInBookmarkBar, true,
++      prefs::kShowTabGroupsInBookmarkBar, false,
+       user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
+   registry->RegisterBooleanPref(
+       prefs::kShowManagedBookmarksInBookmarkBar, true,

@@ -1,0 +1,87 @@
+diff --git a/chrome/browser/browser_features.cc b/chrome/browser/browser_features.cc
+index f775b49bab652..2e416cf7a53f0 100644
+--- a/chrome/browser/browser_features.cc
++++ b/chrome/browser/browser_features.cc
+@@ -62,6 +62,9 @@ BASE_FEATURE(kCertVerificationNetworkTime, base::FEATURE_DISABLED_BY_DEFAULT);
+ BASE_FEATURE(kClearUserDataUponProfileDestruction,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
++// Clears the main browsing data buckets when the browser exits.
++BASE_FEATURE(kClearDataOnExit, base::FEATURE_DISABLED_BY_DEFAULT);
++
+ #if BUILDFLAG(IS_LINUX)
+ // Enables usage of os_crypt_async::SecretPortalKeyProvider.  Once
+ // `kSecretPortalKeyProviderUseForEncryption` is enabled, this flag cannot be
+diff --git a/chrome/browser/browser_features.h b/chrome/browser/browser_features.h
+index 0ddd315cfb0a3..76e13c3a3e4f9 100644
+--- a/chrome/browser/browser_features.h
++++ b/chrome/browser/browser_features.h
+@@ -39,6 +39,7 @@ BASE_DECLARE_FEATURE(kBookmarkTriggerForPrefetch);
+ BASE_DECLARE_FEATURE(kCertificateTransparencyAskBeforeEnabling);
+ BASE_DECLARE_FEATURE(kCertVerificationNetworkTime);
+ BASE_DECLARE_FEATURE(kClearUserDataUponProfileDestruction);
++BASE_DECLARE_FEATURE(kClearDataOnExit);
+ 
+ #if BUILDFLAG(IS_LINUX)
+ BASE_DECLARE_FEATURE(kDbusSecretPortal);
+diff --git a/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc b/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
+index d548f5037d659..faa93b12a1497 100644
+--- a/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
++++ b/chrome/browser/browsing_data/chrome_browsing_data_lifetime_manager.cc
+@@ -19,6 +19,7 @@
+ #include "base/task/task_traits.h"
+ #include "base/values.h"
+ #include "build/build_config.h"
++#include "chrome/browser/browser_features.h"
+ #include "chrome/browser/browsing_data/chrome_browsing_data_remover_constants.h"
+ #include "chrome/browser/browsing_data/chrome_browsing_data_remover_delegate.h"
+ #include "chrome/browser/lifetime/browser_shutdown.h"
+@@ -147,6 +148,21 @@ class BrowsingDataRemoverObserver
+ #endif
+ };
+ 
++uint64_t AllOriginTypeMask() {
++  return content::BrowsingDataRemover::ORIGIN_TYPE_PROTECTED_WEB |
++         content::BrowsingDataRemover::ORIGIN_TYPE_UNPROTECTED_WEB;
++}
++
++uint64_t AllRemoveMask() {
++  return content::BrowsingDataRemover::DATA_TYPE_CACHE |
++         content::BrowsingDataRemover::DATA_TYPE_DOWNLOADS |
++         chrome_browsing_data_remover::DATA_TYPE_CONTENT_SETTINGS |
++         chrome_browsing_data_remover::DATA_TYPE_FORM_DATA |
++         chrome_browsing_data_remover::DATA_TYPE_HISTORY |
++         chrome_browsing_data_remover::DATA_TYPE_PASSWORDS |
++         chrome_browsing_data_remover::DATA_TYPE_SITE_DATA;
++}
++
+ uint64_t GetOriginTypeMask(const base::ListValue& data_types) {
+   uint64_t result = 0;
+   for (const auto& data_type : data_types) {
+@@ -328,9 +344,11 @@ void ChromeBrowsingDataLifetimeManager::ClearBrowsingDataForOnExitPolicy(
+   const base::ListValue& data_types = profile_->GetPrefs()->GetList(
+       browsing_data::prefs::kClearBrowsingDataOnExitList);
+ 
+-  if (!data_types.empty() &&
++  const bool clear_data_on_exit =
++      base::FeatureList::IsEnabled(features::kClearDataOnExit);
++  if (clear_data_on_exit || (!data_types.empty() &&
+       IsConditionSatisfiedForBrowsingDataRemoval(GetSyncTypesForPolicyPref(
+-          profile_, browsing_data::prefs::kClearBrowsingDataOnExitList))) {
++          profile_, browsing_data::prefs::kClearBrowsingDataOnExitList)))) {
+     profile_->GetPrefs()->SetBoolean(
+         browsing_data::prefs::kClearBrowsingDataOnExitDeletionPending, true);
+     auto* remover = profile_->GetBrowsingDataRemover();
+@@ -341,8 +359,10 @@ void ChromeBrowsingDataLifetimeManager::ClearBrowsingDataForOnExitPolicy(
+       DCHECK(keep_browser_alive);
+ #endif
+     remover->RemoveAndReply(base::Time(), base::Time::Max(),
+-                            GetRemoveMask(data_types),
+-                            GetOriginTypeMask(data_types),
++                            clear_data_on_exit ? AllRemoveMask()
++                                               : GetRemoveMask(data_types),
++                            clear_data_on_exit ? AllOriginTypeMask()
++                                               : GetOriginTypeMask(data_types),
+                             BrowsingDataRemoverObserver::Create(
+                                 remover, /*filterable_deletion=*/true, profile_,
+                                 keep_browser_alive));

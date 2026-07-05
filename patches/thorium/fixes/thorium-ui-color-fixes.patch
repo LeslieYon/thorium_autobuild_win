@@ -1,0 +1,45 @@
+# Thorium UI color fixes
+#
+# These hunks were previously part of thorium-ui.patch (the last 2 hunks).
+# They add color definitions that prevent placeholder red (#ff0000) in
+# colors.css output and ensure proper rendering of UI elements.
+#
+# The upstream thorium-2024-ui.patch does not include these changes yet,
+# so we keep them as a separate patch.
+
+--- a/chrome/browser/ui/color/new_tab_page_color_mixer.cc
++++ b/chrome/browser/ui/color/new_tab_page_color_mixer.cc
+@@ -399,6 +399,14 @@ void AddSearchboxColors(ui::ColorMixer& mixer, const ui::ColorProviderKey& key)
+   mixer[kColorSearchboxShadow] =
+       ui::SetAlpha(gfx::kGoogleGrey900,
+                    (dark_mode ? /* % opacity */ 0.32 : 0.28) * SK_AlphaOPAQUE);
++
++  // These searchbox selection and lens/voice icon colors are defined in the
++  // Material NTP mixer only when `kRealboxCr23Theming` is enabled, but that
++  // feature is disabled by default. Define them here unconditionally to
++  // prevent placeholder red (#ff0000) in colors.css output.
++  mixer[kColorSearchboxLensVoiceIconBackground] = {gfx::kGoogleBlue600};
++  mixer[kColorSearchboxSelectionBackground] = {kColorOmniboxSelectionBackground};
++  mixer[kColorSearchboxSelectionForeground] = {kColorOmniboxSelectionForeground};
+ }
+ 
+ }  // namespace
+@@ -641,4 +649,6 @@ void AddWebThemeNewTabPageColors(ui::ColorMixer& mixer, bool dark_mode) {
+   mixer[kColorNewTabPageActionChipDeepSearchIcon] = {
+       dark_mode ? SK_ColorWHITE : gfx::kGoogleGrey800};
+   // LINT.ThenChange(//chrome/browser/ui/color/material_new_tab_page_color_mixer.cc)
++  mixer[kColorNewTabPageModuleTabGroupsDotCyan] = {
++      kColorTabGroupTabStripFrameActiveCyan};
+ }
+--- a/chrome/browser/ui/color/chrome_color_mixer.cc
++++ b/chrome/browser/ui/color/chrome_color_mixer.cc
+@@ -1095,6 +1095,10 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
+                           kColorReadAnythingBackgroundHighContrast,
+                           color_utils::kMinimumVisibleContrastRatio);
++  mixer[kColorReadAnythingFocusRingBackgroundLowContrast] =
++      ui::PickGoogleColor(gfx::kGoogleBlue500,
++                          kColorReadAnythingBackgroundLowContrast,
++                          color_utils::kMinimumVisibleContrastRatio);
+   mixer[kColorReadAnythingFocusRingBackgroundLowContrastLight] =
+       ui::PickGoogleColor(gfx::kGoogleBlue500,
+                           kColorReadAnythingBackgroundLowContrastLight,

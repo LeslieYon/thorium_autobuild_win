@@ -1,35 +1,16 @@
-author: Andres Salomon <dilinger@debian.org>
-description: Use conditional compilation for AtomicQueueSerial lock-free check.
- static_assert on 64-bit/ARM (always lock-free), runtime ASSERT on 32-bit x86.
-
-The upstream commit ce8ce6f81eff replaced runtime ASSERT with static_assert in
-the constexpr constructor of AtomicQueueSerial, but this fails on i386 (32-bit
-x86) because std::atomic<uint64_t>::is_always_lock_free is false there.
-
-This patch restores the constexpr constructor but uses conditional compilation:
-- On 64-bit x86/ARM and ARM64: static_assert at compile time
-- On 32-bit x86: runtime ASSERT (delegates to CPU instruction check)
-
-# This goes in //chromium/src/third_party/angle/src
-
+diff --git a/src/libANGLE/renderer/serial_utils.h b/src/libANGLE/renderer/serial_utils.h
+index beeb7c8068..60e87d96c6 100644
 --- a/third_party/angle/src/libANGLE/renderer/serial_utils.h
 +++ b/third_party/angle/src/libANGLE/renderer/serial_utils.h
-@@ -119,6 +119,14 @@ class Serial final
+@@ -120,6 +120,7 @@ class Serial final
  class alignas(8) AtomicQueueSerial final
  {
    public:
-+    constexpr AtomicQueueSerial() : mValue(kInvalid)
-+    {
-+#if defined(__i386__) || (defined(_M_IX86) && !defined(_M_X64))
-+        ASSERT(mValue.is_lock_free());
-+#else
-+        static_assert(std::atomic<uint64_t>::is_always_lock_free);
-+#endif
-+    }
++    constexpr AtomicQueueSerial() : mValue(kInvalid) { ASSERT(mValue.is_lock_free()); }
      AtomicQueueSerial &operator=(const Serial &other)
      {
          mValue.store(other.mValue, std::memory_order_release);
-@@ -127,8 +135,8 @@ class alignas(8) AtomicQueueSerial final
+@@ -128,8 +129,8 @@ class alignas(8) AtomicQueueSerial final
      Serial getSerial() const { return Serial(mValue.load(std::memory_order_consume)); }
  
    private:
@@ -39,4 +20,3 @@ This patch restores the constexpr constructor but uses conditional compilation:
  };
  
  // Used as default/initial serial
-

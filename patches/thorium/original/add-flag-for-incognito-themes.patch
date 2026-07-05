@@ -1,0 +1,126 @@
+diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
+index edab63d18ffd0..d11d5757b6c9c 100644
+--- a/chrome/browser/chrome_content_browser_client.cc
++++ b/chrome/browser/chrome_content_browser_client.cc
+@@ -4153,9 +4153,12 @@ GetPreferredColorScheme(const WebPreferences& web_prefs,
+     preferred_root_scrollbar_color_scheme = preferred_color_scheme;
+   }
+ #else  // !BUILDFLAG(IS_ANDROID)
++  const bool incognito_follows_browser_theme =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "enable-incognito-themes");
+   if (Profile::FromBrowserContext(web_contents->GetBrowserContext())
+           ->IsIncognitoProfile() &&
+-      !security_principal.IsWebUI()) {
++      !security_principal.IsWebUI() && !incognito_follows_browser_theme) {
+     // Incognito contents follow the device color mode.
+     preferred_color_scheme = ToBlinkPreferredColorScheme(
+         ui::NativeTheme::GetInstanceForWeb()->preferred_color_scheme());
+diff --git a/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab.css b/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab.css
+index 9c5ca7a283cba..0ca655b4a6908 100644
+--- a/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab.css
++++ b/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab.css
+@@ -15,7 +15,7 @@ body {
+ /** Typography -------------------------------------------------------------- */
+ 
+ .content {
+-  color: rgb(232, 234, 237);  /* --google-grey-200 */
++  color: var(--incognito-ntp-text-color, rgb(232, 234, 237));
+   font-size: calc(100% - 2px);
+   line-height: calc(100% + 6px);
+   min-width: 240px;
+@@ -28,7 +28,7 @@ h1 {
+ }
+ 
+ em {
+-  color: white;
++  color: var(--incognito-ntp-title-color, white);
+   font-style: normal;
+ }
+ 
+@@ -96,7 +96,7 @@ em {
+ 
+ #cookie-controls {
+   align-items: center;
+-  background-color: rgb(40, 40, 40); /* var(--neutral-container) */
++  background-color: var(--incognito-ntp-cookie-controls-background, rgb(40, 40, 40));
+   border-radius: 4px;
+   box-sizing: border-box;
+   display: flex;
+@@ -119,7 +119,7 @@ em {
+ }
+ 
+ #cookie-controls-header svg {
+-  fill: rgba(234, 240, 249, 1);
++  fill: var(--incognito-ntp-cookie-controls-icon-color, rgba(234, 240, 249, 1));
+   height: 20px;
+   margin-right: 8px;
+   vertical-align: top;
+@@ -133,7 +133,7 @@ em {
+ 
+ .learn-more-button,
+ #cookie-controls-description a {
+-  color: rgb(138, 180, 248);
++  color: var(--incognito-ntp-link-color, rgb(138, 180, 248));
+ }
+ 
+ /** Layout ------------------------------------------------------------------ */
+diff --git a/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab_theme.css b/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab_theme.css
+index 6d7b24b67ff1f..ff0250adf59a5 100644
+--- a/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab_theme.css
++++ b/chrome/browser/resources/new_tab_page_incognito_guest/incognito_tab_theme.css
+@@ -8,6 +8,11 @@ html {
+   background-position: $i18n{backgroundPosition};
+   background-repeat: $i18n{backgroundTiling};
+   height: 100%;
++  --incognito-ntp-cookie-controls-background: $i18n{colorCookieControlsBackground};
++  --incognito-ntp-cookie-controls-icon-color: $i18n{colorCookieControlsIcon};
++  --incognito-ntp-link-color: rgb($i18n{colorLink});
++  --incognito-ntp-text-color: $i18n{colorText};
++  --incognito-ntp-title-color: $i18n{colorTitle};
+   overflow: auto;
+ }
+ 
+diff --git a/chrome/browser/ui/views/frame/browser_widget.cc b/chrome/browser/ui/views/frame/browser_widget.cc
+index 576e71e230c5e..ef229e5ac1fd2 100644
+--- a/chrome/browser/ui/views/frame/browser_widget.cc
++++ b/chrome/browser/ui/views/frame/browser_widget.cc
+@@ -608,5 +608,10 @@ bool BrowserWidget::RegenerateFrameOnThemeChange(
+ }
+ 
+ bool BrowserWidget::IsIncognitoBrowser() const {
++  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "enable-incognito-themes")) {
++    return false;
++  }
++
+   return browser_view_->browser()->profile()->IsIncognitoProfile();
+ }
+diff --git a/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc b/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
+index 0341bc90744a3..93c8a5a48d3a7 100644
+--- a/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
++++ b/chrome/browser/ui/webui/ntp/ntp_resource_cache.cc
+@@ -371,8 +371,22 @@ void NTPResourceCache::CreateNewTabIncognitoCSS(
+ 
+   // Colors.
+   const ui::ColorProvider& cp = web_contents->GetColorProvider();
++  SkColor color_background =
++      GetThemeColor(native_theme, cp, kColorNewTabPageBackground);
++  SkColor color_text = GetThemeColor(native_theme, cp, kColorNewTabPageText);
++  SkColor color_text_light =
++      GetThemeColor(native_theme, cp, kColorNewTabPageTextLight);
++  const bool dark_background = color_utils::IsDark(color_background);
+   substitutions["colorBackground"] = color_utils::SkColorToRgbaString(
+-      GetThemeColor(native_theme, cp, kColorNewTabPageBackground));
++      color_background);
++  substitutions["colorText"] = color_utils::SkColorToRgbaString(color_text);
++  substitutions["colorTitle"] = color_utils::SkColorToRgbaString(color_text);
++  substitutions["colorLink"] = color_utils::SkColorToRgbString(
++      GetThemeColor(native_theme, cp, kColorNewTabPageLink));
++  substitutions["colorCookieControlsBackground"] =
++      dark_background ? "rgb(40, 40, 40)" : "rgb(241, 243, 244)";
++  substitutions["colorCookieControlsIcon"] =
++      color_utils::SkColorToRgbaString(color_text_light);
+   substitutions["backgroundPosition"] = GetNewTabBackgroundPositionCSS(tp);
+   substitutions["backgroundTiling"] = GetNewTabBackgroundTilingCSS(tp);
+ 

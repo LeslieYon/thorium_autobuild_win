@@ -1,0 +1,127 @@
+diff --git a/chrome/common/channel_info_posix.cc b/chrome/common/channel_info_posix.cc
+index f6bcb3cc8e8d6..b0bc8c2a0db93 100644
+--- a/chrome/common/channel_info_posix.cc
++++ b/chrome/common/channel_info_posix.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2011 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -148,7 +148,7 @@ std::string GetDesktopName(base::Environment* env) {
+   if (name.has_value() && !name.value().empty()) {
+     return name.value();
+   }
+-  return "chromium-browser.desktop";
++  return "thorium-browser.desktop";
+ #endif
+ }
+ #endif  // BUILDFLAG(IS_LINUX)
+diff --git a/chrome/common/chrome_constants.cc b/chrome/common/chrome_constants.cc
+index 6e30ef11474c4..904dc62c7bcb5 100644
+--- a/chrome/common/chrome_constants.cc
++++ b/chrome/common/chrome_constants.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -32,9 +32,9 @@ const char kChromeVersion[] = CHROME_VERSION_STRING;
+ 
+ #if BUILDFLAG(IS_WIN)
+ const base::FilePath::CharType kBrowserProcessExecutableName[] =
+-    FPL("chrome.exe");
++    FPL("thorium.exe");
+ const base::FilePath::CharType kHelperProcessExecutableName[] =
+-    FPL("chrome.exe");
++    FPL("thorium.exe");
+ #elif BUILDFLAG(IS_MAC)
+ const base::FilePath::CharType kBrowserProcessExecutableName[] =
+     FPL(PRODUCT_FULLNAME_STRING);
+@@ -42,11 +42,11 @@ const base::FilePath::CharType kHelperProcessExecutableName[] =
+     FPL(PRODUCT_FULLNAME_STRING " Helper");
+ #elif BUILDFLAG(IS_ANDROID)
+ // NOTE: Keep it synced with the process names defined in AndroidManifest.xml.
+-const base::FilePath::CharType kBrowserProcessExecutableName[] = FPL("chrome");
++const base::FilePath::CharType kBrowserProcessExecutableName[] = FPL("thorium");
+ const base::FilePath::CharType kHelperProcessExecutableName[] =
+     FPL("sandboxed_process");
+ #elif BUILDFLAG(IS_POSIX)
+-const base::FilePath::CharType kBrowserProcessExecutableName[] = FPL("chrome");
++const base::FilePath::CharType kBrowserProcessExecutableName[] = FPL("thorium");
+ // Helper processes end up with a name of "exe" due to execing via
+ // /proc/self/exe.  See bug 22703.
+ const base::FilePath::CharType kHelperProcessExecutableName[] = FPL("exe");
+@@ -54,9 +54,9 @@ const base::FilePath::CharType kHelperProcessExecutableName[] = FPL("exe");
+ 
+ #if BUILDFLAG(IS_WIN)
+ const base::FilePath::CharType kBrowserProcessExecutablePath[] =
+-    FPL("chrome.exe");
++    FPL("thorium.exe");
+ const base::FilePath::CharType kHelperProcessExecutablePath[] =
+-    FPL("chrome.exe");
++    FPL("thorium.exe");
+ #elif BUILDFLAG(IS_MAC)
+ const base::FilePath::CharType kBrowserProcessExecutablePath[] =
+     FPL(PRODUCT_FULLNAME_STRING ".app/Contents/MacOS/" PRODUCT_FULLNAME_STRING);
+@@ -67,16 +67,16 @@ const base::FilePath::CharType
+ const base::FilePath::CharType kGoogleChromeBrowserProcessExecutablePath[] =
+     FPL("Google Chrome.app/Contents/MacOS/Google Chrome");
+ const base::FilePath::CharType kChromiumBrowserProcessExecutablePath[] =
+-    FPL("Chromium.app/Contents/MacOS/Chromium");
++    FPL("Thorium.app/Contents/MacOS/Thorium");
+ const base::FilePath::CharType kHelperProcessExecutablePath[] =
+     FPL(PRODUCT_FULLNAME_STRING
+         " Helper.app/Contents/MacOS/" PRODUCT_FULLNAME_STRING " Helper");
+ #elif BUILDFLAG(IS_ANDROID)
+-const base::FilePath::CharType kBrowserProcessExecutablePath[] = FPL("chrome");
+-const base::FilePath::CharType kHelperProcessExecutablePath[] = FPL("chrome");
++const base::FilePath::CharType kBrowserProcessExecutablePath[] = FPL("thorium");
++const base::FilePath::CharType kHelperProcessExecutablePath[] = FPL("thorium");
+ #elif BUILDFLAG(IS_POSIX)
+-const base::FilePath::CharType kBrowserProcessExecutablePath[] = FPL("chrome");
+-const base::FilePath::CharType kHelperProcessExecutablePath[] = FPL("chrome");
++const base::FilePath::CharType kBrowserProcessExecutablePath[] = FPL("thorium");
++const base::FilePath::CharType kHelperProcessExecutablePath[] = FPL("thorium");
+ #endif  // OS_*
+ 
+ #if BUILDFLAG(IS_MAC)
+diff --git a/chrome/common/chrome_paths_linux.cc b/chrome/common/chrome_paths_linux.cc
+index 5575c049b222f..998c3f3bb2b05 100644
+--- a/chrome/common/chrome_paths_linux.cc
++++ b/chrome/common/chrome_paths_linux.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -95,7 +95,7 @@ bool GetDefaultUserDataDirectory(base::FilePath* result) {
+ #elif BUILDFLAG(GOOGLE_CHROME_BRANDING)
+   std::string data_dir_basename = "google-chrome";
+ #else
+-  std::string data_dir_basename = "chromium";
++  std::string data_dir_basename = "thorium";
+ #endif
+   *result = config_dir.Append(data_dir_basename + GetChannelSuffixForDataDir());
+   return true;
+diff --git a/chrome/common/chrome_paths_mac.mm b/chrome/common/chrome_paths_mac.mm
+index 6829c9cb92c22..b351e495f9e28 100644
+--- a/chrome/common/chrome_paths_mac.mm
++++ b/chrome/common/chrome_paths_mac.mm
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -37,7 +37,7 @@ char* ProductDirNameForBundle(NSBundle* chrome_bundle) {
+ #elif BUILDFLAG(GOOGLE_CHROME_BRANDING)
+       product_dir_name = "Google/Chrome";
+ #else
+-      product_dir_name = "Chromium";
++      product_dir_name = "Thorium";
+ #endif
+     }
+ 

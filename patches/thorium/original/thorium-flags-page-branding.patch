@@ -1,0 +1,60 @@
+diff --git a/components/webui/flags/resources/app.css b/components/webui/flags/resources/app.css
+index 51265bbe20ad6..d656f1ed1fe12 100644
+--- a/components/webui/flags/resources/app.css
++++ b/components/webui/flags/resources/app.css
+@@ -70,6 +70,20 @@
+   }
+ }
+ 
++.logo {
++  width: 48px;
++  height: 48px;
++  float: left;
++  background-repeat: no-repeat;
++  background-position: center;
++  line-height: 48px;
++  margin-right: 12px;
++}
++
++.logo2 {
++  line-height: 48px;
++}
++
+ a {
+   color: var(--link-color);
+   font-size: .8125rem;
+@@ -291,7 +305,7 @@ cr-tabs {
+   box-sizing: border-box;
+   left: 0;
+   opacity: 0;
+-  padding: 16px;
++  padding: 2px;
+   position: fixed;
+   transform: translateY(300px);
+   transition: all 225ms var(--ease-in-out);
+diff --git a/components/webui/flags/resources/app.html.ts b/components/webui/flags/resources/app.html.ts
+index 1fc8aca6e7b14..731e00af29ac7 100644
+--- a/components/webui/flags/resources/app.html.ts
++++ b/components/webui/flags/resources/app.html.ts
+@@ -1,4 +1,4 @@
+-// Copyright 2024 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -35,10 +35,13 @@ export function getHtml(this: AppElement) {
+ <div id="body-container">
+   <div id="flagsTemplate">
+     <div class="flex-container">
+-      <div class="flex">
++      <div class="flex logo2">
++        <div class="logo">
++          <img width="48" height="48" title="Hazard Icon" alt="hazard.svg" src="chrome://resources/images/hazard.svg">
++        </div>
+         <h1 class="section-header-title">$i18n{heading}</h1>
+       </div>
+-      <span id="version" class="flex">$i18n{version}</span>
++      <span title="Thorium Version" id="version" class="flex">$i18n{version}</span>
+     </div>
+     <div class="blurb-container">
+       <span class="blurb-warning">$i18n{page-warning}</span>

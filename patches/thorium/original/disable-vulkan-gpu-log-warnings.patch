@@ -1,0 +1,29 @@
+diff --git a/content/common/gpu_pre_sandbox_hook_linux.cc b/content/common/gpu_pre_sandbox_hook_linux.cc
+index 2e53794fa3374..db6ea87b69953 100644
+--- a/content/common/gpu_pre_sandbox_hook_linux.cc
++++ b/content/common/gpu_pre_sandbox_hook_linux.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2017 The Chromium Authors
++// Copyright 2026 The Chromium Authors, RobRich999, and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -262,6 +262,18 @@ void AddAmdGpuPermissions(std::vector<BrokerFilePermission>* permissions) {
+       "/usr/lib64/dri/r300_dri.so",
+       "/usr/lib64/dri/r600_dri.so",
+       "/usr/lib64/dri/radeonsi_dri.so",
++      // GPU Log Warning Workaround
++      "/usr/lib/libEGL.so.1",
++      "/usr/lib/libGLESv2.so.2",
++      "/usr/lib/libglapi.so.0",
++      "/usr/lib/dri/r300_dri.so",
++      "/usr/lib/dri/r600_dri.so",
++      "/usr/lib/dri/radeonsi_dri.so",
++      "/usr/lib/libvulkan_radeon.so",
++      "/usr/share/vulkan/icd.d",
++      "/usr/share/vulkan/icd.d/radeon_icd.x86_64.json",
++      "/etc/vulkan/icd.d",
++      "/etc/vulkan/icd.d/radeon_icd.x86_64.json",
+       // Allow libglvnd files and libs.
+       "/usr/share/glvnd/egl_vendor.d",
+       "/usr/share/glvnd/egl_vendor.d/50_mesa.json",

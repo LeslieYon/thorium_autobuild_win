@@ -1,0 +1,19 @@
+diff --git a/chrome/browser/net/profile_network_context_service.cc b/chrome/browser/net/profile_network_context_service.cc
+index 005f3806409b5..8776787d49b6a 100644
+--- a/chrome/browser/net/profile_network_context_service.cc
++++ b/chrome/browser/net/profile_network_context_service.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2017 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -647,7 +647,7 @@ void ProfileNetworkContextService::ConfigureNetworkContextParams(
+ void ProfileNetworkContextService::RegisterProfilePrefs(
+     user_prefs::PrefRegistrySyncable* registry) {
+   registry->RegisterBooleanPref(embedder_support::kAlternateErrorPagesEnabled,
+-                                true);
++                                false);
+   registry->RegisterBooleanPref(prefs::kQuicAllowed, true);
+   registry->RegisterBooleanPref(prefs::kGloballyScopeHTTPAuthCacheEnabled,
+                                 false);

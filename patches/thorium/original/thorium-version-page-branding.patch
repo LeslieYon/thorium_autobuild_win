@@ -1,0 +1,104 @@
+diff --git a/components/webui/version/resources/about_version.css b/components/webui/version/resources/about_version.css
+index 474768656bdae..0c107cb134ecb 100644
+--- a/components/webui/version/resources/about_version.css
++++ b/components/webui/version/resources/about_version.css
+@@ -1,4 +1,4 @@
+-/* Copyright 2012 The Chromium Authors
++/* Copyright 2026 The Chromium Authors and Alex313031
+  * Use of this source code is governed by a BSD-style license that can be
+  * found in the LICENSE file. */
+ 
+@@ -60,7 +60,7 @@ body {
+   float: right;
+   margin-inline-start: 40px;
+   text-align: end;
+-  width: 180px;
++  width: 248px;
+ }
+ 
+ #company {
+@@ -73,6 +73,12 @@ body {
+   text-align: end;
+ }
+ 
++#thor_version,
++#thor_authors {
++  font-size: 1.0em;
++  text-align: end;
++}
++
+ #useragent {
+   font-family: monospace;
+ }
+diff --git a/components/webui/version/resources/about_version.html b/components/webui/version/resources/about_version.html
+index 3b689206909bf..b4eeb06d4f83e 100644
+--- a/components/webui/version/resources/about_version.html
++++ b/components/webui/version/resources/about_version.html
+@@ -3,6 +3,7 @@
+ <!--
+ about:version template page
+ -->
++<!-- Copyright (c) 2026 Alex313031 -->
+ 
+ <html id="t" dir="$i18n{textdirection}" lang="$i18n{language}">
+   <head>
+@@ -31,7 +32,7 @@ about:version template page
+       <div id="logo">
+ <if expr="not is_android and not is_ios">
+         <!-- Version for themes. -->
+-        <picture>
++        <picture title="Thorium Banner">
+           <source srcset="chrome://theme/IDR_PRODUCT_LOGO_WHITE,
+                           chrome://theme/IDR_PRODUCT_LOGO_WHITE@2x 2x"
+                   media="(prefers-color-scheme: dark)">
+@@ -42,14 +43,39 @@ about:version template page
+         </picture>
+ </if>
+ <if expr="is_ios or is_android">
+-        <picture>
++        <picture title="Thorium Banner">
+           <source srcset="images/product_logo_white.png" media="(prefers-color-scheme: dark)">
+           <source srcset="images/product_logo.png" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)">
+           <img alt="$i18n{logo_alt_text}" src="images/product_logo.png">
+         </picture>
+ </if>
+-        <div id="company">$i18n{company}</div>
++        <div id="company"><a target="_blank" rel="noopener" href="https://github.com/Alex313031/thorium">$i18n{company}</a></div>
+         <div id="copyright">$i18n{copyright}</div>
++<if expr="not is_android and not is_ios">
++        <br/>
++          <div id="thor_version"><a target="_self" rel="noopener" href="chrome://resources/text/thorium_version.txt">THORIUM_VERSION.txt</a></div>
++          <div id="thor_authors"><a target="_self" rel="noopener" href="chrome://authors/">AUTHORS.txt</a></div>
++        <br/>
++        <!-- Thorium Mascot. -->
++        <picture title="Thorium Mascot">
++          <source srcset="chrome://theme/IDR_PRODUCT_MASCOT,
++                          chrome://theme/IDR_PRODUCT_MASCOT@2x 2x"
++                  media="(prefers-color-scheme: dark)">
++          <source srcset="chrome://theme/IDR_PRODUCT_MASCOT,
++                          chrome://theme/IDR_PRODUCT_MASCOT@2x 2x"
++                  media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)">
++          <img alt="Thorium Mascot" src="chrome://theme/IDR_PRODUCT_MASCOT">
++        </picture>
++</if>
++<if expr="is_ios or is_android">
++        <br/>
++        <!-- Thorium Mascot. -->
++        <picture title="Thorium Mascot">
++          <source srcset="images/thorium_mascot.png" media="(prefers-color-scheme: dark)">
++          <source srcset="images/thorium_mascot.png" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)">
++          <img alt="Thorium Mascot" src="images/thorium_mascot.png">
++        </picture>
++</if>
+       </div>
+       <table id="inner" cellpadding="0" cellspacing="0" border="0">
+         <tr><td class="label">$i18n{application_label}</td>
+@@ -63,7 +89,7 @@ about:version template page
+               <span>$i18n{update_cohort_name}</span>
+   </if>
+             </span>
+-            <button id="copy-to-clipboard" aria-label="$i18n{copy_label}">
++            <button id="copy-to-clipboard" title="$i18n{copy_label}" aria-label="$i18n{copy_label}">
+               <div id="copy-to-clipboard-icon"></div>
+             </button>
+           </td>

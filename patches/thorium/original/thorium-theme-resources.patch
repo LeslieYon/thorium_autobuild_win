@@ -1,0 +1,54 @@
+diff --git a/chrome/app/theme/theme_resources.grd b/chrome/app/theme/theme_resources.grd
+index 3d795c9030811..ddc44638de809 100644
+--- a/chrome/app/theme/theme_resources.grd
++++ b/chrome/app/theme/theme_resources.grd
+@@ -163,7 +163,6 @@
+       </if>
+       <structure type="chrome_scaled_image" name="IDR_PLUGINS_FAVICON" file="common/favicon_plugins.png" />
+       <structure type="chrome_scaled_image" name="IDR_PRERENDER" file="common/prerender_succeed_icon.png" />
+-      <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/product_logo_32.png" />
+       <if expr="not is_android">
+           <structure type="chrome_scaled_image" name="IDR_PRICE_TRACKING_ON_IOS_ICON" file="common/price_tracking_on_ios.png" />
+       </if>
+@@ -172,11 +171,13 @@
+           <if expr="is_linux">
+             <then>
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/linux/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/linux/product_logo_32.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_BETA" file="${branding_path_component}/linux/product_logo_32_beta.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_DEV" file="${branding_path_component}/linux/product_logo_32_dev.png" />
+             </then>
+             <else> <!-- not is_linux -->
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/product_logo_32.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_BETA" file="${branding_path_component}/product_logo_32_beta.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32_DEV" file="${branding_path_component}/product_logo_32_dev.png" />
+             </else>
+@@ -193,9 +194,11 @@
+           <if expr="is_linux">
+             <then>
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/linux/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/linux/product_logo_32.png" />
+             </then>
+             <else>
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_16" file="${branding_path_component}/product_logo_16.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_32" file="${branding_path_component}/product_logo_32.png" />
+             </else>
+           </if> <!-- is_linux -->
+           <if expr="_is_chrome_for_testing_branded">
+@@ -206,6 +209,15 @@
+             <else> <!-- not _is_chrome_for_testing_branded -->
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_NAME_22" file="${branding_path_component}/product_logo_name_22.png" />
+               <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_NAME_22_WHITE" file="${branding_path_component}/product_logo_name_22_white.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_MASCOT" file="chromium/thorium_mascot.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_NETERROR_FAVICON" file="chromium/dino_favicon.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_ROBOT" file="chromium/technical_error.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_AI_CHROME" file="chromium/ai_chrome.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_CHROMIUM_BLANK" file="chromium/chromium_blank.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_CHROMIUM_QUESTION" file="chromium/chromium_question.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_THORIUM_ATOMIC" file="chromium/thorium_atomic.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_THORIUM_ELEMENT" file="chromium/thorium_element.png" />
++              <structure type="chrome_scaled_image" name="IDR_PRODUCT_THORIUM_GUY" file="chromium/thorium_guy.png" />
+             </else>
+           </if> <!-- _is_chrome_for_testing_branded -->
+         </else>

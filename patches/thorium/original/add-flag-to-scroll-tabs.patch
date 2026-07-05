@@ -1,0 +1,85 @@
+diff --git a/chrome/app/chrome_main_delegate.cc b/chrome/app/chrome_main_delegate.cc
+index e82004e05590d..8f9a26be9c429 100644
+--- a/chrome/app/chrome_main_delegate.cc
++++ b/chrome/app/chrome_main_delegate.cc
+@@ -716,6 +716,15 @@ void InitLogging(const std::string& process_type) {
+                  << chrome::kChromeVersion << " (not a warning)";
+     LOG(WARNING) << "In Loving Memory of Linda Louise Frick: Grandma, Mother, and Sister.";
+   }
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN)
++  static const bool is_forced_tab_scroll =
++      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
++          "scroll-tabs") == "always";
++  if (is_forced_tab_scroll) {
++    LOG(WARNING) << "Warning: chrome://flags#scroll-tabs is enabled on this non-Linux machine. "
++                 << "Bugs are likely and should be reported to Alex313031.";
++  }
++#endif
+ }
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
+diff --git a/chrome/browser/ui/views/frame/browser_root_view.cc b/chrome/browser/ui/views/frame/browser_root_view.cc
+index 47d7e467d9ddd..d90e8776294b6 100644
+--- a/chrome/browser/ui/views/frame/browser_root_view.cc
++++ b/chrome/browser/ui/views/frame/browser_root_view.cc
+@@ -12,6 +12,7 @@
+ #include <vector>
+ 
+ #include "base/check_op.h"
++#include "base/command_line.h"
+ #include "base/containers/adapters.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+@@ -177,6 +178,19 @@ DragOperation GetDropEffect(const ui::DropTargetEvent& event) {
+   return DragOperation::kMove;
+ }
+ 
++bool ShouldScrollChangesTab() {
++  const std::string flag_value =
++      base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
++          "scroll-tabs");
++
++  if (flag_value == "always") {
++    return true;
++  } else if (flag_value == "never") {
++    return false;
++  }
++  return browser_defaults::kScrollEventChangesTab;
++}
++
+ }  // namespace
+ 
+ BrowserRootView::DropInfo::DropInfo() = default;
+@@ -189,7 +203,9 @@ BrowserRootView::DropInfo::~DropInfo() {
+ 
+ BrowserRootView::BrowserRootView(BrowserView* browser_view,
+                                  views::Widget* widget)
+-    : views::internal::RootView(widget), browser_view_(browser_view) {}
++    : views::internal::RootView(widget), browser_view_(browser_view) {
++  scroll_event_changes_tab_ = ShouldScrollChangesTab();
++}
+ 
+ BrowserRootView::~BrowserRootView() {
+   // It's possible to destroy the browser while a drop is active.  In this case,
+@@ -331,7 +347,7 @@ bool BrowserRootView::OnMouseWheel(const ui::MouseWheelEvent& event) {
+ 
+   // Scroll-event-changes-tab is incompatible with vertical tabstrip, so
+   // disable it if the latter feature is enabled.
+-  if (browser_defaults::kScrollEventChangesTab &&
++  if (scroll_event_changes_tab_ &&
+       !browser_view_->ShouldDrawVerticalTabStrip()) {
+     // Switch to the left/right tab if the wheel-scroll happens over the
+     // tabstrip, or the empty space beside the tabstrip.
+diff --git a/chrome/browser/ui/views/frame/browser_root_view.h b/chrome/browser/ui/views/frame/browser_root_view.h
+index 6bff662b1f477..2ab3df31a65e9 100644
+--- a/chrome/browser/ui/views/frame/browser_root_view.h
++++ b/chrome/browser/ui/views/frame/browser_root_view.h
+@@ -158,6 +158,8 @@ class BrowserRootView : public views::internal::RootView {
+   int scroll_remainder_x_ = 0;
+   int scroll_remainder_y_ = 0;
+ 
++  bool scroll_event_changes_tab_ = false;
++
+   std::unique_ptr<DropInfo> drop_info_;
+ 
+   base::OnceClosure on_filtering_complete_closure_;

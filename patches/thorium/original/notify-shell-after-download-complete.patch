@@ -1,0 +1,58 @@
+diff --git a/components/download/internal/common/download_item_impl.cc b/components/download/internal/common/download_item_impl.cc
+index a9c5c3de9fa07..d6e3b8704d900 100644
+--- a/components/download/internal/common/download_item_impl.cc
++++ b/components/download/internal/common/download_item_impl.cc
+@@ -46,6 +46,10 @@
+ #include "base/trace_event/trace_event.h"
+ #include "base/uuid.h"
+ #include "build/build_config.h"
++#if BUILDFLAG(IS_WIN)
++#include <shlobj.h>
++#endif
++
+ #include "components/download/internal/common/download_job_impl.h"
+ #include "components/download/internal/common/parallel_download_utils.h"
+ #include "components/download/public/common/download_danger_type.h"
+@@ -118,6 +122,21 @@ void DownloadFileCancel(std::unique_ptr<DownloadFile> download_file) {
+   download_file->Cancel();
+ }
+ 
++#if BUILDFLAG(IS_WIN)
++void NotifyShellOfCompletedDownload(const base::FilePath& full_path,
++                                    bool path_changed) {
++  SHChangeNotify(path_changed ? SHCNE_CREATE : SHCNE_UPDATEITEM,
++                 SHCNF_PATH | SHCNF_FLUSHNOWAIT,
++                 full_path.value().c_str(), nullptr);
++
++  base::FilePath parent_dir = full_path.DirName();
++  if (!parent_dir.empty()) {
++    SHChangeNotify(SHCNE_UPDATEDIR, SHCNF_PATH | SHCNF_FLUSHNOWAIT,
++                   parent_dir.value().c_str(), nullptr);
++  }
++}
++#endif  // BUILDFLAG(IS_WIN)
++
+ // Most of the cancellation pathways behave the same whether the cancellation
+ // was initiated by ther user (CANCELED) or initiated due to browser context
+ // shutdown (SHUTDOWN).
+@@ -2067,7 +2086,8 @@ void DownloadItemImpl::OnDownloadRenamedToFinalName(
+ 
+   DCHECK_EQ(GetTargetFilePath(), full_path);
+ 
+-  if (full_path != GetFullPath()) {
++  bool full_path_changed = full_path != GetFullPath();
++  if (full_path_changed) {
+     // full_path is now the current and target file path.
+     DCHECK(!full_path.empty());
+     SetFullPath(full_path);
+@@ -2081,6 +2101,10 @@ void DownloadItemImpl::OnDownloadRenamedToFinalName(
+   DCHECK(download_file_);
+   ReleaseDownloadFile(false);
+ 
++#if BUILDFLAG(IS_WIN)
++  NotifyShellOfCompletedDownload(full_path, full_path_changed);
++#endif
++
+   // We're not completely done with the download item yet, but at this
+   // point we're committed to complete the download.  Cancels (or Interrupts,
+   // though it's not clear how they could happen) after this point will be

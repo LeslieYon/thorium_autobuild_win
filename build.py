@@ -66,8 +66,8 @@ sys.path.pop(0)
 if str(_ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(_ROOT_DIR))
 
-from patch_scripts import sync_brand_strings
 from patch_scripts import extract_safebrowsing_patches
+from patch_scripts.grd_rebase import sync_grd_strings
 
 uc_patches: Any = _uc_patches
 
@@ -475,18 +475,41 @@ def _run_safe_browsing_patch_extraction(source_tree):
 
 
 def _sync_brand_strings(source_tree):
-    """Sync brand string substitutions in GRD/GRDP -> XTB translation files.
+    """Sync brand strings in GRD/GRDP -> XTB translation files.
 
-    Phase 1: apply brand substitutions directly to GRD/GRDP files.
-    Phase 2: update XTB translation files with new translation IDs.
+    Phase 1: apply brand substitutions to GRD/GRDP files using
+             file_allowlist.csv and auto-discovery.
+    Phase 2: update XTB translation files with new translation IDs,
+             with conflict detection and missing translation reporting.
 
-    This runs after all patches have been applied so that Thorium's brand
-    strings (replacements in patches/thorium/branding/) take effect.
+    This runs after all patches have been applied.  Uses the config-driven
+    approach in patch_scripts/grd_rebase/.
     """
+    from pathlib import Path
+    grd_rebase_dir = Path(__file__).resolve().parent / 'patch_scripts' / 'grd_rebase'
+    config_dir = grd_rebase_dir / 'config'
+
+    file_allowlist = config_dir / 'file_allowlist.csv'
+    message_allowlist = config_dir / 'message_allowlist.csv'
+    feature_ownership = config_dir / 'feature_patch_message_ownership.csv'
+
+    if not file_allowlist.is_file() or not message_allowlist.is_file():
+        get_logger().warning(
+            'String sync config not found at %s; skipping', config_dir
+        )
+        return
+
     get_logger().info('Syncing brand strings in GRD/GRDP -> XTB files...')
     try:
-        sync_brand_strings.sync_brand_strings(source_tree, dry_run=False)
+        sync_grd_strings.main([
+            str(Path(source_tree).resolve()),
+            '--file-allowlist', str(file_allowlist),
+            '--message-allowlist', str(message_allowlist),
+            '--feature-message-ownership', str(feature_ownership),
+        ])
         get_logger().info('Brand string sync completed.')
+    except SystemExit:
+        pass  # main() calls sys.exit(0) on success
     except Exception as exc:
         get_logger().warning('Brand string sync failed (non-fatal): %s', exc)
 

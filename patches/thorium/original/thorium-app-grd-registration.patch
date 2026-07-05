@@ -1,0 +1,25 @@
+diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
+index 779262fae00af..2c6afd4602195 100644
+--- a/chrome/app/generated_resources.grd
++++ b/chrome/app/generated_resources.grd
+@@ -277,6 +277,9 @@ are declared in tools/grit/grit_args.gni.
+   <release seq="1">
+     <!-- IMPORTANT: .grdp files must be in the same directory as this file -->
+     <messages fallback_to_english="true">
++      <!-- Thorium Browser specific strings -->
++      <part file="thorium_strings.grdp" />
++
+       <!-- Access Code Cast specific strings -->
+       <part file="access_code_cast_strings.grdp" />
+ 
+diff --git a/chrome/app/generated_resources.grd.gritdeps b/chrome/app/generated_resources.grd.gritdeps
+index 390da83b4e12c..5366103b7837b 100644
+--- a/chrome/app/generated_resources.grd.gritdeps
++++ b/chrome/app/generated_resources.grd.gritdeps
+@@ -105,5 +105,6 @@ chrome/app/sharesheet_strings.grdp
+ chrome/app/shortcut_input_strings.grdp
+ chrome/app/skills_strings.grdp
+ chrome/app/support_tool_strings.grdp
++chrome/app/thorium_strings.grdp
+ chrome/app/vr_strings.grdp
+ chrome/app/whats_new_strings.grdp

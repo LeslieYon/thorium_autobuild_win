@@ -1,0 +1,1005 @@
+diff --git a/build/config/BUILDCONFIG.gn b/build/config/BUILDCONFIG.gn
+index 12595c1e36678..b27740f060eef 100644
+--- a/build/config/BUILDCONFIG.gn
++++ b/build/config/BUILDCONFIG.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -171,6 +171,11 @@ declare_args() {
+       is_debug && current_os != "ios" && current_os != "watchos"
+ }
+ 
++declare_args() {
++  # True for Thorium overlay builds. This gates Thorium-only generated assets.
++  is_thorium_build = true
++}
++
+ assert(!(is_debug && is_official_build), "Can't do official debug builds")
+ assert(!(current_os == "ios" && is_component_build),
+        "Can't use component build on iOS")
+@@ -432,6 +437,13 @@ if (current_os == "zos") {
+   default_compiler_configs += [ "//build/config/zos:compiler" ]
+ }
+ 
++# Make sure Thorium compiler configs come last.
++default_compiler_configs += [
++  "//build/config/compiler:thorium_simd_optimization",
++  "//build/config/compiler:emit-relocs",
++  "//build/config/compiler:polly",
++]
++
+ # Static libraries and source sets use only the compiler ones.
+ set_defaults("static_library") {
+   configs = default_compiler_configs
+@@ -464,7 +476,10 @@ if (is_win) {
+ } else if (is_android) {
+   # Warn whenever linking code that could unintentionally switch off
+   # branch target identification (BTI) on Arm systems.
+-  _linker_configs += [ "//build/config/android:lld_branch_target_hardening" ]
++  _linker_configs += [
++    "//build/config/android:lld_branch_target_hardening",
++    "//build/config/android:default_relr_relocations",
++  ]
+ }
+ 
+ # Executable defaults.
+diff --git a/build/config/android/BUILD.gn b/build/config/android/BUILD.gn
+index 5ba1536435d46..1d805b1887fb0 100644
+--- a/build/config/android/BUILD.gn
++++ b/build/config/android/BUILD.gn
+@@ -1,9 +1,10 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/android/rules.gni")
+ import("//build/config/c++/c++.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/compiler/compiler.gni")
+ import("//build/config/gclient_args.gni")
+ import("//build/config/sanitizers/sanitizers.gni")
+@@ -75,6 +76,16 @@ config("compiler") {
+   cflags += [ "--target=$android_abi_target$android_ndk_api_level" ]
+   ldflags += [ "--target=$android_abi_target$android_ndk_api_level" ]
+ 
++  if (is_full_optimization_build) {
++    cflags += [ "-O3" ]
++    ldflags += [ "-Wl,-O3" ]
++  }
++
++  if (current_cpu == "x86" || current_cpu == "x64") {
++    cflags += [ "-msse3", "-mssse3", "-msse4.1" ]
++    ldflags += [ "-msse3", "-mssse3", "-msse4.1" ]
++  }
++
+   # Assign any flags set for the C compiler to asmflags so that they are sent
+   # to the assembler.
+   asmflags = cflags
+@@ -101,11 +112,22 @@ config("hide_all_but_jni") {
+       [ "-Wl,--version-script=" + rebase_path(_version_script, root_build_dir) ]
+ }
+ 
++config("relr_relocations") {
++  # RELR supported API 30+, but supported 28+ with --use-android-relr-tags.
++  # https://android.googlesource.com/platform/bionic/+/master/android-changes-for-ndk-developers.md#relative-relocations-relr
++  ldflags = [ "-Wl,--pack-dyn-relocs=relr,--use-android-relr-tags" ]
++}
++
++config("default_relr_relocations") {
++  if (default_min_sdk_version >= 28) {
++    configs = [ ":relr_relocations" ]
++  }
++}
+ config("lld_branch_target_hardening") {
+   # Config opts a shared library into BTI linker hardening. This
+   # is an opt-in config (rather than default-enabled) to avoid
+   # interfering with the V8 CFI bots (crbug.com/1334614).
+-  if (current_cpu == "arm64" && use_lld) {
++  if (current_cpu == "arm64") {
+     if (arm_control_flow_integrity == "standard") {
+       # Linking objects without GNU_PROPERTY_AARCH64_FEATURE_1_BTI
+       # in their .gnu.note section implicitly results in the final
+diff --git a/build/config/arm.gni b/build/config/arm.gni
+index cf21113480fd6..48d79430c349f 100644
+--- a/build/config/arm.gni
++++ b/build/config/arm.gni
+@@ -1,15 +1,10 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031.
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/chromeos/ui_mode.gni")
+ import("//build/config/v8_target_cpu.gni")
+ 
+-# TODO(thakis): Remove all uses of these, then remove the variables.
+-arm_fpu = "neon"
+-arm_use_neon = true
+-arm_optionally_use_neon = false
+-
+ # These are primarily relevant in current_cpu == "arm" contexts, where
+ # ARM code is being compiled.  But they can also be relevant in the
+ # other contexts when the code will change its behavior based on the
+@@ -24,6 +19,21 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+     # An empty string means to use the default for the arm_version.
+     arm_arch = ""
+ 
++    # The ARM floating point hardware. This will be a string like "neon" or
++    # "vfpv3". An empty string means to use the default for the arm_version.
++    arm_fpu = ""
++
++    # The ARM variant-specific tuning mode. This will be a string like "armv6"
++    # or "cortex-a15". An empty string means to use the default for the
++    # arm_version.
++    arm_tune = ""
++
++    # Whether to use the neon FPU instruction set or not.
++    arm_use_neon = ""
++
++    # Whether to enable optional NEON code paths.
++    arm_optionally_use_neon = false
++
+     # Thumb is a reduced instruction set available on some ARM processors that
+     # has increased code density.
+     arm_use_thumb = true
+@@ -42,8 +52,31 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+   assert(arm_float_abi == "" || arm_float_abi == "hard" ||
+          arm_float_abi == "soft" || arm_float_abi == "softfp")
+ 
++  if (arm_use_neon == "") {
++    if (current_os == "linux" && target_cpu != v8_target_cpu) {
++      # Don't use neon on V8 simulator builds as a default.
++      arm_use_neon = false
++    } else {
++      arm_use_neon = true
++    }
++  }
++
+   if (arm_version == 6) {
+-    assert(false, "arm_version must be >= 7")
++    if (arm_arch == "") {
++      # v8 can still with version 6 but only with the armv6k extension.
++      arm_arch = "armv6k"
++    }
++    if (arm_tune != "") {
++      arm_tune = ""
++    }
++    if (arm_float_abi == "") {
++      arm_float_abi = "softfp"
++    }
++    if (arm_fpu == "") {
++      arm_fpu = "vfp"
++    }
++    arm_use_thumb = false
++    arm_use_neon = false
+   } else if (arm_version == 7) {
+     if (arm_arch == "") {
+       arm_arch = "armv7-a"
+@@ -57,18 +90,44 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+         arm_float_abi = "hard"
+       }
+     }
++
++    if (arm_fpu == "") {
++      if (arm_use_neon) {
++        arm_fpu = "neon"
++      } else {
++        arm_fpu = "vfpv3-d16"
++      }
++    }
+   } else if (arm_version == 8) {
+     if (arm_arch == "") {
+-      arm_arch = "armv8-a"
++      if (is_mac) {
++        arm_arch = "armv8.3-a"
++      } else {
++        arm_arch = "armv8-a"
++      }
++    }
++    if (arm_tune == "") {
++      if (is_mac) {
++        arm_tune = "generic-armv8.3-a"
++      } else {
++        arm_tune = "generic-armv8-a"
++      }
+     }
++
+     if (arm_float_abi == "") {
+       arm_float_abi = "hard"
+     }
++
++    if (arm_fpu == "") {
++      if (arm_use_neon) {
++        arm_fpu = "neon"
++      } else {
++        arm_fpu = "vfpv3-d16"
++      }
++    }
+   }
+ } else if (current_cpu == "arm64" || v8_current_cpu == "arm64" ||
+            current_cpu == "arm64e" || v8_current_cpu == "arm64e") {
+-  # arm64 supports only "hard".
+-  arm_float_abi = "hard"
+   declare_args() {
+     # Enables the new Armv8 branch protection features. Valid strings are:
+     # - "pac": Enables Pointer Authentication Code (PAC, featured in Armv8.3)
+@@ -76,6 +135,44 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+     # - "none": No branch protection.
+     arm_control_flow_integrity = "none"
+ 
++    # Version of the ARM processor when compiling on ARM. Ignored on non-ARM
++    # platforms.
++    arm_version = 8
++
++    # arm64 supports only "hard".
++    arm_float_abi = "hard"
++
++    # The ARM64 architecture. This will be a string like "armv8-a" or "armv8.5-a.
++    # An empty string means to use the default for the arm_version.
++    if (is_mac) {
++      arm_arch = "armv8.3-a"
++    } else {
++      arm_arch = "armv8-a"
++    }
++
++    # The ARM variant-specific tuning mode. This will be a string like "armv6"
++    # or "cortex-a15". An empty string means to use the default for the
++    # arm_version.
++    if (is_mac) {
++      arm_tune = "generic-armv8.3-a"
++    } else {
++      arm_tune = "generic-armv8-a"
++    }
++
++    # The ARM64 floating point hardware. This will be a string like "neon" or
++    # "vfpv3-d16". An empty string means to use the default for the arm_version.
++    arm_fpu = "neon"
++
++    # Whether to use the neon FPU instruction set or not.
++    arm_use_neon = "true"
++
++    # Whether to enable optional NEON code paths.
++    arm_optionally_use_neon = false
++
++    # Thumb is a reduced instruction set available on some ARM processors that
++    # has increased code density.
++    arm_use_thumb = true
++
+     if ((is_android || is_linux) && target_cpu == "arm64") {
+       # Enable PAC and BTI on AArch64 Linux/Android systems.
+       # target_cpu == "arm64" filters out some cases (e.g. the ChromeOS x64
+@@ -83,7 +180,6 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+       # use the arm64 simulator.
+       arm_control_flow_integrity = "standard"
+     }
+-
+     if (host_os == "mac" && host_cpu == "arm64") {
+       # Disable ARM integrity flow or build
+       # will fail because of this issue
+@@ -91,8 +187,13 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+       arm_control_flow_integrity = "none"
+     }
+   }
++  # Initial values from upstream. arm64 supports only "hard".
++  arm_version = 8
++  arm_float_abi = "hard"
++  arm_use_neon = true
++
+   assert(arm_control_flow_integrity == "none" ||
+              arm_control_flow_integrity == "standard" ||
+              arm_control_flow_integrity == "pac",
+-         "Invalid branch protection option")
++         "Invalid ARM branch protection option.")
+ }
+diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
+index e1da11405c1f6..2786029dd95b9 100644
+--- a/build/config/compiler/BUILD.gn
++++ b/build/config/compiler/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors, RobRich999, and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -7,6 +7,7 @@ import("//build/config/android/config.gni")
+ import("//build/config/c++/c++.gni")
+ import("//build/config/c++/modules.gni")
+ import("//build/config/cast.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/chrome_build.gni")
+ import("//build/config/chromeos/args.gni")
+ import("//build/config/clang/clang.gni")
+@@ -2403,6 +2404,145 @@ config("no_incompatible_pointer_warnings") {
+   }
+ }
+ 
++# Thorium SIMD optimizations.
++config("thorium_simd_optimization") {
++  cflags = []
++  ldflags = []
++
++  if (current_cpu == "x86") {
++    if (is_win) {
++      if (use_sse2) {
++        cflags += [ "/arch:SSE2", "/clang:-msse2" ]
++      }
++      if (use_sse3) {
++        cflags += [ "/clang:-msse3" ]
++      }
++      if (use_sse41) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1" ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2" ]
++      }
++    } else {
++      if (use_sse2) {
++        cflags += [ "-msse2" ]
++        ldflags += [ "-msse2" ]
++      }
++      if (use_sse3) {
++        cflags += [ "-msse3" ]
++        ldflags += [ "-msse3" ]
++      }
++      if (use_sse41) {
++        cflags += [ "-mssse3", "-msse4.1" ]
++        ldflags += [ "-mssse3", "-msse4.1" ]
++      }
++      if (use_sse42) {
++        cflags += [ "-msse4", "-msse4.2" ]
++        ldflags += [ "-msse4.2" ]
++      }
++    }
++  } else if (current_cpu == "x64") {
++    if (is_win) {
++      if (use_sse3) {
++        cflags += [ "/clang:-msse3" ]
++      }
++      if (use_sse41) {
++        cflags += [ "/clang:-mssse3", "/clang:-msse4.1" ]
++      }
++      if (use_sse42) {
++        cflags += [ "/clang:-msse4.2" ]
++      }
++      if (use_avx) {
++        cflags += [ "/clang:-mpclmul", "/clang:-maes", "/clang:-mavx" ]
++      }
++      if (use_fma) {
++        cflags += [ "/clang:-mfma", "/clang:-ffp-contract=fast" ]
++      }
++      if (use_avx2) {
++        cflags += [
++          "/clang:-mavx2",
++          "/clang:-mf16c",
++          "/clang:-mlzcnt",
++          "/clang:-mbmi",
++          "/clang:-mbmi2",
++        ]
++        ldflags += [ "-mllvm:-march=haswell" ]
++      }
++      if (use_avx512) {
++        cflags += [
++          "/clang:-mavx512f",
++          "/clang:-mavx512cd",
++          "/clang:-mavx512vl",
++          "/clang:-mavx512bw",
++          "/clang:-mavx512dq",
++        ]
++        ldflags += [ "-mllvm:-march=skylake-avx512" ]
++      }
++    } else if (is_mac) {
++      if (use_avx2) {
++        cflags += [ "-march=x86-64-v3" ]
++        ldflags += [ "-Wl,-mllvm,-march=x86-64-v3" ]
++      } else {
++        cflags += [ "-msse3", "-mssse3", "-msse4.1" ]
++      }
++    } else {
++      if (use_sse3) {
++        cflags += [ "-msse3" ]
++        ldflags += [ "-msse3" ]
++      }
++      if (use_sse41) {
++        cflags += [ "-mssse3", "-msse4.1" ]
++        ldflags += [ "-mssse3", "-msse4.1" ]
++      }
++      if (use_sse42) {
++        cflags += [ "-msse4", "-msse4.2" ]
++        ldflags += [ "-msse4.2" ]
++      }
++      if (use_avx) {
++        cflags += [ "-mpclmul", "-maes", "-mavx" ]
++        ldflags += [ "-mpclmul", "-maes", "-mavx" ]
++      }
++      if (use_fma) {
++        cflags += [ "-mfma", "-ffp-contract=fast" ]
++        ldflags += [ "-mfma", "-Wl,-mllvm,-fp-contract=fast" ]
++      }
++      if (use_avx2) {
++        cflags += [ "-mavx2", "-mf16c", "-mlzcnt", "-mbmi", "-mbmi2" ]
++        ldflags += [
++          "-mavx2",
++          "-mf16c",
++          "-mlzcnt",
++          "-mbmi",
++          "-mbmi2",
++          "-Wl,-mllvm,-march=haswell",
++        ]
++      }
++      if (use_avx512) {
++        cflags += [
++          "-mavx512f",
++          "-mavx512cd",
++          "-mavx512vl",
++          "-mavx512bw",
++          "-mavx512dq",
++        ]
++        ldflags += [
++          "-mavx512f",
++          "-mavx512cd",
++          "-mavx512vl",
++          "-mavx512bw",
++          "-mavx512dq",
++          "-Wl,-mllvm,-march=skylake-avx512",
++        ]
++      }
++    }
++  } else if (current_cpu == "arm64") {
++    if (is_mac) {
++      cflags += [ "-mcpu=apple-m1" ]
++    } else if (!is_android && is_raspi) {
++      cflags += [ "-mtune=cortex-a72" ]
++    }
++  }
++}
+ # Optimization -----------------------------------------------------------------
+ #
+ # The BUILDCONFIG file sets the "default_optimization" config on targets by
+@@ -2434,6 +2574,22 @@ if (is_win) {
+   }
+   common_optimize_on_ldflags = []
+ 
++  if (is_full_optimization_build) {
++    common_optimize_on_cflags += [
++      "-mllvm",
++      "-aggressive-ext-opt",
++      "-mllvm",
++      "-enable-gvn-hoist",
++      "/clang:-O3",
++      "-Xclang",
++      "-O3",
++    ]
++    common_optimize_on_ldflags += [
++      "-mllvm:-aggressive-ext-opt",
++      "-mllvm:-enable-gvn-hoist",
++    ]
++  }
++
+   # /OPT:ICF is not desirable in Debug builds, since code-folding can result in
+   # misleading symbols in stack traces.
+   if (!is_debug && !is_component_build) {
+@@ -2447,6 +2603,21 @@ if (is_win) {
+   common_optimize_on_cflags = []
+   common_optimize_on_ldflags = []
+ 
++  if (is_full_optimization_build) {
++    common_optimize_on_cflags += [
++      "-mllvm",
++      "-aggressive-ext-opt",
++      "-mllvm",
++      "-enable-gvn-hoist",
++      "-O3",
++    ]
++    common_optimize_on_ldflags += [
++      "-Wl,-mllvm,-aggressive-ext-opt",
++      "-Wl,-mllvm,-enable-gvn-hoist",
++      "-Wl,-O3",
++    ]
++  }
++
+   if (is_android && (use_lld || use_mold)) {
+     # TODO(jdduke) Re-enable on mips after resolving linking
+     # issues with libc++ (crbug.com/456380).
+@@ -2700,6 +2871,38 @@ config("default_optimization") {
+   }
+ }
+ 
++# Emit relocations for BOLT.
++config("emit-relocs") {
++  if (!using_sanitizer && use_bolt) {
++    if (is_win) {
++      ldflags = [ "-mllvm:--emit-relocs" ]
++    } else {
++      ldflags = [ "-Wl,--emit-relocs" ]
++    }
++  }
++}
++
++# Use LLVM's Polly optimizer.
++config("polly") {
++  if (use_polly) {
++    ldflags = common_optimize_on_ldflags
++    if (is_win) {
++      ldflags += [
++        "-mllvm:-polly",
++        "-mllvm:-polly-detect-profitability-min-per-loop-insts=40",
++        "-mllvm:-polly-run-dce",
++        "-mllvm:-polly-vectorizer=stripmine",
++      ]
++    } else {
++      ldflags += [
++        "-Wl,-mllvm,-polly",
++        "-Wl,-mllvm,-polly-detect-profitability-min-per-loop-insts=40",
++        "-Wl,-mllvm,-polly-run-dce",
++        "-Wl,-mllvm,-polly-vectorizer=stripmine",
++      ]
++    }
++  }
++}
+ _clang_sample_profile = ""
+ if (is_clang && is_a_target_toolchain) {
+   if (clang_sample_profile_path != "") {
+diff --git a/build/config/compiler_opt.gni b/build/config/compiler_opt.gni
+new file mode 100644
+index 0000000000000..ca7ec7c566dcf
+--- /dev/null
++++ b/build/config/compiler_opt.gni
+@@ -0,0 +1,172 @@
++# Copyright 2026 Alex313031
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++## For information about compiler flags and optimizations
++## that this uses, see https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
++
++import("//build/config/compiler/compiler.gni")
++
++declare_args() {
++  ## General Optimization settings
++  ## For LLVM or OS specific stuff
++
++  # Turn this on to have compiler optimization turned up to the max.
++  # Such as using -O3 instead of -O2 for CFLAGS.
++  is_full_optimization_build = is_official_build
++
++  # Whether to use Raspberry Pi specific optimizations.
++  is_raspi = false
++
++  # Whether to enable LLVM's Polly optimizations.
++  # See https://polly.llvm.org/
++  use_polly = false
++
++  # Whether to enable LLVM's BOLT optimizations.
++  # See https://github.com/llvm/llvm-project/blob/main/bolt/README.md
++  use_bolt = false
++}
++
++declare_args() {
++  ## SIMD compiler optimization flags
++  ## Propagated to //build/config/* to allow controlling
++  ## x86_64 SIMD optimization levels. This was done to refactor
++  ## multiple BUILD.gn file into one copy of each.
++  ## Flags are not cumulative, so for example, for an AVX build you
++  ## would want to turn on use_sse3, use_sse41, use_sse42 too. For AVX2
++  ## you would add use_avx, etc.
++
++  # SSE2
++  # Normal x64 compiler baseline, present since Willamette (Original
++  # 2001 Pentium 4) and AMD SledgeHammer (1st Gen. Opteron) and
++  # the Athlon 64. Big step from MMX, x87, and SSE (i.e. SSE1)
++  # Baseline requirement to run Windows since update KB4103718
++  # for Windows 7 SP1/Server 2008 R2 SP1/Home Server 2011.
++  use_sse2 = target_cpu == "x86"
++
++  # SSE3
++  # Normal Chromium baseline, present since Prescott (2004 Pentium 4)
++  # and AMD SanDiego (2nd Gen. Opteron).
++  # Only applicable to 32 Bit Windows and Linux builds, where
++  # setting it to false allows making an SSE2 build. (`-mmmx -msse2`)
++  # `-msse3`
++  use_sse3 = target_cpu == "x86" || target_cpu == "x64"
++
++  # SSE4.1
++  # Normal PrimoBrowser baseline
++  # Normal ThoriumOS baseline because Core 2 Duo is the lowest
++  # hardware that other CrOS subsystems like drivers support.
++  # Present since Penryn (2007 45nm Core 2 Duo die shrink), and
++  # AMD Jaguar (2013 Athlon CPUs) and Bulldozer (2012 AMD FX).
++  # Includes SSSE3 since all SSSE3 `-mssse3 -msse4.1`
++  use_sse41 = false
++
++  # SSE4.2 (x86-64-v2)
++  # Present since Nehalem (2009 1st Generation Core i series), and
++  # the same AMD CPUs as above.
++  # Normal LaCrOS baseline since Sept 2023.
++  # See https://bugs.chromium.org/p/chromium/issues/detail?id=1475858
++  # Baseline for Windows since Windows 10 24H2.
++  # `-msse4.2`
++  use_sse42 = false
++
++  # AVX
++  # Normal Thorium baseline
++  # Present since Sandy Bridge (2011 2nd Gen. Core i series)
++  # and AMD Bulldozer (2012 AMD FX).
++  # Requires Windows 7 SP1 / Linux 2.6.30 or later to use.
++  # Uses new 128 bit registers and CPU blocks; a new era of SIMD.
++  # Includes AES and PCLMUL `-maes -mpclmul -mavx`
++  use_avx = false
++
++  # AVX2 (x86-64-v3)
++  # Second generation AVX, expanded to 256-bit registers.
++  # Present since Haswell (4th Gen. Core i series), and
++  # AMD Excavator (4th Gen. refinement of Bulldozer cores) and
++  # Zen (1st Gen. Ryzen).
++  # Includes FMA3 `-mfma -mavx2` (`-ffp-contract` see below at FMA section)
++  use_avx2 = false
++
++  # AVX-512
++  # Third generation AVX, expanded to 512-bit registers.
++  # Present since Skylake (Specifically Skylake-X "Extreme Edition"
++  # processors), and AMD Zen 4 (4th Gen. Ryzen 7000).
++  # Only uses AVX-512 instructions common to all processors.
++  # `-mavx512f -mavx512cd -mavx512vl -mavx512bw -mavx512dq
++  #  -mf16c -mlzcnt -mbmi2`
++  use_avx512 = false
++}
++
++declare_args() {
++  # FMA
++  # "Fused Multiply Add" operations
++  # Present since Haswell and AMD Piledriver (2nd Gen. refinement
++  # of Bulldozer).
++  # `-mfma -ffp-contract=fast` (use -mfma3 -mfma4 for Piledriver)
++  use_fma = use_avx2 || use_avx512
++}
++
++if (is_debug) {
++  assert(!is_full_optimization_build, "is_full_optimization_build only works with non-debug builds")
++  assert(!use_polly, "use_polly only works with non-debug builds")
++  assert(!use_bolt, "use_bolt only works with non-debug builds")
++}
++
++if (use_sse2) {
++  assert(target_cpu == "x86", "use_sse2 was true for a 64 bit target_cpu! This seems like a wrong combination.")
++}
++
++# Make sure we are a x86 arch
++if (use_sse2 || use_sse3 || use_sse41 || use_sse42 || use_avx || use_avx2 || use_avx512) {
++  assert(target_cpu == "x86" || target_cpu == "x64", "x86 SIMD intrinsic optimizations cannot be used with non-x86 targets.")
++}
++
++# FMA doesn't work on 32 bit architectures
++if (use_fma) {
++  assert(target_cpu != "x86" && current_cpu != "arm", "use_fma is true. FMA only works for 64 bit CPU architectures.")
++}
++
++if ((use_avx || use_avx2 || use_avx512 || use_fma) && symbol_level == "2") {
++  print("WARNING: Using AVX with symbol_level = 2 is known to cause undefined symbol: FallbackCrcMemcpyEngine linker errors.")
++}
++
++# 32 Bit OSes cant use anything above SSE4.2, and 32 Bit Apps can't benefit
++# from anything higher usually.
++if (use_avx || use_avx2 || use_avx512 || use_fma) {
++  assert(target_cpu == "x64", "AVX, AVX2, AVX-512, or FMA require x64. target_cpu is x86")
++}
++
++# AVX2 should always have FMA, however, there are times one might want
++# to set use_fma = true even with AVX2 off, such as when making a build for
++# an AMD Piledriver or Steamroller CPU.
++if (use_avx2 && !use_fma) {
++  print("WARNING: Use_avx2 is true while use_fma is false. This will create a build compiled with AVX2, but without FMA or floating point contraction.")
++  print("This should only be set intentionally for testing.")
++  print("")
++}
++
++# Same for AVX-512
++if (use_avx512 && !use_fma) {
++  print("WARNING: Use_avx512 is true while use_fma is false. This will create a build compiled with AVX-512, but without FMA or floating point contraction.")
++  print("This should only be set intentionally for testing.")
++  print("")
++}
++
++# Not a normal configuration, that usually means a mistake was made configuring
++# your args. However, there are a few CPUs out there for which this makes sense.
++# Alex313031 TODO: Maybe add -mfma3 -mfma4 for this config?
++if (!use_avx2 && use_fma) {
++  print("WARNING: Use_avx2 is false while use_fma true. This will create an AVX build with FMA.")
++  print("This should only be set intentionally for testing, or for specific CPUs that have AVX and FMA, but not AVX2, such as AMD Piledriver.")
++  print("")
++}
++
++if (use_fma && !use_avx) {
++  print("WARNING: use_fma is true while use_avx is false. FMA requires AVX.")
++  print("")
++}
++
++if (!use_sse3 && target_cpu == "x64") {
++  print("use_sse3 is disabled. This should only be done for 32 Bit builds.")
++  print("")
++}
+diff --git a/build/config/mac/BUILD.gn b/build/config/mac/BUILD.gn
+index 56238a14ae8fb..7e93a084210b9 100644
+--- a/build/config/mac/BUILD.gn
++++ b/build/config/mac/BUILD.gn
+@@ -1,10 +1,11 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/apple/arch.gni")
+ import("//build/config/apple/symbols.gni")
+ import("//build/config/c++/c++.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/mac/mac_sdk.gni")
+ import("//build/config/sysroot.gni")
+ import("//build/toolchain/rbe.gni")
+@@ -15,6 +16,8 @@ import("//build/toolchain/siso.gni")
+ config("compiler") {
+   # These flags are shared between the C compiler and linker.
+   common_mac_flags = []
++  common_mac_cflags = []
++  common_mac_ldflags = []
+ 
+   # CPU architecture.
+   _archs_mapping_os = archs_mapping[current_os]
+@@ -27,15 +30,20 @@ config("compiler") {
+   }
+   common_mac_flags += [ "--target=$clang_arch-apple-macos" ]
+ 
++  if (is_full_optimization_build) {
++    common_mac_cflags += [ "-O3" ]
++    common_mac_ldflags += [ "-Wl,-O3" ]
++  }
++
+   # This is here so that all files get recompiled after an Xcode update.
+   # (defines are passed via the command line, and build system rebuild things
+   # when their commandline changes). Nothing should ever read this define.
+   defines = [ "CR_XCODE_BUILD=$xcode_build" ]
+ 
+   asmflags = common_mac_flags
+-  cflags = common_mac_flags
++  cflags = common_mac_flags + common_mac_cflags
+ 
+-  ldflags = common_mac_flags
++  ldflags = common_mac_flags + common_mac_ldflags
+ 
+   # ld64 defaults to fixup chains on macOS 12+ when targeting arm64 and on
+   # macOS 13+ when targeting x86_64.
+@@ -43,6 +51,14 @@ config("compiler") {
+   # Force it on; for Chromium it should work on macOS 12 even on x86_64.
+   ldflags += [ "-Wl,-fixup_chains" ]
+ 
++  if (is_full_optimization_build) {
++    cflags += [ "-ffp-contract=fast" ]
++    ldflags += [
++      "-Wl,-mllvm,-fp-contract=fast",
++      "-Wl,-mllvm,-import-instr-limit=100",
++    ]
++  }
++
+   if (save_unstripped_output) {
+     ldflags += [ "-Wcrl,unstripped," + rebase_path(root_out_dir) ]
+   }
+@@ -120,7 +136,7 @@ if (mac_use_xcode_symlinks && current_toolchain == default_toolchain) {
+   }
+ } else {
+   group("sdk_inputs") {
+-    if (current_toolchain != default_toolchain && target_os == "ios") {
++    if (current_toolchain != default_toolchain) {
+       public_deps = [ ":sdk_inputs($default_toolchain)" ]
+     }
+   }
+diff --git a/build/config/win/BUILD.gn b/build/config/win/BUILD.gn
+index 101c2339697ca..f261f3c85d0d8 100644
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -1,8 +1,9 @@
+-# Copyright 2013 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//build/config/c++/c++.gni")
++import("//build/config/compiler_opt.gni")
+ import("//build/config/chrome_build.gni")
+ import("//build/config/clang/clang.gni")
+ import("//build/config/compiler/compiler.gni")
+@@ -119,8 +120,82 @@ config("compiler") {
+     # Chrome currently requires SSE3. Clang supports targeting any Intel
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
++    if (current_cpu == "x86") {
++      cflags += [ "-mmmx", "-msse", "-msse2", "/clang:-msse2" ]
++      if (use_sse2) {
++        cflags += [ "/arch:SSE2" ]
++      }
++      if (use_sse3) {
++        cflags += [ "-msse3", "/clang:-msse3" ]
++      }
++    } else if (current_cpu == "x64") {
++      cflags += [ "-msse3", "/clang:-msse3" ]
++    }
++
+     if (current_cpu == "x86" || current_cpu == "x64") {
+-      cflags += [ "-msse3" ]
++      if (is_full_optimization_build) {
++        cflags += [
++          "/clang:-O3",
++          "-Xclang",
++          "-O3",
++        ]
++      }
++      if (use_sse41) {
++        cflags += [
++          "-mssse3",
++          "-msse4.1",
++          "/clang:-mssse3",
++          "/clang:-msse4.1",
++        ]
++      }
++      if (use_sse42) {
++        cflags += [
++          "-msse4.2",
++          "/clang:-msse4.2",
++        ]
++      }
++      if (use_avx) {
++        cflags += [
++          "-mpclmul",
++          "-maes",
++          "-mavx",
++          "/clang:-mpclmul",
++          "/clang:-maes",
++          "/clang:-mavx",
++        ]
++      }
++      if (use_avx2) {
++        cflags += [
++          "-mavx2",
++          "-mfma",
++          "-mf16c",
++          "-mlzcnt",
++          "-mbmi",
++          "-mbmi2",
++          "/clang:-mavx2",
++          "/clang:-mfma",
++          "/clang:-mf16c",
++          "/clang:-mlzcnt",
++          "/clang:-mbmi",
++          "/clang:-mbmi2",
++          "/clang:-ffp-contract=fast",
++        ]
++      }
++      if (use_avx512) {
++        cflags += [
++          "-mavx512f",
++          "-mavx512cd",
++          "-mavx512vl",
++          "-mavx512bw",
++          "-mavx512dq",
++          "/clang:-mavx2",
++          "/clang:-mavx512f",
++          "/clang:-mavx512cd",
++          "/clang:-mavx512vl",
++          "/clang:-mavx512bw",
++          "/clang:-mavx512dq",
++        ]
++      }
+     }
+ 
+     # Enable ANSI escape codes if something emulating them is around (cmd.exe
+@@ -162,6 +237,9 @@ config("compiler") {
+ 
+     # Enable /prefetch-inputs to improve linking performance.
+     ldflags += [ "/prefetch-inputs" ]
++    if (is_full_optimization_build) {
++      ldflags += [ "/OPT:lldlto=3" ]
++    }
+   }
+ 
+   # Some binaries create PDBs larger than 4 GiB. Increasing the PDB page size to
+@@ -189,11 +267,17 @@ config("compiler") {
+       "/INCREMENTAL:NO",
+       "/FIXED:NO",
+     ]
++    if (use_avx2) {
++      ldflags += [ "-mllvm:-march=haswell" ]
++    }
++    if (use_avx512) {
++      ldflags += [ "-mllvm:-march=skylake-avx512" ]
++    }
+ 
+     if (use_lld) {
+       # String tail merging leads to smaller binaries, but they don't compress
+       # as well, leading to increased mini_installer size (crbug.com/838449).
+-      ldflags += [ "/OPT:NOLLDTAILMERGE" ]
++      ldflags += [ "/OPT:LLDTAILMERGE" ]
+     }
+ 
+     # TODO(siggi): Is this of any use anymore?
+@@ -201,7 +285,7 @@ config("compiler") {
+     # PDB file by about 5%) but does not otherwise alter the output binary. It
+     # is enabled opportunistically for builds where it is not prohibited (not
+     # supported when incrementally linking, or using /debug:fastlink).
+-    ldflags += [ "/PROFILE" ]
++    # ldflags += [ "/PROFILE" ]
+   }
+ 
+   # arflags apply only to static_libraries. The normal linker configs are only
+@@ -291,12 +375,14 @@ config("runtime_library") {
+ # manually override this config for their compiles.
+ config("winver") {
+   defines = [
++    # 0x0A000010
+     "NTDDI_VERSION=NTDDI_WIN11_GE",
+ 
+     # We can't say `=_WIN32_WINNT_WIN10` here because some files do
+     # `#if WINVER < 0x0600` without including windows.h before,
+     # and then _WIN32_WINNT_WIN10 isn't yet known to be 0x0A00.
+     "_WIN32_WINNT=0x0A00",
++    "_WIN64_WINNT=0x0A00",
+     "WINVER=0x0A00",
+   ]
+ }
+@@ -440,22 +526,17 @@ config("delayloads_except_dbghelp") {
+     "/DELAYLOAD:psapi.dll",
+     "/DELAYLOAD:rpcrt4.dll",
+     "/DELAYLOAD:rstrtmgr.dll",
+-    "/DELAYLOAD:secur32.dll",
+     "/DELAYLOAD:setupapi.dll",
+     "/DELAYLOAD:shell32.dll",
+     "/DELAYLOAD:shlwapi.dll",
+     "/DELAYLOAD:uiautomationcore.dll",
+     "/DELAYLOAD:urlmon.dll",
+     "/DELAYLOAD:user32.dll",
+-    "/DELAYLOAD:userenv.dll",
+     "/DELAYLOAD:usp10.dll",
+     "/DELAYLOAD:uxtheme.dll",
+     "/DELAYLOAD:wer.dll",
+     "/DELAYLOAD:wevtapi.dll",
+-    "/DELAYLOAD:winhttp.dll",
+     "/DELAYLOAD:wininet.dll",
+-    "/DELAYLOAD:winspool.drv",
+-    "/DELAYLOAD:wintrust.dll",
+     "/DELAYLOAD:winusb.dll",
+     "/DELAYLOAD:wsock32.dll",
+     "/DELAYLOAD:wtsapi32.dll",
+@@ -480,7 +561,12 @@ config("delayloads_not_for_child_dll") {
+   ldflags = [
+     "/DELAYLOAD:crypt32.dll",
+     "/DELAYLOAD:dwrite.dll",
++    "/DELAYLOAD:secur32.dll",
++    "/DELAYLOAD:userenv.dll",
++    "/DELAYLOAD:winhttp.dll",
+     "/DELAYLOAD:winmm.dll",
++    "/DELAYLOAD:winspool.drv",
++    "/DELAYLOAD:wintrust.dll",
+     "/DELAYLOAD:ws2_32.dll",
+   ]
+ }
+@@ -488,8 +574,7 @@ config("delayloads_not_for_child_dll") {
+ # ACLs are placed on the filesystem in order to allow chrome to launch
+ # sandboxed processes in an app container when run from the out directory.
+ group("maybe_set_appcontainer_acls") {
+-  # Exclude setting ACLs when build is not happening on chromium, or with a
+-  # different toolchain.
++  # Exclude setting ACLs when build is not happening on chromium, or with a different toolchain.
+   if (build_with_chromium && current_cpu == target_cpu && host_os == "win") {
+     deps = [ ":set_appcontainer_acls" ]
+   }
+@@ -503,8 +588,8 @@ if (build_with_chromium && current_cpu == target_cpu && host_os == "win") {
+     outputs = [ stamp_file ]
+ 
+     args = [
+-      "--stamp=" + rebase_path(stamp_file, root_build_dir),
+-      "--dir=" + rebase_path(root_out_dir, root_build_dir),
++      "--stamp=" + rebase_path(stamp_file, root_out_dir),
++      "--dir=" + rebase_path(root_out_dir, root_out_dir),
+     ]
+   }
+ }
