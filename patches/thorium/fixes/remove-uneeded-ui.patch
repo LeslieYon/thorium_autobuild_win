@@ -109,3 +109,43 @@
 -        external>
 -    </cr-link-row>
    </settings-subpage>
+--- a/chrome/browser/ui/webui/settings/settings_ui.cc
++++ b/chrome/browser/ui/webui/settings/settings_ui.cc
+@@ -626,33 +626,18 @@ SettingsUI::SettingsUI(content::WebUI* w
+   html_source->AddString("aiSuggestionsHelpCenterArticleLink",
+                          contextual_cueing::kHelpCenterArticleLink.Get());
+ 
+-  const bool enable_ai_mode_search =
+-      contextual_tasks::ContextualTasksContextService::
+-          GetIsSmartTabSharingEnabled(profile) &&
+-      base::FeatureList::IsEnabled(
+-          contextual_tasks::
+-              kContextualTasksContextSmartTabSharingDefaultOnAvailability);
+-  html_source->AddBoolean("enableAiModeSearchSetting", enable_ai_mode_search);
++  html_source->AddBoolean("enableAiModeSearchSetting", false);
+ 
+-  const bool show_ai_settings_for_testing = base::FeatureList::IsEnabled(
+-      optimization_guide::features::kAiSettingsPageForceAvailable);
+-
+-  // Show the AI features section in the AI page if any of the AI features are
+-  // enabled.
+-  bool show_ai_features_section = show_ai_settings_for_testing;
+   for (auto [name, visible] : optimization_guide_features) {
+-    html_source->AddBoolean(name, visible || show_ai_settings_for_testing);
+-    show_ai_features_section |= visible;
++    html_source->AddBoolean(name, false);
+   }
+ 
+   // Within the AI subpage are separate sections for Glic and for all other AI
+   // features, the visibility of these are separately controlled but we want to
+   // show the subpage if any of the AI features or Glic are enabled.
+-  html_source->AddBoolean("showAiPage", show_glic_section ||
+-                                            show_ai_features_section ||
+-                                            enable_ai_mode_search);
++  html_source->AddBoolean("showAiPage", false);
+   html_source->AddBoolean("showAiPageAiFeatureSection",
+-                          show_ai_features_section);
++                          false);
+ 
+   html_source->AddBoolean(
+       "enableSupportForHomeAndWork",
