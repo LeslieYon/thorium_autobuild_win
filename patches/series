@@ -24,6 +24,7 @@ thorium/fixes/fix-gcp-grdp-strings.patch
 # picked from ungoogled-chromium's remove-uneeded-ui.patch
 thorium/fixes/remove-uneeded-ui.patch
 thorium/fixes/remove-safebrowsing-prefs-deps.patch
+thorium/fixes/remove-navigation-source-param-parse-fix.patch
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # ##### thorium patches below ####

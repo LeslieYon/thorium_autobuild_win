@@ -17,44 +17,30 @@
  #include "components/signin/public/base/signin_switches.h"
  #include "components/supervised_user/core/browser/supervised_user_pref_store.h"
  #include "components/sync/base/data_type.h"
---- a/chrome/browser/policy/configuration_policy_handler_list_factory.cc
-+++ b/chrome/browser/policy/configuration_policy_handler_list_factory.cc
-@@ -540,9 +540,6 @@ const PolicyToPreferenceMapEntry kSimplePolicyMap[] = {
-   { key::kAccessibilityImageLabelsEnabled,
-     prefs::kAccessibilityImageLabelsEnabled,
-     base::Value::Type::BOOLEAN },
--  { key::kAdvancedProtectionAllowed,
--    prefs::kAdvancedProtectionAllowed,
--    base::Value::Type::BOOLEAN },
-   { key::kAllowCrossOriginAuthPrompt,
-     prefs::kAllowCrossOriginAuthPrompt,
-     base::Value::Type::BOOLEAN },
-@@ -703,15 +685,6 @@ const PolicyToPreferenceMapEntry kSimple
-   { key::kPasswordDismissCompromisedAlertEnabled,
-     password_manager::prefs::kPasswordDismissCompromisedAlertEnabled,
-     base::Value::Type::BOOLEAN },
--  { key::kPasswordProtectionChangePasswordURL,
--    prefs::kPasswordProtectionChangePasswordURL,
--    base::Value::Type::STRING },
--  { key::kPasswordProtectionLoginURLs,
--    prefs::kPasswordProtectionLoginURLs,
--    base::Value::Type::LIST },
--  { key::kPasswordProtectionWarningTrigger,
--    prefs::kPasswordProtectionWarningTrigger,
--    base::Value::Type::INTEGER },
- #if BUILDFLAG(ENABLE_PDF)
-   { key::kPdfLocalFileAccessAllowedForDomains,
-     prefs::kPdfLocalFileAccessAllowedForDomains,
---- a/components/sync_preferences/common_syncable_prefs_database.cc
-+++ b/components/sync_preferences/common_syncable_prefs_database.cc
-@@ -277,10 +274,6 @@ constexpr auto kCommonSyncablePrefsAllow
-         {payments::kCanMakePaymentEnabled,
-          {syncable_prefs_ids::kCanMakePaymentEnabled, syncer::PREFERENCES,
-           PrefSensitivity::kNone, MergeBehavior::kNone}},
--        {prefs::kAccountTailoredSecurityUpdateTimestamp,
--         {syncable_prefs_ids::kAccountTailoredSecurityUpdateTimestamp,
--          syncer::PRIORITY_PREFERENCES, PrefSensitivity::kNone,
--          MergeBehavior::kNone}},
-         {prefs::kCookieControlsMode,
-          {syncable_prefs_ids::kCookieControlsMode, syncer::PREFERENCES,
-           PrefSensitivity::kNone, MergeBehavior::kNone}},
+--- a/chrome/browser/enterprise/connectors/connectors_service.cc
++++ b/chrome/browser/enterprise/connectors/connectors_service.cc
+@@ -215,8 +215,7 @@ std::string ConnectorsService::GetManage
+ 
+   std::optional<policy::PolicyScope> scope;
+   for (const char* scope_pref :
+-       {enterprise_connectors::kEnterpriseRealTimeUrlCheckScope,
+-        AnalysisConnectorScopePref(AnalysisConnector::FILE_ATTACHED),
++       {AnalysisConnectorScopePref(AnalysisConnector::FILE_ATTACHED),
+         AnalysisConnectorScopePref(AnalysisConnector::FILE_DOWNLOADED),
+         AnalysisConnectorScopePref(AnalysisConnector::BULK_DATA_ENTRY),
+         AnalysisConnectorScopePref(AnalysisConnector::PRINT),
+@@ -267,14 +266,6 @@ std::string ConnectorsService::GetRealTi
+   }
+ 
+   Profile* profile = Profile::FromBrowserContext(context_);
+-  if (IsAffiliated(profile)) {
+-    std::string result = GetDeviceClientId(profile);
+-    std::string email = MaybeGetProfileEmail(profile);
+-    if (!email.empty()) {
+-      return base::StrCat({result, "\n", email});
+-    }
+-    return result;
+-  }
+ 
+   if (dm_token->scope == policy::POLICY_SCOPE_MACHINE) {
+     return GetDeviceClientId(profile);

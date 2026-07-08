@@ -1,7 +1,6 @@
 # Thorium UI color fixes
 #
-# These hunks were previously part of thorium-ui.patch (the last 2 hunks).
-# They add color definitions that prevent placeholder red (#ff0000) in
+# These hunks add color definitions that prevent placeholder red (#ff0000) in
 # colors.css output and ensure proper rendering of UI elements.
 #
 # The upstream thorium-2024-ui.patch does not include these changes yet,
@@ -31,15 +30,3 @@
 +  mixer[kColorNewTabPageModuleTabGroupsDotCyan] = {
 +      kColorTabGroupTabStripFrameActiveCyan};
  }
---- a/chrome/browser/ui/color/chrome_color_mixer.cc
-+++ b/chrome/browser/ui/color/chrome_color_mixer.cc
-@@ -1095,6 +1095,10 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
-                           kColorReadAnythingBackgroundHighContrast,
-                           color_utils::kMinimumVisibleContrastRatio);
-+  mixer[kColorReadAnythingFocusRingBackgroundLowContrast] =
-+      ui::PickGoogleColor(gfx::kGoogleBlue500,
-+                          kColorReadAnythingBackgroundLowContrast,
-+                          color_utils::kMinimumVisibleContrastRatio);
-   mixer[kColorReadAnythingFocusRingBackgroundLowContrastLight] =
-       ui::PickGoogleColor(gfx::kGoogleBlue500,
-                           kColorReadAnythingBackgroundLowContrastLight,

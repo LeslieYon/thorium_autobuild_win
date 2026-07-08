@@ -191,6 +191,8 @@ def _rule_safe_browsing_keywords(_file_path: str, hunk: str) -> bool:
         'safe_browsing',
         'ukm_pref',
         'getextendedreportingprefnam',
+        'base::value::type::',
+        'kaccounttailoredsecurityupdatetimestamp',
         # 'advancedprotection',
         # 'passwordprotection',
     )

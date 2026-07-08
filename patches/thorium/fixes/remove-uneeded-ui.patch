@@ -109,6 +109,7 @@
 -        external>
 -    </cr-link-row>
    </settings-subpage>
+# remove non-functional AI options UI
 --- a/chrome/browser/ui/webui/settings/settings_ui.cc
 +++ b/chrome/browser/ui/webui/settings/settings_ui.cc
 @@ -626,33 +626,18 @@ SettingsUI::SettingsUI(content::WebUI* w

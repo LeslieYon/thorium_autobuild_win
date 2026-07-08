@@ -17,6 +17,7 @@
 #[main]
 upstream-fixes/missing-dependencies.patch
 core/inox-patchset/0001-fix-building-without-safebrowsing.patch
+extra/inox-patchset/0008-restore-classic-ntp.patch
 core/ungoogled-chromium/fix-building-without-safebrowsing.patch
 core/ungoogled-chromium/fix-building-with-prunned-binaries.patch
 core/ungoogled-chromium/disable-mei-preload.patch
