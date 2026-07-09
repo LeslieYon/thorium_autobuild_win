@@ -1,0 +1,31 @@
+diff --git a/chrome/browser/ssl/ssl_config_service_manager.cc b/chrome/browser/ssl/ssl_config_service_manager.cc
+index be7fe08f34259..3221ea2e87d94 100644
+--- a/chrome/browser/ssl/ssl_config_service_manager.cc
++++ b/chrome/browser/ssl/ssl_config_service_manager.cc
+@@ -10,6 +10,7 @@
+ #include <string_view>
+ #include <vector>
+ 
++#include "base/command_line.h"
+ #include "base/containers/to_vector.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+@@ -253,6 +254,18 @@ network::mojom::SSLConfigPtr SSLConfigServiceManager::GetNewSSLConfig() const {
+ 
+   config->ech_enabled = ech_enabled_.GetValue();
+ 
++  const base::CommandLine* command_line =
++      base::CommandLine::ForCurrentProcess();
++  if (!ech_enabled_.IsManaged() &&
++      command_line->HasSwitch("encrypted-client-hello")) {
++    const std::string encrypted_client_hello =
++        command_line->GetSwitchValueASCII("encrypted-client-hello");
++    if (encrypted_client_hello == "enabled")
++      config->ech_enabled = true;
++    else if (encrypted_client_hello == "disabled")
++      config->ech_enabled = false;
++  }
++
+ #if BUILDFLAG(CHROME_ROOT_STORE_SUPPORTED)
+   config->trust_anchor_ids =
+       trust_anchor_ids_.has_value()

@@ -34,6 +34,7 @@ thorium/fixes/fix-building-device-vr.patch
 # Application order follows patchThor() in the original Thorium build script
 #
 thorium/original/add-hevc-ffmpeg-decoder-parser.patch
+thorium/original/add-ac3-eac3-ffmpeg-decoders.patch
 thorium/original/change-libavcodec-header.patch
 thorium/original/fix-policy-templates.patch
 thorium/original/ftp-support-thorium.patch
@@ -106,9 +107,12 @@ thorium/original/thorium-version-page-branding.patch
 thorium/original/thorium-vector-icons.patch
 thorium/original/thorium-app-menu-icons.patch
 thorium/original/prevent-url-elisions-by-default.patch
+thorium/original/disable-ai-entrypoints-by-default.patch
 thorium/original/enable-chrome-labs-by-default.patch
 thorium/original/enable-whats-new-by-default.patch
 thorium/original/restore_download_shelf.patch
+# disable-middle-click-paste-with-autoscroll: Split from thorium-2024-ui.patch
+thorium/original/disable-middle-click-paste-with-autoscroll.patch
 
 # Windows installer (category 60)
 thorium/original/thorium-mini-installer-manifest.patch
@@ -118,6 +122,7 @@ thorium/original/windows-thorium-flags-conf.patch
 # Feature flags and defaults (category 70)
 thorium/original/add-flag-for-close-confirmation.patch
 thorium/original/add-flag-to-close-window-with-last-tab.patch
+thorium/original/enable-ctrl-tab-mru.patch
 thorium/original/add-flag-to-scroll-tabs.patch
 thorium/original/add-flag-for-double-click-close-tab.patch
 thorium/original/add-flag-for-right-click-close-tab.patch
@@ -135,6 +140,7 @@ thorium/original/add-flag-to-keep-all-history.patch
 thorium/original/force-disable-tab-outlines.patch
 thorium/original/quiet-notification-defaults.patch
 thorium/original/secure-dns-defaults.patch
+thorium/original/add-flag-for-encrypted-client-hello.patch
 thorium/original/disable-alternate-error-pages-by-default.patch
 thorium/original/enable-parallel-downloading-by-default.patch
 thorium/original/disable-background-mode-by-default.patch

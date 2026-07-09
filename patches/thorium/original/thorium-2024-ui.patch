@@ -2981,28 +2981,6 @@ index a68a5fbcd74e7..c568a58cfd555 100644
  COMPONENT_EXPORT(UI_BASE_FEATURES)
  BASE_DECLARE_FEATURE(kBubbleMetricsApi);
  
-diff --git a/ui/linux/linux_ui_factory.cc b/ui/linux/linux_ui_factory.cc
-index 714cb4ec5caa5..aa5d0a80d16b0 100644
---- a/ui/linux/linux_ui_factory.cc
-+++ b/ui/linux/linux_ui_factory.cc
-@@ -193,7 +193,7 @@ SystemTheme GetDefaultSystemTheme() {
-     case base::nix::DESKTOP_ENVIRONMENT_UNITY:
-     case base::nix::DESKTOP_ENVIRONMENT_XFCE:
-     case base::nix::DESKTOP_ENVIRONMENT_COSMIC:
--      return SystemTheme::kGtk;
-+      return SystemTheme::kDefault;
-     case base::nix::DESKTOP_ENVIRONMENT_KDE3:
-     case base::nix::DESKTOP_ENVIRONMENT_KDE4:
-     case base::nix::DESKTOP_ENVIRONMENT_KDE5:
-@@ -201,7 +201,7 @@ SystemTheme GetDefaultSystemTheme() {
-     case base::nix::DESKTOP_ENVIRONMENT_UKUI:
-     case base::nix::DESKTOP_ENVIRONMENT_DEEPIN:
-     case base::nix::DESKTOP_ENVIRONMENT_LXQT:
--      return SystemTheme::kQt;
-+      return SystemTheme::kDefault;
-     case base::nix::DESKTOP_ENVIRONMENT_OTHER:
-       return SystemTheme::kDefault;
-   }
 diff --git a/ui/views/controls/button/toggle_button.cc b/ui/views/controls/button/toggle_button.cc
 index 585e7889f9af4..bfb9ce89b7697 100644
 --- a/ui/views/controls/button/toggle_button.cc

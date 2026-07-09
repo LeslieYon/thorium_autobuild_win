@@ -42,6 +42,49 @@ index 44f0d03da121a..e67a072c3d217 100644
            .SetEnabled(is_incognito ||
                        (!is_guest_session && !profile->IsSystemProfile()))
            .Build());
+diff --git a/chrome/browser/ui/content_settings/content_setting_image_model.cc b/chrome/browser/ui/content_settings/content_setting_image_model.cc
+index bcdbd0957b0e7..c0eba8e182044 100644
+--- a/chrome/browser/ui/content_settings/content_setting_image_model.cc
++++ b/chrome/browser/ui/content_settings/content_setting_image_model.cc
+@@ -8,6 +8,7 @@
+ #include <string>
+ #include <utility>
+ 
++#include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/metrics/field_trial_params.h"
+ #include "base/metrics/user_metrics.h"
+@@ -382,6 +383,9 @@ const ContentSettingsImageDetails* GetImageDetails(ContentSettingsType type) {
+ void GetIconChromeRefresh(ContentSettingsType type,
+                           bool blocked,
+                           raw_ptr<const gfx::VectorIcon>* icon) {
++  const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   switch (type) {
+     case ContentSettingsType::COOKIES:
+       *icon = blocked ? &(features::IsRoundedIconsEnabled()
+@@ -419,11 +423,17 @@ void GetIconChromeRefresh(ContentSettingsType type,
+       return;
+     case ContentSettingsType::SOUND:
+       *icon = blocked ? &(features::IsRoundedIconsEnabled()
+-                              ? vector_icons::kVolumeOffIcon
+-                              : vector_icons::kVolumeOffChromeRefreshOldIcon)
++                              ? (disable_thorium_icons
++                                     ? vector_icons::kVolumeOffIcon
++                                     : vector_icons::kVolumeOffThoriumIcon)
++                              : (disable_thorium_icons
++                                     ? vector_icons::kVolumeOffChromeRefreshOldIcon
++                                     : vector_icons::kVolumeOffChromeRefreshThoriumIcon))
+                       : &(features::IsRoundedIconsEnabled()
+                               ? vector_icons::kVolumeUpIcon
+-                              : vector_icons::kVolumeUpChromeRefreshOldIcon);
++                              : (disable_thorium_icons
++                                     ? vector_icons::kVolumeUpChromeRefreshOldIcon
++                                     : vector_icons::kVolumeUpChromeRefreshThoriumIcon));
+       return;
+     case ContentSettingsType::ADS:
+       *icon = blocked ? &(features::IsRoundedIconsEnabled()
 diff --git a/chrome/browser/ui/extensions/extensions_toolbar_view_model.cc b/chrome/browser/ui/extensions/extensions_toolbar_view_model.cc
 index 2ec1cf51cd517..7676198f2faee 100644
 --- a/chrome/browser/ui/extensions/extensions_toolbar_view_model.cc
@@ -72,6 +115,80 @@ index 2ec1cf51cd517..7676198f2faee 100644
      case ExtensionsToolbarButtonState::kAllExtensionsBlocked:
        return features::IsRoundedIconsEnabled()
                   ? vector_icons::kChromeExtensionOffIcon
+diff --git a/chrome/browser/ui/tabs/alert/tab_alert_icon.cc b/chrome/browser/ui/tabs/alert/tab_alert_icon.cc
+index 08e5d23de4982..4504a91a608e4 100644
+--- a/chrome/browser/ui/tabs/alert/tab_alert_icon.cc
++++ b/chrome/browser/ui/tabs/alert/tab_alert_icon.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "chrome/browser/ui/tabs/alert/tab_alert_icon.h"
+ 
++#include "base/command_line.h"
+ #include "chrome/app/vector_icons/vector_icons.h"
+ #include "chrome/browser/actor/resources/grit/actor_browser_resources.h"
+ #include "chrome/browser/glic/browser_ui/glic_vector_icon_manager.h"
+@@ -66,15 +67,24 @@ ui::ColorId GetAlertIndicatorColor(TabAlert state,
+ }
+ 
+ const gfx::VectorIcon& GetAlertIcon(TabAlert alert_state) {
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   switch (alert_state) {
+     case TabAlert::kAudioPlaying:
+       return features::IsRoundedIconsEnabled()
+                  ? vector_icons::kVolumeUpIcon
+-                 : vector_icons::kVolumeUpChromeRefreshOldIcon;
++                 : disable_thorium_icons
++                       ? vector_icons::kVolumeUpChromeRefreshOldIcon
++                       : vector_icons::kVolumeUpChromeRefreshThoriumIcon;
+     case TabAlert::kAudioMuting:
+       return features::IsRoundedIconsEnabled()
+-                 ? vector_icons::kVolumeOffIcon
+-                 : vector_icons::kVolumeOffChromeRefreshOldIcon;
++                 ? (disable_thorium_icons
++                        ? vector_icons::kVolumeOffIcon
++                        : vector_icons::kVolumeOffThoriumIcon)
++                 : (disable_thorium_icons
++                        ? vector_icons::kVolumeOffChromeRefreshOldIcon
++                        : vector_icons::kVolumeOffChromeRefreshThoriumIcon);
+     case TabAlert::kMediaRecording:
+     case TabAlert::kAudioRecording:
+     case TabAlert::kVideoRecording:
+diff --git a/chrome/browser/ui/tabs/tab_menu_model.cc b/chrome/browser/ui/tabs/tab_menu_model.cc
+index d59e95f5a5ebe..9b525ad02e9ea 100644
+--- a/chrome/browser/ui/tabs/tab_menu_model.cc
++++ b/chrome/browser/ui/tabs/tab_menu_model.cc
+@@ -446,15 +446,24 @@ void TabMenuModel::Build(int index) {
+                           IDS_TAB_CXMENU_SOUND_UNMUTE_SITE, num_tabs));
+ 
+   if (features::IsMenuSimplificationEnabled()) {
++    static const bool disable_thorium_icons =
++        base::CommandLine::ForCurrentProcess()->HasSwitch(
++            "disable-thorium-icons");
+     SetIconForCommandId(
+         TabStripModel::CommandToggleSiteMuted,
+         ui::ImageModel::FromVectorIcon(
+             will_mute ? features::IsRoundedIconsEnabled()
+-                            ? vector_icons::kVolumeOffIcon
+-                            : vector_icons::kVolumeOffChromeRefreshOldIcon
+-            : features::IsRoundedIconsEnabled()
+-                ? vector_icons::kVolumeUpIcon
+-                : vector_icons::kVolumeUpChromeRefreshOldIcon,
++                            ? (disable_thorium_icons
++                                   ? vector_icons::kVolumeOffIcon
++                                   : vector_icons::kVolumeOffThoriumIcon)
++                            : (disable_thorium_icons
++                                   ? vector_icons::kVolumeOffChromeRefreshOldIcon
++                                   : vector_icons::kVolumeOffChromeRefreshThoriumIcon)
++                       : features::IsRoundedIconsEnabled()
++                           ? vector_icons::kVolumeUpIcon
++                           : (disable_thorium_icons
++                                  ? vector_icons::kVolumeUpChromeRefreshOldIcon
++                                  : vector_icons::kVolumeUpChromeRefreshThoriumIcon),
+             ui::kColorMenuIcon, ui::SimpleMenuModel::kDefaultIconSize));
+   }
+ 
 diff --git a/chrome/browser/ui/toolbar/app_menu_model.cc b/chrome/browser/ui/toolbar/app_menu_model.cc
 index 95ad4098919a8..82f91a9db81d1 100644
 --- a/chrome/browser/ui/toolbar/app_menu_model.cc
@@ -221,6 +338,75 @@ index 5b4a2131316f4..17bec4a17837f 100644
          kColorExtensionMenuIcon, small_icon_size);
  
      button_builder.SetHorizontalAlignment(gfx::ALIGN_RIGHT)
+diff --git a/chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.cc b/chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.cc
+index 5e008d4166e48..d1977d97c5fb7 100644
+--- a/chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.cc
++++ b/chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.h"
+ 
++#include "base/command_line.h"
+ #include "base/observer_list.h"
+ #include "base/strings/pattern.h"
+ #include "build/build_config.h"
+@@ -58,10 +59,16 @@ MediaToolbarButtonView::MediaToolbarButtonView(
+   SetFlipCanvasOnPaintForRTLUI(false);
+   SetVectorIcons(features::IsRoundedIconsEnabled()
+                      ? kQueueMusicIcon
+-                     : kMediaToolbarButtonChromeRefreshOldIcon,
++                     : base::CommandLine::ForCurrentProcess()->HasSwitch(
++                           "disable-thorium-icons")
++                           ? kMediaToolbarButtonChromeRefreshOldIcon
++                           : kMediaToolbarButtonChromeRefreshThoriumIcon,
+                  features::IsRoundedIconsEnabled()
+                      ? kQueueMusicIcon
+-                     : kMediaToolbarButtonTouchOldIcon);
++                     : base::CommandLine::ForCurrentProcess()->HasSwitch(
++                           "disable-thorium-icons")
++                           ? kMediaToolbarButtonTouchOldIcon
++                           : kMediaToolbarButtonTouchThoriumIcon);
+   SetTooltipText(
+       l10n_util::GetStringUTF16(IDS_GLOBAL_MEDIA_CONTROLS_ICON_TOOLTIP_TEXT));
+   GetViewAccessibility().SetHasPopup(ax::mojom::HasPopup::kDialog);
+diff --git a/chrome/browser/ui/views/overlay/toggle_mute_button.cc b/chrome/browser/ui/views/overlay/toggle_mute_button.cc
+index d2998e3b521b6..9167a1b7fb650 100644
+--- a/chrome/browser/ui/views/overlay/toggle_mute_button.cc
++++ b/chrome/browser/ui/views/overlay/toggle_mute_button.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "chrome/browser/ui/views/overlay/toggle_mute_button.h"
+ 
++#include "base/command_line.h"
+ #include "chrome/browser/ui/color/chrome_color_id.h"
+ #include "chrome/browser/ui/views/overlay/constants.h"
+ #include "chrome/grit/generated_resources.h"
+@@ -37,13 +38,22 @@ void ToggleMuteButton::UpdateImageAndTooltipText() {
+     return;
+   }
+ 
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   const auto& icon = is_muted_
+                          ? features::IsRoundedIconsEnabled()
+-                               ? vector_icons::kVolumeOffIcon
+-                               : vector_icons::kVolumeOffChromeRefreshOldIcon
++                               ? (disable_thorium_icons
++                                      ? vector_icons::kVolumeOffIcon
++                                      : vector_icons::kVolumeOffThoriumIcon)
++                               : (disable_thorium_icons
++                                      ? vector_icons::kVolumeOffChromeRefreshOldIcon
++                                      : vector_icons::kVolumeOffChromeRefreshThoriumIcon)
+                      : features::IsRoundedIconsEnabled()
+                          ? vector_icons::kVolumeUpIcon
+-                         : vector_icons::kVolumeUpChromeRefreshOldIcon;
++                         : (disable_thorium_icons
++                                ? vector_icons::kVolumeUpChromeRefreshOldIcon
++                                : vector_icons::kVolumeUpChromeRefreshThoriumIcon);
+ 
+   auto text = is_muted_ ? IDS_PICTURE_IN_PICTURE_UNMUTE_TEXT
+                         : IDS_PICTURE_IN_PICTURE_MUTE_TEXT;
 diff --git a/chrome/browser/ui/views/page_info/page_info_main_view.cc b/chrome/browser/ui/views/page_info/page_info_main_view.cc
 index eb13023555566..b922957aebc32 100644
 --- a/chrome/browser/ui/views/page_info/page_info_main_view.cc
@@ -250,7 +436,7 @@ index eb13023555566..b922957aebc32 100644
            /*subtitle_text=*/std::u16string(),
            PageInfoViewFactory::GetOpenSubpageIcon()));
 diff --git a/chrome/browser/ui/views/page_info/page_info_view_factory.cc b/chrome/browser/ui/views/page_info/page_info_view_factory.cc
-index 7bca0c5935174..a6031c272a9fd 100644
+index 7bca0c5935174..75ff06c111e85 100644
 --- a/chrome/browser/ui/views/page_info/page_info_view_factory.cc
 +++ b/chrome/browser/ui/views/page_info/page_info_view_factory.cc
 @@ -7,6 +7,7 @@
@@ -261,7 +447,38 @@ index 7bca0c5935174..a6031c272a9fd 100644
  #include "base/feature_list.h"
  #include "base/memory/raw_ptr.h"
  #include "base/strings/utf_string_conversions.h"
-@@ -913,11 +914,19 @@ const ui::ImageModel PageInfoViewFactory::GetOpenSubpageIcon() {
+@@ -306,6 +307,9 @@ const ui::ImageModel PageInfoViewFactory::GetPermissionIcon(
+           ? std::get<ContentSetting>(setting) == CONTENT_SETTING_BLOCK ||
+                 std::get<ContentSetting>(setting) == CONTENT_SETTING_ASK
+           : info->delegate().IsBlocked(setting);
++  const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+ 
+   // TODO(crbug.com/335848275): Migrate the icons in 2 steps.
+   // 1 - Copy contents of refresh icons into current non-refresh icons.
+@@ -449,11 +453,17 @@ const ui::ImageModel PageInfoViewFactory::GetPermissionIcon(
+     case ContentSettingsType::SOUND:
+       icon = show_blocked_badge
+                  ? &(features::IsRoundedIconsEnabled()
+-                         ? vector_icons::kVolumeOffIcon
+-                         : vector_icons::kVolumeOffChromeRefreshOldIcon)
++                         ? (disable_thorium_icons
++                                ? vector_icons::kVolumeOffIcon
++                                : vector_icons::kVolumeOffThoriumIcon)
++                         : (disable_thorium_icons
++                                ? vector_icons::kVolumeOffChromeRefreshOldIcon
++                                : vector_icons::kVolumeOffChromeRefreshThoriumIcon))
+                  : &(features::IsRoundedIconsEnabled()
+                          ? vector_icons::kVolumeUpIcon
+-                         : vector_icons::kVolumeUpChromeRefreshOldIcon);
++                         : (disable_thorium_icons
++                                ? vector_icons::kVolumeUpChromeRefreshOldIcon
++                                : vector_icons::kVolumeUpChromeRefreshThoriumIcon));
+       break;
+     case ContentSettingsType::CLIPBOARD_READ_WRITE:
+       icon = show_blocked_badge ? &(features::IsRoundedIconsEnabled()
+@@ -913,11 +923,19 @@ const ui::ImageModel PageInfoViewFactory::GetOpenSubpageIcon() {
    // GetIconSize() does not work for subpage icons because the default size of
    // features::IsRoundedIconsEnabled() ? vector_icons::kArrowRightFlippableIcon
    // : kSubmenuArrowOldIcon is 8 rather than 16.
@@ -434,7 +651,7 @@ index a2ed2085675b2..7e7270382e950 100644
                             ? kCloseIcon
                             : kNavigateStopTouchOldIcon),
 diff --git a/chrome/browser/ui/views/toolbar/toolbar_controller.cc b/chrome/browser/ui/views/toolbar/toolbar_controller.cc
-index 1122043b3895c..f0425a9d3aeab 100644
+index 1122043b3895c..0a995e6aeac69 100644
 --- a/chrome/browser/ui/views/toolbar/toolbar_controller.cc
 +++ b/chrome/browser/ui/views/toolbar/toolbar_controller.cc
 @@ -10,6 +10,7 @@
@@ -445,7 +662,27 @@ index 1122043b3895c..f0425a9d3aeab 100644
  #include "base/containers/adapters.h"
  #include "base/metrics/user_metrics.h"
  #include "base/metrics/user_metrics_action.h"
-@@ -324,12 +325,18 @@ ToolbarController::GetDefaultResponsiveElements(Browser* browser) {
+@@ -236,6 +237,9 @@ ToolbarController::~ToolbarController() {
+ std::vector<ToolbarController::ResponsiveElementInfo>
+ ToolbarController::GetDefaultResponsiveElements(Browser* browser) {
+   bool is_incognito = browser->profile()->IsIncognitoProfile();
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   // TODO(crbug.com/40912482): Fill in observed identifier.
+   // Order matters because it should match overflow menu order top to bottom.
+   std::vector<ToolbarController::ResponsiveElementInfo> elements = {
+@@ -317,19 +321,26 @@ ToolbarController::GetDefaultResponsiveElements(Browser* browser) {
+                IDS_OVERFLOW_MENU_ITEM_TEXT_MEDIA_CONTROLS,
+                &(features::IsRoundedIconsEnabled()
+                      ? kQueueMusicIcon
+-                     : kMediaToolbarButtonChromeRefreshOldIcon),
++                     : disable_thorium_icons
++                           ? kMediaToolbarButtonChromeRefreshOldIcon
++                           : kMediaToolbarButtonChromeRefreshThoriumIcon),
+                kToolbarMediaButtonElementId, kToolbarMediaBubbleElementId),
+            /*is_section_end=*/true),
+        ToolbarController::ResponsiveElementInfo(
             ToolbarController::ElementIdInfo(
                 kToolbarAvatarButtonElementId,
                 IDS_OVERFLOW_MENU_ITEM_TEXT_PROFILE,
@@ -456,8 +693,7 @@ index 1122043b3895c..f0425a9d3aeab 100644
 -                                     ? kAccountCircleIcon
 -                                     : kUserAccountAvatarRefreshOldIcon)),
 +               is_incognito
-+                   ? (&(base::CommandLine::ForCurrentProcess()->HasSwitch(
-+                            "disable-thorium-icons")
++                   ? (&(disable_thorium_icons
 +                            ? (features::IsRoundedIconsEnabled()
 +                                   ? kIncognitoIcon
 +                                   : kIncognitoRefreshMenuOldIcon)

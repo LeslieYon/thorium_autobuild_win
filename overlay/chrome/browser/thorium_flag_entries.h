@@ -15,6 +15,10 @@
      "GTK Auto Dark Mode",
      "Enables Thorium to automatically change to Dark Mode according to the system GTK Theme.",
      kOsLinux, SINGLE_VALUE_TYPE("auto-dark-mode")},
+    {"use-system-linux-theme",
+     "Use GTK/Qt System Theme",
+     "Allows Thorium to use the detected GTK or Qt system theme on Linux instead of the default Thorium 2024 UI theme behavior.",
+     kOsLinux, SINGLE_VALUE_TYPE("use-system-linux-theme")},
 #endif // BUILDFLAG(IS_LINUX)
 
     {"thorium-2024",
@@ -46,10 +50,12 @@
      "Hide Extensions Menu",
      "Hides the extensions container. This includes the puzzle piece icon as well as any pinned extensions.",
      kOsDesktop, SINGLE_VALUE_TYPE("hide-extensions-menu")},
+#if BUILDFLAG(ENABLE_EXTENSIONS) && !BUILDFLAG(IS_ANDROID)
     {"extensions-menu-quick-toggles",
      "Extensions Menu Quick Toggles",
      "Shows a quick enable/disable section for installed extensions in the extensions menu.",
-     kOsDesktop, FEATURE_VALUE_TYPE(features::kExtensionsMenuQuickToggle)},    
+     kOsDesktop, FEATURE_VALUE_TYPE(features::kExtensionsMenuQuickToggle)},     
+#endif  // BUILDFLAG(ENABLE_EXTENSIONS) && !BUILDFLAG(IS_ANDROID)
     {"classic-omnibox",
      "Classic Omnibox UI",
      "Changes the omnibox shape to be more square.",
@@ -58,6 +64,10 @@
      "Thorium Rectangular Tabs UI",
      "Changes the look of browser tabs to appear with a rectangular shape, similar to Vivaldi or Cent Browser.",
      kOsDesktop, SINGLE_VALUE_TYPE("rectangular-tabs")},
+    {"ctrl-tab-mru",
+     "Ctrl+Tab Switches to Most Recently Used Tab",
+     "Makes Ctrl+Tab switch to the previously used tab instead of the next adjacent tab.",
+     kOsDesktop, FEATURE_VALUE_TYPE(features::kCtrlTabMru)},
 
     {"custom-tab-width",
      "Custom Tab Width",
@@ -67,8 +77,10 @@
      "Disable Thorium Custom DNS Config",
      "Disables the custom DNS configuration used by default in Thorium. Useful when this config breaks something, "
      "due to external apps or a non-standard system DNS config setting.",
-     kOsDesktop, SINGLE_VALUE_TYPE("disable-thorium-dns-config")},
-
+     kOsDesktop, SINGLE_VALUE_TYPE("disable-thorium-dns-config")},    {"encrypted-client-hello",
+     "Encrypted ClientHello",
+     "Controls whether Thorium allows TLS Encrypted ClientHello. Enabled still requires server support and usable HTTPS/SVCB DNS records.",
+     kOsAll, MULTI_VALUE_TYPE(kEncryptedClientHelloChoices)},
 #if !BUILDFLAG(IS_ANDROID)
     {"show-component-extension-options",
      "Show Component Extension Options",

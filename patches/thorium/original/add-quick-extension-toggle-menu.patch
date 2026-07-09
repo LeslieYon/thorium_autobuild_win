@@ -15,8 +15,47 @@ index 46264bc11768e..07e4ec67017d9 100644
          <message name="IDS_EXTENSIONS_MENU_CONTEXT_MENU_TOOLTIP" desc="Title of the context menu for individual extensions in the Extensions Menu" formatter_data="android_java">
            More options
          </message>
+diff --git a/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.cc b/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.cc
+index de4a4c04a7b5c..42175aa46131c 100644
+--- a/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.cc
++++ b/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.cc
+@@ -315,6 +315,19 @@ void ExtensionsMenuDelegateAndroid::OnExtensionToggleSelected(
+   }
+ }
+ 
++void ExtensionsMenuDelegateAndroid::OnExtensionEnableToggleSelected(
++    const extensions::ExtensionId& extension_id,
++    bool is_on) {
++  // The Android extensions menu does not expose the desktop quick enable
++  // manager section.
++}
++
++void ExtensionsMenuDelegateAndroid::OnAllExtensionsEnableToggleSelected(
++    bool is_on) {
++  // The Android extensions menu does not expose the desktop quick enable
++  // manager section.
++}
++
+ void ExtensionsMenuDelegateAndroid::OnShowRequestsTogglePressed(
+     const extensions::ExtensionId& extension_id,
+     bool is_on) {
+diff --git a/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.h b/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.h
+index 0d90f794f4680..0c6694bd6ccae 100644
+--- a/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.h
++++ b/chrome/browser/ui/android/extensions/extensions_menu_delegate_android.h
+@@ -101,6 +101,10 @@ class ExtensionsMenuDelegateAndroid : public ExtensionsMenuViewModel::Delegate,
+   void OnExtensionToggleSelected(const extensions::ExtensionId& extension_id,
+                                  const url::Origin& origin,
+                                  bool is_on) override;
++  void OnExtensionEnableToggleSelected(
++      const extensions::ExtensionId& extension_id,
++      bool is_on) override;
++  void OnAllExtensionsEnableToggleSelected(bool is_on) override;
+   void OnReloadPageButtonClicked() override;
+   void OnShowRequestsTogglePressed(const extensions::ExtensionId& extension_id,
+                                    bool is_on) override;
 diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
-index 5748bc53a2024..8d506c1b03a02 100644
+index 1b70d0ec404b9..c1385bd50b39f 100644
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
 @@ -93,6 +93,9 @@ BASE_FEATURE(kFewerUpdateConfirmations, base::FEATURE_ENABLED_BY_DEFAULT);

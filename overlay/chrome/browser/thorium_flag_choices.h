@@ -60,6 +60,14 @@ const FeatureEntry::Choice kShowAvatarButtonChoices[] = {
      "never"}
 };
 
+const FeatureEntry::Choice kEncryptedClientHelloChoices[] = {
+    {flags_ui::kGenericExperimentChoiceDefault, "", ""},
+    {"Enabled",
+     "encrypted-client-hello", "enabled"},
+    {"Disabled",
+     "encrypted-client-hello", "disabled"},
+};
+
 const FeatureEntry::Choice kWebglMSAASampleCountChoices[] = {
     {flags_ui::kGenericExperimentChoiceDefault, "", ""},
     {"0",

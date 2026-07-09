@@ -26,3 +26,16 @@ index df8f9455d224f..f0857b4b67eff 100644
  }
  #endif  // !BUILDFLAG(IS_ANDROID)
  
+diff --git a/chrome/common/logging_chrome.cc b/chrome/common/logging_chrome.cc
+index 2e7ae1d3a591c..6c235fe0a9955 100644
+--- a/chrome/common/logging_chrome.cc
++++ b/chrome/common/logging_chrome.cc
+@@ -573,7 +573,7 @@ base::FilePath GetLogFileName(const base::CommandLine& command_line) {
+ 
+   // If command line and environment do not provide a log file we can use,
+   // fallback to the default.
+-  const base::FilePath log_filename(FILE_PATH_LITERAL("chrome_debug.log"));
++  const base::FilePath log_filename(FILE_PATH_LITERAL("thorium_debug.log"));
+   base::FilePath log_path;
+ 
+   if (base::PathService::Get(chrome::DIR_LOGS, &log_path)) {

@@ -1,0 +1,129 @@
+diff --git a/chrome/browser/renderer_preferences_util.cc b/chrome/browser/renderer_preferences_util.cc
+index a01afc10439ba..2fbe32894457b 100644
+--- a/chrome/browser/renderer_preferences_util.cc
++++ b/chrome/browser/renderer_preferences_util.cc
+@@ -35,6 +35,7 @@
+ #include "third_party/blink/public/public_buildflags.h"
+ #include "third_party/skia/include/core/SkColor.h"
+ #include "ui/accessibility/platform/ax_platform.h"
++#include "ui/base/clipboard/clipboard.h"
+ #include "ui/base/ui_base_features.h"
+ #include "ui/native_theme/native_theme.h"
+ 
+@@ -142,8 +143,9 @@ void UpdateFromSystemSettings(blink::RendererPreferences* prefs,
+ #endif  // BUILDFLAG(USE_AURA)
+ 
+ #if BUILDFLAG(IS_LINUX)
+-  if (auto* linux_ui = ui::LinuxUi::instance()) {
+-    prefs->middle_click_paste_allowed = linux_ui->PrimaryPasteEnabled();
++  if (ui::LinuxUi::instance()) {
++    prefs->middle_click_paste_allowed =
++        ui::Clipboard::IsMiddleClickPasteEnabled();
+   }
+ #endif
+   prefs->caret_blink_interval =
+diff --git a/chrome/browser/ui/browser_commands.cc b/chrome/browser/ui/browser_commands.cc
+index e8333d166923c..b91efafbbccf6 100644
+--- a/chrome/browser/ui/browser_commands.cc
++++ b/chrome/browser/ui/browser_commands.cc
+@@ -1229,7 +1229,8 @@ void NewTabToRight(BrowserWindowInterface* browser) {
+ void NewTabFromClipboardURL(BrowserWindowInterface* browser) {
+ #if BUILDFLAG(IS_LINUX)
+   if (ui::Clipboard::IsSupportedClipboardBuffer(
+-          ui::ClipboardBuffer::kSelection)) {
++          ui::ClipboardBuffer::kSelection) &&
++      ui::Clipboard::IsMiddleClickPasteEnabled()) {
+     ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+     CHECK(clipboard)
+         << "Clipboard instance is not available, cannot proceed with "
+diff --git a/third_party/blink/renderer/core/editing/selection_controller.cc b/third_party/blink/renderer/core/editing/selection_controller.cc
+index 0afe44c149a90..232b545579c48 100644
+--- a/third_party/blink/renderer/core/editing/selection_controller.cc
++++ b/third_party/blink/renderer/core/editing/selection_controller.cc
+@@ -61,6 +61,7 @@
+ #include "third_party/blink/renderer/core/layout/layout_view.h"
+ #include "third_party/blink/renderer/core/page/focus_controller.h"
+ #include "third_party/blink/renderer/core/page/page.h"
++#include "third_party/blink/renderer/core/page/autoscroll_controller.h"
+ #include "third_party/blink/renderer/core/paint/paint_layer.h"
+ #include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "ui/base/mojom/menu_source_type.mojom-blink.h"
+@@ -1289,6 +1290,13 @@ bool SelectionController::HandlePasteGlobalSelection(
+   if (!frame_->GetPage())
+     return false;
+ 
++  if (RuntimeEnabledFeatures::MiddleClickAutoscrollEnabled() &&
++      frame_->GetPage()
++          ->GetAutoscrollController()
++          .MiddleClickAutoscrollInProgress()) {
++    return false;
++  }
++
+   // Do not paste if the user has opted out of middle-click pasting.
+   if (auto* settings = frame_->GetSettings();
+       settings && !settings->GetMiddleClickPasteAllowed()) {
+diff --git a/ui/base/clipboard/clipboard.cc b/ui/base/clipboard/clipboard.cc
+index db3cd03998742..e253b6639f957 100644
+--- a/ui/base/clipboard/clipboard.cc
++++ b/ui/base/clipboard/clipboard.cc
+@@ -12,11 +12,13 @@
+ #include <variant>
+ 
+ #include "base/check.h"
++#include "base/command_line.h"
+ #include "base/json/json_reader.h"
+ #include "base/memory/ptr_util.h"
+ #include "base/no_destructor.h"
+ #include "base/notreached.h"
+ #include "base/strings/strcat.h"
++#include "base/strings/string_split.h"
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/types/optional_util.h"
+ #include "build/build_config.h"
+@@ -36,6 +38,35 @@ namespace ui {
+ 
+ namespace {
+ 
++#if BUILDFLAG(IS_LINUX)
++constexpr char kMiddleClickAutoscrollBlinkFeature[] =
++    "MiddleClickAutoscroll";
++constexpr char kDisableBlinkFeaturesSwitch[] = "disable-blink-features";
++constexpr char kEnableBlinkFeaturesSwitch[] = "enable-blink-features";
++constexpr char kEnableBlinkTestFeaturesSwitch[] = "enable-blink-test-features";
++
++bool BlinkFeatureSwitchContains(const base::CommandLine& command_line,
++                                const char* switch_name,
++                                const char* feature_name) {
++  return std::ranges::contains(
++      base::SplitString(command_line.GetSwitchValueASCII(switch_name), ",",
++                        base::TRIM_WHITESPACE, base::SPLIT_WANT_NONEMPTY),
++      feature_name);
++}
++
++bool IsMiddleClickAutoscrollEnabledFromCommandLine() {
++  const base::CommandLine& command_line =
++      *base::CommandLine::ForCurrentProcess();
++  if (BlinkFeatureSwitchContains(command_line, kDisableBlinkFeaturesSwitch,
++                                 kMiddleClickAutoscrollBlinkFeature)) {
++    return false;
++  }
++  return command_line.HasSwitch(kEnableBlinkTestFeaturesSwitch) ||
++         BlinkFeatureSwitchContains(command_line, kEnableBlinkFeaturesSwitch,
++                                    kMiddleClickAutoscrollBlinkFeature);
++}
++#endif
++
+ void OnCustomFormatDataRead(
+     Clipboard::ExtractCustomPlatformNamesCallback callback,
+     std::string custom_format_json) {
+@@ -116,6 +147,10 @@ bool Clipboard::IsSupportedClipboardBuffer(ClipboardBuffer buffer) {
+ // static
+ bool Clipboard::IsMiddleClickPasteEnabled() {
+ #if BUILDFLAG(IS_LINUX)
++  if (IsMiddleClickAutoscrollEnabledFromCommandLine()) {
++    return false;
++  }
++
+   if (auto* linux_ui = ui::LinuxUi::instance()) {
+     return linux_ui->PrimaryPasteEnabled();
+   }

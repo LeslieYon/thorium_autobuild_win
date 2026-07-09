@@ -67,7 +67,7 @@ index 4bf77b0acb5ae..27b73afbb4b60 100644
    return "";
  #endif
 diff --git a/media/filters/ffmpeg_video_decoder.cc b/media/filters/ffmpeg_video_decoder.cc
-index eaf9f1c3c4490..67eb707768e30 100644
+index eaf9f1c3c4490..39c65ed89018d 100644
 --- a/media/filters/ffmpeg_video_decoder.cc
 +++ b/media/filters/ffmpeg_video_decoder.cc
 @@ -1,4 +1,4 @@
@@ -76,19 +76,28 @@ index eaf9f1c3c4490..67eb707768e30 100644
  // Use of this source code is governed by a BSD-style license that can be
  // found in the LICENSE file.
  #include "media/filters/ffmpeg_video_decoder.h"
-@@ -73,7 +73,6 @@ static int GetFFmpegVideoDecoderThreadCount(const VideoDecoderConfig& config) {
+@@ -71,19 +71,19 @@ static int GetFFmpegVideoDecoderThreadCount(const VideoDecoderConfig& config) {
+   // Only add more threads for those codecs that we know will benefit.
+   switch (config.codec()) {
      case VideoCodec::kUnknown:
++      // We do not compile ffmpeg with support for any of these codecs.
++      NOTREACHED();
++
++    case VideoCodec::kH264:
++    case VideoCodec::kHEVC:
      case VideoCodec::kVC1:
      case VideoCodec::kMPEG2:
 -    case VideoCodec::kHEVC:
      case VideoCodec::kVP9:
      case VideoCodec::kAV1:
      case VideoCodec::kDolbyVision:
-@@ -84,6 +83,7 @@ static int GetFFmpegVideoDecoderThreadCount(const VideoDecoderConfig& config) {
-       NOTREACHED();
- 
-     case VideoCodec::kH264:
-+    case VideoCodec::kHEVC:
+     case VideoCodec::kTheora:
+     case VideoCodec::kMPEG4:
+     case VideoCodec::kVP8:
+-      // We do not compile ffmpeg with support for any of these codecs.
+-      NOTREACHED();
+-
+-    case VideoCodec::kH264:
        // Normalize to three threads for 1080p content, then scale linearly
        // with number of pixels.
        // Examples:
