@@ -16,21 +16,9 @@
 components/signin/public/base/signin_pref_names.cc
 components/signin/public/base/signin_pref_names.h
 
-# safe_browsing/ — safe_browsing_prefs still referenced by BUILD.gn;
-# Thorium's other safe browsing patches don't remove this dependency.
-components/safe_browsing/core/common/safe_browsing_prefs.cc
-components/safe_browsing/core/common/safe_browsing_prefs.h
-
 # domain_reliability/ — Baked-in configs required at build time by
 # components/domain_reliability/BUILD.gn (bake_in_configs action).
 components/domain_reliability/baked_in_configs/*.json
-
-# mei_preload/ — The preloaded_data.pb binary is pruned by upstream, but
-# Thorium does not apply the companion ungoogled patch that removes the
-# build dependency. Without it, ninja fails with:
-#   '../../chrome/browser/resources/media/mei_preload/preloaded_data.pb',
-#   needed by 'MEIPreload/preloaded_data.pb', missing and no known rule
-chrome/browser/resources/media/mei_preload/preloaded_data.pb
 
 # other files protected
 components/privacy_sandbox/privacy_sandbox_attestations/preload/privacy-sandbox-attestations.dat
