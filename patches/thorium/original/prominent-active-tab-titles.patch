@@ -1,0 +1,104 @@
+diff --git a/chrome/browser/ui/views/tabs/tab.cc b/chrome/browser/ui/views/tabs/tab.cc
+index f3e5410e042f2..60e87e4183258 100644
+--- a/chrome/browser/ui/views/tabs/tab.cc
++++ b/chrome/browser/ui/views/tabs/tab.cc
+@@ -261,6 +261,7 @@ Tab::Tab(tabs::TabHandle handle, TabSlotController* controller)
+   SetID(VIEW_ID_TAB);
+ 
+   AddChildViewRaw(title_.get());
++  title_->SetFontList(tab_style_views_->GetFontList());
+ 
+   SetEventTargeter(std::make_unique<views::ViewTargeter>(this));
+ 
+@@ -941,6 +942,7 @@ void Tab::ActiveStateChanged() {
+   icon_->SetActiveState(IsActive());
+   alert_indicator_button_->OnParentTabButtonColorChanged();
+   alert_indicator_button_->UpdateEnabledForMuteToggle();
++  title_->SetFontList(tab_style_views_->GetFontList());
+   DeprecatedLayoutImmediately();
+ }
+ 
+diff --git a/chrome/browser/ui/views/tabs/tab_style_views.cc b/chrome/browser/ui/views/tabs/tab_style_views.cc
+index 33db8044c9c51..08482d85a7a20 100644
+--- a/chrome/browser/ui/views/tabs/tab_style_views.cc
++++ b/chrome/browser/ui/views/tabs/tab_style_views.cc
+@@ -9,6 +9,7 @@
+ #include <utility>
+ 
+ #include "base/check_is_test.h"
++#include "base/command_line.h"
+ #include "base/i18n/rtl.h"
+ #include "base/memory/raw_ptr.h"
+ #include "base/numerics/safe_conversions.h"
+@@ -49,6 +50,7 @@
+ #include "ui/gfx/geometry/skia_conversions.h"
+ #include "ui/gfx/scoped_canvas.h"
+ #include "ui/views/controls/focus_ring.h"
++#include "ui/views/style/typography.h"
+ #include "ui/views/widget/widget.h"
+ 
+ namespace {
+@@ -72,6 +74,7 @@ class TabStyleViewsImpl : public TabStyleViews {
+   bool IsApparentlyActive() const override;
+   float GetCurrentActiveOpacity() const override;
+   TabStyle::TabColors CalculateTargetColors() const override;
++  const gfx::FontList& GetFontList() const override;
+   void ShowHover(TabStyle::ShowHoverStyle style) override;
+   void HideHover(TabStyle::HideHoverStyle style) override;
+ 
+@@ -182,6 +185,9 @@ class TabStyleViewsImpl : public TabStyleViews {
+   const raw_ptr<const Tab> tab_;
+ 
+   std::unique_ptr<GlowHoverController> hover_controller_;
++
++  gfx::FontList normal_font_;
++  gfx::FontList heavy_font_;
+ };
+ 
+ // TabStyleViewsImpl ----------------------------------------------------------
+@@ -190,7 +196,11 @@ TabStyleViewsImpl::TabStyleViewsImpl(Tab* tab)
+     : tab_(tab),
+       hover_controller_((tab && gfx::Animation::ShouldRenderRichAnimation())
+                             ? new GlowHoverController(tab)
+-                            : nullptr) {
++                            : nullptr),
++      normal_font_(views::TypographyProvider::Get().GetFont(
++          views::style::CONTEXT_LABEL, views::style::STYLE_PRIMARY)),
++      heavy_font_(views::TypographyProvider::Get().GetFont(
++          views::style::CONTEXT_BUTTON_MD, views::style::STYLE_PRIMARY)) {
+   // `tab_` must not be nullptr.
+   CHECK(tab_);
+   // TODO(dfried): create a new STYLE_PROMINENT or similar to use instead of
+@@ -637,6 +647,18 @@ TabStyle::TabColors TabStyleViewsImpl::CalculateTargetColors() const {
+       tab()->GetColorProvider());
+ }
+ 
++const gfx::FontList& TabStyleViewsImpl::GetFontList() const {
++  static const bool prominent_active_tab_titles =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "prominent-active-tab-titles");
++
++  if (prominent_active_tab_titles && tab_->IsActive()) {
++    return heavy_font_;
++  }
++
++  return normal_font_;
++}
++
+ void TabStyleViewsImpl::ShowHover(TabStyle::ShowHoverStyle style) {
+   if (!hover_controller_) {
+     return;
+diff --git a/chrome/browser/ui/views/tabs/tab_style_views.h b/chrome/browser/ui/views/tabs/tab_style_views.h
+index c70567aeb7c95..8070b1f98665e 100644
+--- a/chrome/browser/ui/views/tabs/tab_style_views.h
++++ b/chrome/browser/ui/views/tabs/tab_style_views.h
+@@ -54,6 +54,9 @@ class TabStyleViews {
+                          float scale,
+                          const TabPathFlags& flags) const = 0;
+ 
++  // Returns the appropriate font for the current active state.
++  virtual const gfx::FontList& GetFontList() const = 0;
++
+   // Paints the tab.
+   virtual void PaintTab(gfx::Canvas* canvas) const = 0;
+ 

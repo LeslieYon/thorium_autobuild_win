@@ -1,0 +1,2633 @@
+diff --git a/chrome/browser/resources/settings/settings.html b/chrome/browser/resources/settings/settings.html
+index 9694b7eefa644..17a2547c61383 100644
+--- a/chrome/browser/resources/settings/settings.html
++++ b/chrome/browser/resources/settings/settings.html
+@@ -1,6 +1,6 @@
+ <!doctype html>
+ <html dir="$i18n{textdirection}" lang="$i18n{language}" class="loading"
+-    $i18n{webuiRefresh2026}>
++    $i18n{thorium2024} $i18n{webuiRefresh2026}>
+ <head>
+   <meta charset="utf-8">
+   <meta name="color-scheme" content="light dark">
+diff --git a/chrome/browser/ui/bookmarks/bookmark_utils.cc b/chrome/browser/ui/bookmarks/bookmark_utils.cc
+index ed11adf55026f..31a8cb627f99c 100644
+--- a/chrome/browser/ui/bookmarks/bookmark_utils.cc
++++ b/chrome/browser/ui/bookmarks/bookmark_utils.cc
+@@ -383,15 +383,31 @@ bool CanAllBeEditedByUser(
+ 
+ ui::ImageModel GetBookmarkFolderIcon(BookmarkFolderIconType icon_type,
+                                      ui::ColorVariant color) {
++  const bool thorium_2024 = features::IsThorium2024();
++
++#if BUILDFLAG(IS_WIN)
++  if (thorium_2024) {
++    const int default_id = (icon_type == BookmarkFolderIconType::kNormal)
++                               ? IDR_FOLDER_CLOSED
++                               : IDR_BOOKMARK_BAR_FOLDER_MANAGED;
++    return ui::ImageModel::FromImageSkia(
++        *ui::ResourceBundle::GetSharedInstance().GetImageSkiaNamed(default_id));
++  }
++#endif
++
+   const gfx::VectorIcon* icon_id;
+   if (icon_type == BookmarkFolderIconType::kNormal) {
+-    icon_id = &(features::IsRoundedIconsEnabled()
+-                    ? vector_icons::kFolderFlippableIcon
+-                    : vector_icons::kFolderChromeRefreshOldIcon);
++    icon_id = thorium_2024
++                  ? &vector_icons::kBookmarkFolderIcon
++                  : &(features::IsRoundedIconsEnabled()
++                          ? vector_icons::kFolderFlippableIcon
++                          : vector_icons::kFolderChromeRefreshOldIcon);
+   } else {
+-    icon_id = &(features::IsRoundedIconsEnabled()
+-                    ? vector_icons::kFolderManagedFlippableIcon
+-                    : vector_icons::kFolderManagedRefreshOldIcon);
++    icon_id = thorium_2024
++                  ? &vector_icons::kFolderManagedIcon
++                  : &(features::IsRoundedIconsEnabled()
++                          ? vector_icons::kFolderManagedFlippableIcon
++                          : vector_icons::kFolderManagedRefreshOldIcon);
+   }
+   return ui::ImageModel::FromVectorIcon(*icon_id, color);
+ }
+diff --git a/chrome/browser/ui/color/chrome_color_mixer.cc b/chrome/browser/ui/color/chrome_color_mixer.cc
+index 599797319f500..f6ff582becae7 100644
+--- a/chrome/browser/ui/color/chrome_color_mixer.cc
++++ b/chrome/browser/ui/color/chrome_color_mixer.cc
+@@ -352,8 +352,12 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
+       gfx::kGoogleGrey500, kColorBookmarkBarBackground, 6.0f);
+   mixer[kColorBookmarkFolderIcon] = {ui::kColorIcon};
+   mixer[kColorBookmarkBarSeparator] = {kColorToolbarSeparator};
+-  mixer[kColorBookmarkBarSeparatorChromeRefresh] = {
+-      kColorTabBackgroundInactiveFrameActive};
++  if (features::IsThorium2024()) {
++    mixer[kColorBookmarkBarSeparatorChromeRefresh] = {ui::kColorSysDivider};
++  } else {
++    mixer[kColorBookmarkBarSeparatorChromeRefresh] = {
++        kColorTabBackgroundInactiveFrameActive};
++  }
+   mixer[kColorBookmarkDragImageBackground] = {ui::kColorAccent};
+   mixer[kColorBookmarkDragImageCountBackground] = {ui::kColorAlertHighSeverity};
+   mixer[kColorBookmarkDragImageCountForeground] =
+@@ -773,8 +777,12 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
+   mixer[kColorAppMenuChipInkDropRipple] = {kColorToolbarInkDropRipple};
+   mixer[kColorToolbarCloseButtonBackgroundDefault] = {
+       ui::kColorSysBaseContainer};
+-  mixer[kColorToolbarExtensionSeparatorEnabled] = {
+-      kColorTabBackgroundInactiveFrameActive};
++  if (features::IsThorium2024()) {
++    mixer[kColorToolbarExtensionSeparatorEnabled] = {ui::kColorSysDivider};
++  } else {
++    mixer[kColorToolbarExtensionSeparatorEnabled] = {
++        kColorTabBackgroundInactiveFrameActive};
++  }
+   mixer[kColorToolbarExtensionSeparatorDisabled] = {
+       kColorToolbarButtonIconInactive};
+   mixer[kColorToolbarGlicButtonBackgroundDefault] = {
+diff --git a/chrome/browser/ui/color/chrome_color_mixers.cc b/chrome/browser/ui/color/chrome_color_mixers.cc
+index 9dfe5e7cd531d..32713ce4bb89d 100644
+--- a/chrome/browser/ui/color/chrome_color_mixers.cc
++++ b/chrome/browser/ui/color/chrome_color_mixers.cc
+@@ -23,6 +23,7 @@
+ #include "chrome/browser/ui/color/product_specifications_color_mixer.h"
+ #include "chrome/browser/ui/color/projects_panel_color_mixer.h"
+ #include "chrome/browser/ui/color/tab_strip_color_mixer.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/color/color_provider_utils.h"
+ 
+ namespace {
+@@ -60,18 +61,29 @@ void AddChromeColorMixers(ui::ColorProvider* provider,
+       chrome_color_provider_utils_callbacks;
+   ui::SetColorProviderUtilsCallbacks(
+       chrome_color_provider_utils_callbacks.get());
+-  AddChromeColorMixer(provider, key);
+-  AddNewTabPageColorMixer(provider, key);
+-  AddOmniboxColorMixer(provider, key);
+-  AddProductSpecificationsColorMixer(provider, key);
+-  AddProjectsPanelColorMixer(provider, key);
+-  AddTabStripColorMixer(provider, key);
++  const auto add_standard_mixers = [&] {
++    AddChromeColorMixer(provider, key);
++    AddNewTabPageColorMixer(provider, key);
++    AddOmniboxColorMixer(provider, key);
++    AddProductSpecificationsColorMixer(provider, key);
++    AddProjectsPanelColorMixer(provider, key);
++    AddTabStripColorMixer(provider, key);
++  };
++  const auto add_material_mixers = [&] {
++    AddMaterialChromeColorMixer(provider, key);
++    AddMaterialNewTabPageColorMixer(provider, key);
++    AddMaterialOmniboxColorMixer(provider, key);
++    AddMaterialSidePanelColorMixer(provider, key);
++    AddMaterialTabStripColorMixer(provider, key);
++  };
+ 
+-  AddMaterialChromeColorMixer(provider, key);
+-  AddMaterialNewTabPageColorMixer(provider, key);
+-  AddMaterialOmniboxColorMixer(provider, key);
+-  AddMaterialSidePanelColorMixer(provider, key);
+-  AddMaterialTabStripColorMixer(provider, key);
++  if (features::IsThorium2024()) {
++    add_material_mixers();
++    add_standard_mixers();
++  } else {
++    add_standard_mixers();
++    add_material_mixers();
++  }
+ 
+   // Must be the last one in order to override other mixer colors.
+   AddNativeChromeColorMixer(provider, key);
+diff --git a/chrome/browser/ui/color/tab_strip_color_mixer.cc b/chrome/browser/ui/color/tab_strip_color_mixer.cc
+index 9670cc8734065..44c3feeb09c79 100644
+--- a/chrome/browser/ui/color/tab_strip_color_mixer.cc
++++ b/chrome/browser/ui/color/tab_strip_color_mixer.cc
+@@ -8,6 +8,7 @@
+ #include "chrome/browser/themes/theme_properties.h"
+ #include "chrome/browser/ui/color/chrome_color_id.h"
+ #include "chrome/browser/ui/color/chrome_color_provider_utils.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/color/color_id.h"
+ #include "ui/color/color_mixer.h"
+ #include "ui/color/color_provider.h"
+@@ -138,10 +139,15 @@ void AddTabStripColorMixer(ui::ColorProvider* provider,
+   // behavior. The main difference is that the tab hover color in GM2 depends on
+   // the tab width - narrower tabs have more opacity. We must chooses a single
+   // opacity, so we go with one towards the more opaque end of the GM2 range.
+-  mixer[kColorTabBackgroundInactiveHoverFrameActive] = {
+-      ui::AlphaBlend(kColorTabBackgroundActiveFrameActive,
+-                     kColorTabBackgroundInactiveFrameActive,
+-                     /* 40% opacity */ 0.4 * SK_AlphaOPAQUE)};
++  if (features::IsThorium2024()) {
++    mixer[kColorTabBackgroundInactiveHoverFrameActive] = {
++        ui::kColorSysStateHeaderHover};
++  } else {
++    mixer[kColorTabBackgroundInactiveHoverFrameActive] = {
++        ui::AlphaBlend(kColorTabBackgroundActiveFrameActive,
++                       kColorTabBackgroundInactiveFrameActive,
++                       /* 40% opacity */ 0.4 * SK_AlphaOPAQUE)};
++  }
+   mixer[kColorTabBackgroundInactiveHoverFrameInactive] = {
+       ui::AlphaBlend(kColorTabBackgroundActiveFrameInactive,
+                      kColorTabBackgroundInactiveFrameInactive,
+diff --git a/chrome/browser/ui/layout_constants.cc b/chrome/browser/ui/layout_constants.cc
+index b2c1709b4c2ac..0af3486d89f3b 100644
+--- a/chrome/browser/ui/layout_constants.cc
++++ b/chrome/browser/ui/layout_constants.cc
+@@ -18,22 +18,25 @@
+ 
+ int GetLayoutConstant(LayoutConstant constant) {
+   const bool touch_ui = ui::TouchUiController::Get()->touch_ui();
++  const bool thorium_2024 = features::IsThorium2024();
+   switch (constant) {
+     case LayoutConstant::kAppMenuProfileRowAvatarIconSize:
+-      return 24;
++      return thorium_2024 ? 16 : 24;
+     case LayoutConstant::kAppMenuMaximumCharacterLength:
+-      return 30;
++      return thorium_2024 ? 28 : 30;
+     case LayoutConstant::kBookmarkBarHeight: {
+       // The fixed margin ensures the bookmark buttons appear centered relative
+       // to the white space above and below.
+-      const int bookmark_bar_attached_vertical_margin = 6;
++      const int bookmark_bar_attached_vertical_margin = thorium_2024 ? 3 : 6;
+       return GetLayoutConstant(LayoutConstant::kBookmarkBarButtonHeight) +
+              bookmark_bar_attached_vertical_margin;
+     }
+     case LayoutConstant::kBookmarkBarButtonHeight:
+-      return touch_ui ? 36 : 28;
++      return thorium_2024 ? (touch_ui ? 34 : 26) : (touch_ui ? 36 : 28);
+     case LayoutConstant::kBookmarkBarButtonPadding:
+-      return GetLayoutConstant(LayoutConstant::kToolbarElementPadding);
++      return thorium_2024 ? 2
++                          : GetLayoutConstant(
++                                LayoutConstant::kToolbarElementPadding);
+     case LayoutConstant::kBookmarkBarButtonImageLabelPadding:
+       return 6;
+     case LayoutConstant::kWebAppMenuButtonSize:
+@@ -51,7 +54,7 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case LayoutConstant::kLocationBarChildInternalSpacing:
+       return touch_ui ? 10 : 4;
+     case LayoutConstant::kLocationBarChildCornerRadius:
+-      return 12;
++      return thorium_2024 ? 8 : 12;
+     case LayoutConstant::kLocationBarChipIconSize:
+       return 16;
+     case LayoutConstant::kLocationBarChipPadding:
+@@ -59,7 +62,7 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case LayoutConstant::kLocationBarElementPadding:
+       return touch_ui ? 3 : 2;
+     case LayoutConstant::kLocationBarPageInfoIconVerticalPadding:
+-      return touch_ui ? 3 : 5;
++      return touch_ui ? 3 : (thorium_2024 ? 4 : 5);
+     case LayoutConstant::kLocationBarPageInfoIconLabelExtraTrailingPadding:
+       return 4;
+     case LayoutConstant::kLocationBarPageInfoIconDangerousLeadingPadding:
+@@ -67,11 +70,11 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case LayoutConstant::kLocationBarPageInfoIconDangerousTrailingPadding:
+       return 10;
+     case LayoutConstant::kLocationBarTrailingDecorationEdgePadding:
+-      return touch_ui ? 3 : 12;
++      return touch_ui ? 3 : (thorium_2024 ? 6 : 12);
+     case LayoutConstant::kLocationBarTrailingDecorationInnerPadding:
+-      return touch_ui ? 3 : 8;
++      return touch_ui ? 3 : (thorium_2024 ? 6 : 8);
+     case LayoutConstant::kLocationBarHeight:
+-      return touch_ui ? 36 : 34;
++      return thorium_2024 ? (touch_ui ? 34 : 30) : (touch_ui ? 36 : 34);
+     // LINT.IfChange(LocationBarIconSize)
+     case LayoutConstant::kLocationBarIconSize:
+       return touch_ui ? 20 : 16;
+@@ -90,15 +93,26 @@ int GetLayoutConstant(LayoutConstant constant) {
+       return 16;
+     case LayoutConstant::kTabAlertIndicatorIconWidth:
+       return touch_ui ? 12 : 16;
++    case LayoutConstant::kTabButtonOffset:
++      return thorium_2024 ? -1 : 0;
+     case LayoutConstant::kTabCloseButtonSize:
+-      return touch_ui ? 24 : (features::IsRoundedIconsEnabled() ? 14 : 16);
++      return touch_ui ? 24
++                      : (thorium_2024
++                             ? 18
++                             : (features::IsRoundedIconsEnabled() ? 14 : 16));
+     case LayoutConstant::kTabHeight:
+       return 34 + GetLayoutConstant(LayoutConstant::kTabstripToolbarOverlap);
+     case LayoutConstant::kTabStripHeight:
+       return GetLayoutConstant(LayoutConstant::kTabHeight) +
+              GetLayoutConstant(LayoutConstant::kTabStripPadding);
+     case LayoutConstant::kTabStripPadding:
++      return thorium_2024 ? 0 : 6;
++    case LayoutConstant::kTabMargin:
+       return 6;
++    case LayoutConstant::kTabInactivePadding:
++      return thorium_2024 ? 3 : 6;
++    case LayoutConstant::kTabSearchPadding:
++      return thorium_2024 ? 3 : 6;
+     case LayoutConstant::kTabSeparatorHeight:
+       return touch_ui ? 24 : 20;
+     case LayoutConstant::kTabPreTitlePadding:
+@@ -108,32 +122,33 @@ int GetLayoutConstant(LayoutConstant constant) {
+     case LayoutConstant::kTabstripToolbarOverlap:
+       return 1;
+     case LayoutConstant::kToolbarButtonHeight:
+-      return touch_ui ? 48 : 34;
++      return thorium_2024 ? (touch_ui ? 46 : 30) : (touch_ui ? 48 : 34);
+     case LayoutConstant::kToolbarButtonIconSize:
+       return touch_ui ? kDefaultTouchableIconSize
+                       : kDefaultIconSizeChromeRefresh;
+     case LayoutConstant::kToolbarDividerCornerRadius:
+       return 1;
+     case LayoutConstant::kToolbarDividerHeight:
+-      return touch_ui ? 20 : 16;
++      return touch_ui ? 20 : (thorium_2024 ? 18 : 16);
+     case LayoutConstant::kToolbarDividerSpacing:
+-      return 9;
++      return thorium_2024 ? 7 : 9;
+     case LayoutConstant::kToolbarDividerWidth:
+       return 2;
+     case LayoutConstant::kToolbarElementPadding:
+       return touch_ui ? 0 : 4;
+     case LayoutConstant::kToolbarIconDefaultMargin:
+-      return touch_ui ? 0 : 2;
++      return thorium_2024 ? 2 : (touch_ui ? 0 : 2);
+     case LayoutConstant::kLocationBarMargin:
+-      return touch_ui ? 12 : 9;
++      return touch_ui ? 12 : (thorium_2024 ? 7 : 9);
+     case LayoutConstant::kSidePanelInset:
+       return 8;
+     case LayoutConstant::kPageInfoIconSize:
+-      return 20;
++      return thorium_2024 ? 18 : 20;
+     case LayoutConstant::kDownloadIconSize:
+-      return 20;
++      return thorium_2024 ? 18 : 20;
+     case LayoutConstant::kMainBackgroundRegionCornerRadius:
+     case LayoutConstant::kToolbarCornerRadius:
++      return thorium_2024 ? 0 : 8;
+     case LayoutConstant::kVerticalTabCornerRadius:
+       return 8;
+     case LayoutConstant::kVerticalTabHeight:
+@@ -174,15 +189,20 @@ int GetLayoutConstant(LayoutConstant constant) {
+ 
+ gfx::Insets GetLayoutInsets(LayoutInset inset) {
+   const bool touch_ui = ui::TouchUiController::Get()->touch_ui();
++  const bool thorium_2024 = features::IsThorium2024();
+   switch (inset) {
+     case DOWNLOAD_ICON:
+       return gfx::Insets(4);
+ 
+     case DOWNLOAD_ROW:
+-      return gfx::Insets::VH(8, 20);
++      return gfx::Insets::VH(8, thorium_2024 ? 18 : 20);
+ 
+     case LOCATION_BAR_ICON_INTERIOR_PADDING:
+-      return gfx::Insets::VH(2, 2);
++      if (thorium_2024) {
++        return touch_ui ? gfx::Insets::VH(5, 10) : gfx::Insets::VH(4, 4);
++      } else {
++        return gfx::Insets::VH(2, 2);
++      }
+ 
+     case LOCATION_BAR_PAGE_INFO_ICON_PADDING:
+       return touch_ui ? gfx::Insets::VH(5, 10) : gfx::Insets::VH(4, 4);
+@@ -197,10 +217,11 @@ gfx::Insets GetLayoutInsets(LayoutInset inset) {
+     }
+ 
+     case TOOLBAR_BUTTON:
+-      return gfx::Insets(touch_ui ? 12 : 7);
++      return gfx::Insets(touch_ui ? 12
++                                  : (thorium_2024 ? 6 : 7));
+ 
+     case BROWSER_APP_MENU_CHIP_PADDING:
+-      if (touch_ui) {
++      if (touch_ui || thorium_2024) {
+         return GetLayoutInsets(TOOLBAR_BUTTON);
+       } else {
+         return gfx::Insets::TLBR(7, 4, 7, 6);
+@@ -213,17 +234,20 @@ gfx::Insets GetLayoutInsets(LayoutInset inset) {
+       return gfx::Insets::TLBR(0, 8, 0, 8);
+ 
+     case AVATAR_CHIP_PADDING:
+-      if (touch_ui) {
++      if (touch_ui || thorium_2024) {
+         return GetLayoutInsets(TOOLBAR_BUTTON);
+       } else {
+         return gfx::Insets::TLBR(7, 10, 7, 4);
+       }
+ 
+     case TOOLBAR_INTERIOR_MARGIN:
+-      return touch_ui ? gfx::Insets::VH(4, 0) : gfx::Insets::VH(6, 6);
++      return thorium_2024
++                 ? (touch_ui ? gfx::Insets() : gfx::Insets::VH(3, 6))
++                 : (touch_ui ? gfx::Insets::VH(4, 0)
++                             : gfx::Insets::VH(6, 6));
+ 
+     case WEBUI_TAB_STRIP_TOOLBAR_INTERIOR_MARGIN:
+-      return gfx::Insets::VH(4, 0);
++      return thorium_2024 ? gfx::Insets::VH(4, 6) : gfx::Insets::VH(4, 0);
+ 
+     case VERTICAL_TAB_STRIP_BOTTOM_BUTTON_UNCOLLAPSED:
+       return gfx::Insets::VH(5, 14);
+diff --git a/chrome/browser/ui/layout_constants.h b/chrome/browser/ui/layout_constants.h
+index 608a5c38e6dd8..286b51f64679d 100644
+--- a/chrome/browser/ui/layout_constants.h
++++ b/chrome/browser/ui/layout_constants.h
+@@ -153,6 +153,18 @@ enum class LayoutConstant {
+   // detached tab, and on all sides of the controls padding.
+   kTabStripPadding,
+ 
++  // For the tab margins.
++  kTabMargin,
++
++  // For inactive tab padding.
++  kTabInactivePadding,
++
++  // Padding for the tab search button.
++  kTabSearchPadding,
++
++  // Offset y for new tab button.
++  kTabButtonOffset,
++
+   // The height of a separator in the tabstrip.
+   kTabSeparatorHeight,
+ 
+diff --git a/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc b/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc
+index 4357fc482b7f4..ef2ff5bce8c7e 100644
+--- a/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc
++++ b/chrome/browser/ui/omnibox/omnibox_pedal_implementations.cc
+@@ -2006,10 +2006,16 @@ const gfx::VectorIcon& GetSharingHubVectorIcon() {
+              ? omnibox::kIosShareIcon
+              : omnibox::kShareMacChromeRefreshOldIcon;
+ #elif BUILDFLAG(IS_WIN)
++  if (features::IsThorium2024()) {
++    return omnibox::kShareChromeRefreshOldIcon;
++  }
+   return features::IsRoundedIconsEnabled()
+              ? omnibox::kShareWindowsIcon
+              : omnibox::kShareWinChromeRefreshOldIcon;
+ #elif BUILDFLAG(IS_LINUX)
++  if (features::IsThorium2024()) {
++    return omnibox::kShareChromeRefreshOldIcon;
++  }
+   return features::IsRoundedIconsEnabled()
+              ? omnibox::kSendIcon
+              : omnibox::kShareLinuxChromeRefreshOldIcon;
+diff --git a/chrome/browser/ui/tabs/tab_style.cc b/chrome/browser/ui/tabs/tab_style.cc
+index fbfe095b4c1a3..2e896f7d4cbbe 100644
+--- a/chrome/browser/ui/tabs/tab_style.cc
++++ b/chrome/browser/ui/tabs/tab_style.cc
+@@ -20,12 +20,16 @@ namespace {
+ // Thickness in DIPs of the separator painted on the left and right edges of
+ // the tab.
+ constexpr int kSeparatorThickness = 2;
++constexpr int kThoriumSeparatorHorizontalMargin = 0;
+ constexpr int kSeparatorHorizontalMargin = 2;
+ // TODO (crbug.com/40915785): This constant should be in LayoutConstants.
++constexpr int kThoriumSeparatorHeight = 20;
+ constexpr int kSeparatorHeight = 16;
+ 
+ // The padding from the top of the tab to the content area.
++constexpr int kThoriumTabVerticalPadding = 9;
+ constexpr int kTabVerticalPadding = 6;
++constexpr int kThoriumTabHorizontalPadding = 6;
+ constexpr int kTabHorizontalPadding = 8;
+ 
+ // The standard tab width is 232 DIP, excluding separators and overlap.
+@@ -98,16 +102,16 @@ int TabStyle::GetMinimumInactiveWidth() const {
+ }
+ 
+ int TabStyle::GetTopCornerRadius() const {
+-  return 10;
++  return features::IsThorium2024() ? 8 : 10;
+ }
+ 
+ int TabStyle::GetBottomCornerRadius() const {
+-  return 12;
++  return features::IsThorium2024() ? 8 : 12;
+ }
+ 
+ int TabStyle::GetTabOverlap() const {
+   // The overlap removes the width and the margins of the separator.
+-  const float total_separator_width =
++  const int total_separator_width =
+       GetSeparatorMargins().width() + GetSeparatorSize().width();
+   return 2 * GetBottomCornerRadius() - total_separator_width;
+ }
+@@ -119,10 +123,20 @@ gfx::Size TabStyle::GetPreviewImageSize() const {
+ }
+ 
+ gfx::Size TabStyle::GetSeparatorSize() const {
++  if (features::IsThorium2024()) {
++    return gfx::Size(kSeparatorThickness, kThoriumSeparatorHeight);
++  }
+   return gfx::Size(kSeparatorThickness, kSeparatorHeight);
+ }
+ 
+ gfx::Insets TabStyle::GetSeparatorMargins() const {
++  if (features::IsThorium2024()) {
++    return gfx::Insets::TLBR(
++        GetLayoutConstant(LayoutConstant::kTabInactivePadding),
++        kThoriumSeparatorHorizontalMargin,
++        GetLayoutConstant(LayoutConstant::kTabInactivePadding),
++        kThoriumSeparatorHorizontalMargin);
++  }
+   return gfx::Insets::TLBR(GetLayoutConstant(LayoutConstant::kTabStripPadding),
+                            kSeparatorHorizontalMargin,
+                            GetLayoutConstant(LayoutConstant::kTabStripPadding),
+@@ -130,6 +144,9 @@ gfx::Insets TabStyle::GetSeparatorMargins() const {
+ }
+ 
+ int TabStyle::GetSeparatorCornerRadius() const {
++  if (features::IsThorium2024()) {
++    return 0;
++  }
+   return GetSeparatorSize().width() / 2;
+ }
+ 
+@@ -268,6 +285,15 @@ SkColor TabStyle::GetCurrentTabBackgroundColor(
+ }
+ 
+ gfx::Insets TabStyle::GetContentsInsets() const {
++  if (features::IsThorium2024()) {
++    return gfx::Insets::TLBR(
++        kThoriumTabVerticalPadding +
++            GetLayoutConstant(LayoutConstant::kTabStripPadding),
++        GetBottomCornerRadius() + kThoriumTabHorizontalPadding,
++        kThoriumTabVerticalPadding +
++            GetLayoutConstant(LayoutConstant::kTabStripPadding),
++        GetBottomCornerRadius() + kThoriumTabHorizontalPadding);
++  }
+   return gfx::Insets::TLBR(
+       kTabVerticalPadding + GetLayoutConstant(LayoutConstant::kTabStripPadding),
+       GetBottomCornerRadius() + kTabHorizontalPadding,
+diff --git a/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc b/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc
+index 146d6dc191951..9d3703317c70d 100644
+--- a/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc
++++ b/chrome/browser/ui/views/bookmarks/bookmark_bar_view.cc
+@@ -371,8 +371,8 @@ class BookmarkBarView::ButtonSeparatorView : public views::Separator {
+ 
+  public:
+   ButtonSeparatorView() {
+-    const int leading_padding = 8;
+-    const int trailing_padding = 8;
++    const int leading_padding = features::IsThorium2024() ? 4 : 8;
++    const int trailing_padding = features::IsThorium2024() ? 3 : 8;
+     const gfx::Insets border_insets =
+         gfx::Insets::TLBR(0, leading_padding, 0, trailing_padding);
+     const ui::ColorId color_id = kColorBookmarkBarSeparatorChromeRefresh;
+@@ -609,8 +609,10 @@ void BookmarkBarView::GetAnchorPositionForButton(
+ }
+ 
+ int BookmarkBarView::GetLeadingMargin() const {
+-  static constexpr int kBookmarksBarLeadingMarginWithoutSavedTabGroups = 6;
+-  static constexpr int kBookmarksBarLeadingMarginWithSavedTabGroups = 6;
++  const int kBookmarksBarLeadingMarginWithoutSavedTabGroups =
++      features::IsThorium2024() ? 9 : 6;
++  const int kBookmarksBarLeadingMarginWithSavedTabGroups =
++      features::IsThorium2024() ? 15 : 6;
+ 
+   if (saved_tab_groups_separator_view_ &&
+       saved_tab_groups_separator_view_->GetVisible()) {
+@@ -728,7 +730,7 @@ void BookmarkBarView::Layout(PassKey) {
+   }
+ 
+   int x = GetLeadingMargin();
+-  static constexpr int kBookmarkBarTrailingMargin = 8;
++  const int kBookmarkBarTrailingMargin = features::IsThorium2024() ? 0 : 8;
+   int width = View::width() - x - kBookmarkBarTrailingMargin;
+ 
+   const int button_height =
+@@ -923,6 +925,9 @@ void BookmarkBarView::Layout(PassKey) {
+   x = max_x + bookmark_bar_button_padding;
+ 
+   // The overflow button.
++  if (features::IsThorium2024() && all_bookmarks_button_->GetVisible()) {
++    x -= 10;
++  }
+   overflow_button_->SetBounds(x, y, overflow_pref.width(), button_height);
+   overflow_button_->SetVisible(show_bookmarks_overflow);
+   x += overflow_pref.width();
+diff --git a/chrome/browser/ui/views/chrome_layout_provider.cc b/chrome/browser/ui/views/chrome_layout_provider.cc
+index 1edd0f38ec34f..87165dce79101 100644
+--- a/chrome/browser/ui/views/chrome_layout_provider.cc
++++ b/chrome/browser/ui/views/chrome_layout_provider.cc
+@@ -11,6 +11,7 @@
+ #include "chrome/browser/ui/views/chrome_typography.h"
+ #include "components/omnibox/common/omnibox_features.h"
+ #include "ui/base/pointer/touch_ui_controller.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/gfx/shadow_value.h"
+ 
+ namespace {
+@@ -48,10 +49,12 @@ gfx::Insets ChromeLayoutProvider::GetInsetsMetric(int metric) const {
+   switch (metric) {
+     case views::INSETS_DIALOG:
+     case views::INSETS_DIALOG_SUBSECTION: {
+-      return gfx::Insets::VH(20, 20);
++      return features::IsThorium2024() ? gfx::Insets(16)
++                                       : gfx::Insets::VH(20, 20);
+     }
+     case views::INSETS_DIALOG_FOOTNOTE: {
+-      return gfx::Insets::TLBR(10, 20, 15, 20);
++      return features::IsThorium2024() ? gfx::Insets(16)
++                                       : gfx::Insets::TLBR(10, 20, 15, 20);
+     }
+     case views::INSETS_CHECKBOX_RADIO_BUTTON: {
+       gfx::Insets insets = LayoutProvider::GetInsetsMetric(metric);
+@@ -77,7 +80,10 @@ gfx::Insets ChromeLayoutProvider::GetInsetsMetric(int metric) const {
+     case INSETS_PAGE_INFO_HOVER_BUTTON: {
+       const gfx::Insets insets =
+           LayoutProvider::GetInsetsMetric(views::INSETS_LABEL_BUTTON);
+-      const int horizontal_padding = 20;
++      const int horizontal_padding =
++          features::IsThorium2024()
++              ? 16
++              : 20;
+       // Hover button in page info requires double the height compared to the
+       // label button because it behaves like a menu control.
+       return gfx::Insets::VH(insets.height(), horizontal_padding);
+@@ -109,7 +115,7 @@ int ChromeLayoutProvider::GetDistanceMetric(int metric) const {
+     case DISTANCE_EXTENSIONS_MENU_WIDTH:
+       return kMediumDialogWidth;
+     case DISTANCE_EXTENSIONS_MENU_BUTTON_ICON_SIZE:
+-      return 20;
++      return features::IsThorium2024() ? 16 : 20;
+     case DISTANCE_EXTENSIONS_MENU_BUTTON_ICON_SMALL_SIZE:
+       return 16;
+     case DISTANCE_EXTENSIONS_MENU_EXTENSION_ICON_SIZE:
+@@ -145,7 +151,7 @@ int ChromeLayoutProvider::GetDistanceMetric(int metric) const {
+     case DISTANCE_BETWEEN_PRIMARY_AND_SECONDARY_LABELS_HORIZONTAL:
+       return 24;
+     case DISTANCE_OMNIBOX_CELL_VERTICAL_PADDING:
+-      return 12;
++      return features::IsThorium2024() ? 8 : 12;
+     case DISTANCE_OMNIBOX_TWO_LINE_CELL_VERTICAL_PADDING:
+       return 4;
+     case DISTANCE_SIDE_PANEL_HEADER_VECTOR_ICON_SIZE:
+@@ -157,19 +163,23 @@ int ChromeLayoutProvider::GetDistanceMetric(int metric) const {
+     case DISTANCE_SIDE_PANEL_CONTENT_RADIUS:
+       return 8;
+     case DISTANCE_HORIZONTAL_SEPARATOR_PADDING_PAGE_INFO_VIEW:
+-      return 20;
++      return features::IsThorium2024() ? 4 : 20;
+     case DISTANCE_INFOBAR_HORIZONTAL_ICON_LABEL_PADDING:
+       return 12;
+     case DISTANCE_INFOBAR_HEIGHT:
+       // Spec says height of button should be 36dp, vertical padding on both
+       // top and bottom should be 8dp.
++      // The Thorium 2024 case uses 2dp vertical padding plus 1dp top padding.
++      if (features::IsThorium2024()) {
++        return 36 + 1 + 2 * 2;
++      }
+       // The new refreshed button height is 20 + (2 * 6) = 32dp.
+       // Therefore, the total infobar height is 32dp + 2 * 12.
+       return 32 + 2 * 12;
+     case DISTANCE_PERMISSION_PROMPT_HORIZONTAL_ICON_LABEL_PADDING:
+-      return 8;
++      return features::IsThorium2024() ? 12 : 8;
+     case DISTANCE_RICH_HOVER_BUTTON_ICON_HORIZONTAL:
+-      return 8;
++      return features::IsThorium2024() ? 12 : 8;
+     case DISTANCE_TASK_MANAGER_SEARCH_BAR_ICON_AND_BUTTON_HORIZONTAL_SPACING:
+       return 4;
+     case DISTANCE_TASK_MANAGER_SEARCH_ICON_SIZE:
+diff --git a/chrome/browser/ui/views/download/bubble/download_bubble_primary_view.cc b/chrome/browser/ui/views/download/bubble/download_bubble_primary_view.cc
+index 6446b2ba7287c..3227de2af4029 100644
+--- a/chrome/browser/ui/views/download/bubble/download_bubble_primary_view.cc
++++ b/chrome/browser/ui/views/download/bubble/download_bubble_primary_view.cc
+@@ -123,7 +123,9 @@ void DownloadBubblePrimaryView::MaybeAddOtrInfoRow(Browser* browser) {
+ 
+ int DownloadBubblePrimaryView::DefaultPreferredWidth() const {
+   return ChromeLayoutProvider::Get()->GetDistanceMetric(
+-      views::DISTANCE_BUBBLE_PREFERRED_WIDTH);
++      features::IsThorium2024()
++          ? views::DISTANCE_MODAL_DIALOG_PREFERRED_WIDTH
++          : views::DISTANCE_BUBBLE_PREFERRED_WIDTH);
+ }
+ 
+ DownloadBubbleRowView* DownloadBubblePrimaryView::GetRow(
+diff --git a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
+index 405cb0f1204b7..5b4a2131316f4 100644
+--- a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
++++ b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
+@@ -64,9 +64,11 @@ views::Builder<HoverButton> GetSitePermissionsButtonBuilder(
+     // Add right-aligned arrow icon for non-enterprise extensions when the
+     // button is not disabled.
+     auto arrow_icon = ui::ImageModel::FromVectorIcon(
+-        features::IsRoundedIconsEnabled()
+-            ? vector_icons::kKeyboardArrowRightFlippableIcon
+-            : vector_icons::kSubmenuArrowChromeRefreshOldIcon,
++        features::IsThorium2024()
++            ? vector_icons::kSubmenuArrowOldIcon
++            : features::IsRoundedIconsEnabled()
++                ? vector_icons::kKeyboardArrowRightFlippableIcon
++                : vector_icons::kSubmenuArrowChromeRefreshOldIcon,
+         kColorExtensionMenuIcon, small_icon_size);
+ 
+     button_builder.SetHorizontalAlignment(gfx::ALIGN_RIGHT)
+@@ -280,8 +282,10 @@ void ExtensionsMenuEntryView::UpdateContextMenuButton(
+   const int icon_size = ChromeLayoutProvider::Get()->GetDistanceMetric(
+       DISTANCE_EXTENSIONS_MENU_BUTTON_ICON_SIZE);
+   auto three_dot_icon = ui::ImageModel::FromVectorIcon(
+-      features::IsRoundedIconsEnabled() ? kMoreVertIcon
+-                                        : kBrowserToolsChromeRefreshOldIcon,
++      features::IsThorium2024()
++          ? kBrowserToolsOldIcon
++          : features::IsRoundedIconsEnabled() ? kMoreVertIcon
++                                              : kBrowserToolsChromeRefreshOldIcon,
+       kColorExtensionMenuIcon, icon_size);
+ 
+   // Show a pin button for the context menu normal state icon when the action is
+diff --git a/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc b/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
+index d0f3cd61eabe1..ad2d9a0a44fd5 100644
+--- a/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
++++ b/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
+@@ -149,16 +149,20 @@ ExtensionMenuItemView::ExtensionMenuItemView(
+                       view_model_->GetActionName()))
+                   .SetImageModel(views::Button::STATE_NORMAL,
+                                  ui::ImageModel::FromVectorIcon(
+-                                     features::IsRoundedIconsEnabled()
+-                                         ? kMoreVertIcon
+-                                         : kBrowserToolsChromeRefreshOldIcon,
++                                     features::IsThorium2024()
++                                         ? kBrowserToolsOldIcon
++                                         : features::IsRoundedIconsEnabled()
++                                             ? kMoreVertIcon
++                                             : kBrowserToolsChromeRefreshOldIcon,
+                                      kColorExtensionMenuIcon, icon_size))
+                   .SetImageModel(
+                       views::Button::STATE_DISABLED,
+                       ui::ImageModel::FromVectorIcon(
+-                          features::IsRoundedIconsEnabled()
+-                              ? kMoreVertIcon
+-                              : kBrowserToolsChromeRefreshOldIcon,
++                          features::IsThorium2024()
++                              ? kBrowserToolsOldIcon
++                              : features::IsRoundedIconsEnabled()
++                                  ? kMoreVertIcon
++                                  : kBrowserToolsChromeRefreshOldIcon,
+                           kColorExtensionMenuIconDisabled, icon_size)));
+ 
+   if (allow_pinning) {
+diff --git a/chrome/browser/ui/views/frame/browser_frame_view_layout_linux.cc b/chrome/browser/ui/views/frame/browser_frame_view_layout_linux.cc
+index 6625553e74359..a07063e646be8 100644
+--- a/chrome/browser/ui/views/frame/browser_frame_view_layout_linux.cc
++++ b/chrome/browser/ui/views/frame/browser_frame_view_layout_linux.cc
+@@ -74,5 +74,7 @@ gfx::Insets BrowserFrameViewLayoutLinux::RestoredFrameEdgeInsets() const {
+ }
+ 
+ int BrowserFrameViewLayoutLinux::NonClientExtraTopThickness() const {
+-  return delegate_->IsTabStripVisible() ? 0 : kExtraTopBorder;
++  return (!features::IsThorium2024() && delegate_->IsTabStripVisible())
++             ? 0
++             : kExtraTopBorder;
+ }
+diff --git a/chrome/browser/ui/views/frame/browser_frame_view_win.cc b/chrome/browser/ui/views/frame/browser_frame_view_win.cc
+index f829637e45840..fa0323c4db2a6 100644
+--- a/chrome/browser/ui/views/frame/browser_frame_view_win.cc
++++ b/chrome/browser/ui/views/frame/browser_frame_view_win.cc
+@@ -369,7 +369,9 @@ int BrowserFrameViewWin::NonClientHitTest(const gfx::Point& point) {
+   constexpr int kResizeCornerWidth = 16;
+ 
+   const int top_border_thickness =
+-      (GetBrowserView()->GetIsWebAppType() || IsFrameCondensed())
++      (GetBrowserView()->GetIsWebAppType() || IsFrameCondensed() ||
++       (features::IsThorium2024() &&
++        ShouldBrowserCustomDrawTitlebar(GetBrowserView())))
+           ? FrameTopBorderThickness(false)
+           : GetLayoutConstant(LayoutConstant::kTabStripPadding);
+ 
+@@ -570,7 +572,11 @@ int BrowserFrameViewWin::FrameTopBorderThickness(bool restored) const {
+     // default. When maximized, the OS sizes the window such that the border
+     // extends beyond the screen edges. In that case, we must return the
+     // default value.
+-    return 0;
++    constexpr int kThoriumTopResizeFrameArea = 8;
++    return features::IsThorium2024() &&
++                   ShouldBrowserCustomDrawTitlebar(GetBrowserView())
++               ? kThoriumTopResizeFrameArea
++               : 0;
+   }
+ 
+   // Mouse and touch locations are floored but GetSystemMetricsInDIP is rounded,
+@@ -862,10 +868,15 @@ void BrowserFrameViewWin::LayoutCaptionButtons() {
+           ? 0
+           : caption_button_metrics_->GetCaptionButtonWidth();
+ 
++  const int caption_height =
++      features::IsThorium2024() &&
++              ShouldBrowserCustomDrawTitlebar(GetBrowserView())
++          ? std::min(GetFrameHeight(), preferred_size.height())
++          : GetFrameHeight();
+   const int height =
+       !GetBrowserView()->GetWebAppFrameToolbarPreferredSize().IsEmpty()
+           ? (TitlebarHeight(false) - WindowTopY())
+-          : GetFrameHeight();
++          : caption_height;
+ 
+   caption_button_container_->SetBounds(
+       CaptionButtonsOnLeadingEdge()
+diff --git a/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc b/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
+index 3c1d24e875bd2..2e04ec6dd7506 100644
+--- a/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
++++ b/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
+@@ -10,6 +10,7 @@
+ #include "base/task/single_thread_task_runner.h"
+ #include "build/build_config.h"
+ #include "build/buildflag.h"
++#include "chrome/app/vector_icons/vector_icons.h"
+ #include "chrome/browser/glic/public/features.h"
+ #include "chrome/browser/glic/public/glic_enabling.h"
+ #include "chrome/browser/themes/theme_properties.h"
+@@ -323,8 +324,11 @@ HorizontalTabStripRegionView::HorizontalTabStripRegionView(
+         std::make_unique<NewTabButton>(
+             base::BindRepeating(&TabStrip::NewTabButtonPressed,
+                                 base::Unretained(tab_strip_)),
+-            features::IsRoundedIconsEnabled() ? vector_icons::kAddWeight500Icon
+-                                              : vector_icons::kAddOldIcon,
++            features::IsThorium2024()
++                ? vector_icons::kAddOldIcon
++                : features::IsRoundedIconsEnabled()
++                    ? vector_icons::kAddWeight500Icon
++                    : vector_icons::kAddOldIcon,
+             Edge::kNone, Edge::kNone, browser);
+ 
+     new_tab_button_ = AddChildView(std::move(tab_strip_control_button));
+@@ -355,7 +359,9 @@ HorizontalTabStripRegionView::HorizontalTabStripRegionView(
+     tab_search_button_->SetProperty(
+         views::kMarginsKey,
+         gfx::Insets::TLBR(0, 0, 0,
+-                          GetLayoutConstant(LayoutConstant::kTabStripPadding)));
++                          GetLayoutConstant(features::IsThorium2024()
++                                                ? LayoutConstant::kTabSearchPadding
++                                                : LayoutConstant::kTabStripPadding)));
+   }
+   if (tab_strip_action_container) {
+     tab_strip_action_container_ =
+@@ -510,14 +516,20 @@ void HorizontalTabStripRegionView::Layout(PassKey) {
+     // negative margins.
+     gfx::Size button_size = button_to_paint_to_layer->GetPreferredSize();
+ 
++    const int tab_button_x_offset = features::IsThorium2024()
++                                        ? 4
++                                        : GetLayoutConstant(
++                                              LayoutConstant::kTabStripPadding);
++
+     // The y position is measured from the bottom of the tabstrip, and then
+     // padding and button height are removed.
+     int x = tab_strip_->bounds().right() -
+-            TabStyle::Get()->GetBottomCornerRadius() +
+-            GetLayoutConstant(LayoutConstant::kTabStripPadding) +
++            TabStyle::Get()->GetBottomCornerRadius() + tab_button_x_offset +
+             GetLayoutConstant(LayoutConstant::kNewTabButtonLeadingMargin);
+ 
+-    gfx::Point button_new_position = gfx::Point(x, GetInsets().top());
++    gfx::Point button_new_position = gfx::Point(
++        x, GetInsets().top() +
++               GetLayoutConstant(LayoutConstant::kTabButtonOffset));
+     gfx::Rect button_new_bounds = gfx::Rect(button_new_position, button_size);
+ 
+     // If the tabsearch button is before the tabstrip container, then manually
+@@ -738,10 +750,14 @@ void HorizontalTabStripRegionView::LogTabSearchPositionForTesting() {
+ }
+ 
+ void HorizontalTabStripRegionView::UpdateButtonBorders() {
++  constexpr gfx::Size kThoriumNewTabButtonSize = {28, 28};
++  const int new_tab_button_height = features::IsThorium2024()
++                                        ? kThoriumNewTabButtonSize.height()
++                                        : NewTabButton::kButtonSize.height();
+   const int extra_vertical_space =
+       GetLayoutConstant(LayoutConstant::kTabStripHeight) -
+       GetLayoutConstant(LayoutConstant::kTabstripToolbarOverlap) -
+-      NewTabButton::kButtonSize.height();
++      new_tab_button_height;
+   const int top_inset = extra_vertical_space / 2;
+   const int bottom_inset =
+       extra_vertical_space - top_inset +
+@@ -811,7 +827,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+ 
+     tab_strip_right_margin =
+         button_to_paint_to_layer->GetPreferredSize().width() +
+-        GetLayoutConstant(LayoutConstant::kTabStripPadding);
++        GetLayoutConstant(features::IsThorium2024()
++                              ? LayoutConstant::kTabInactivePadding
++                              : LayoutConstant::kTabStripPadding);
+   }
+ 
+   // If the tab search button is before the tab strip, it also overlaps the
+@@ -825,7 +843,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+     CHECK(tab_search_button_->GetProperty(views::kViewIgnoredByLayoutKey));
+     current_leading_width +=
+         tab_search_button_->GetPreferredSize().width() +
+-        GetLayoutConstant(LayoutConstant::kTabStripPadding);
++        GetLayoutConstant(features::IsThorium2024()
++                              ? LayoutConstant::kTabInactivePadding
++                              : LayoutConstant::kTabStripPadding);
+   }
+ 
+   if (unfocus_button_ && unfocus_button_->GetVisible()) {
+@@ -834,7 +854,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+     unfocus_button_->SetProperty(views::kViewIgnoredByLayoutKey, true);
+     current_leading_width +=
+         unfocus_button_->GetPreferredSize().width() +
+-        GetLayoutConstant(LayoutConstant::kTabStripPadding);
++        GetLayoutConstant(features::IsThorium2024()
++                              ? LayoutConstant::kTabInactivePadding
++                              : LayoutConstant::kTabStripPadding);
+   }
+ 
+   if (combo_button_) {
+@@ -843,13 +865,17 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+     combo_button_->SetProperty(views::kViewIgnoredByLayoutKey, true);
+     current_leading_width +=
+         combo_button_->GetPreferredSize().width() +
+-        GetLayoutConstant(LayoutConstant::kTabStripPadding);
++        GetLayoutConstant(features::IsThorium2024()
++                              ? LayoutConstant::kTabInactivePadding
++                              : LayoutConstant::kTabStripPadding);
+   }
+ 
+   if (current_leading_width > 0) {
+     tab_strip_left_margin =
+         current_leading_width +
+-        GetLayoutConstant(LayoutConstant::kTabStripPadding) -
++        GetLayoutConstant(features::IsThorium2024()
++                              ? LayoutConstant::kTabInactivePadding
++                              : LayoutConstant::kTabStripPadding) -
+         TabStyle::Get()->GetBottomCornerRadius();
+   }
+ 
+@@ -867,10 +893,14 @@ void HorizontalTabStripRegionView::AdjustViewBoundsRect(View* view,
+                                                         int offset) {
+   const gfx::Size view_size = view->GetPreferredSize();
+   const int x = tab_strip_->x() + TabStyle::Get()->GetBottomCornerRadius() -
+-                GetLayoutConstant(LayoutConstant::kTabStripPadding) -
++                GetLayoutConstant(features::IsThorium2024()
++                                      ? LayoutConstant::kTabSearchPadding
++                                      : LayoutConstant::kTabStripPadding) -
+                 view_size.width() - offset;
+-  const gfx::Rect new_bounds =
+-      gfx::Rect(gfx::Point(x, GetInsets().top()), view_size);
++  const gfx::Rect new_bounds = gfx::Rect(
++      gfx::Point(x, GetInsets().top() +
++                        GetLayoutConstant(LayoutConstant::kTabButtonOffset)),
++      view_size);
+   view->SetBoundsRect(new_bounds);
+ }
+ 
+diff --git a/chrome/browser/ui/views/frame/opaque_browser_frame_view.cc b/chrome/browser/ui/views/frame/opaque_browser_frame_view.cc
+index be7c8cc4c6bb1..fa6fa652598e8 100644
+--- a/chrome/browser/ui/views/frame/opaque_browser_frame_view.cc
++++ b/chrome/browser/ui/views/frame/opaque_browser_frame_view.cc
+@@ -298,7 +298,9 @@ void OpaqueBrowserFrameView::MaybeAddAppIconToLayoutParams(
+ }
+ 
+ int OpaqueBrowserFrameView::GetTopInset(bool restored) const {
+-  return layout_->NonClientTopHeight(restored);
++  return GetBrowserView()->ShouldDrawTabStrip() && features::IsThorium2024()
++             ? layout_->GetTabStripInsetsTop(restored)
++             : layout_->NonClientTopHeight(restored);
+ }
+ 
+ void OpaqueBrowserFrameView::UpdateThrobber(bool running) {
+diff --git a/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.cc b/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.cc
+index f554ea12291ef..e9669127ac9d7 100644
+--- a/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.cc
++++ b/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.cc
+@@ -154,6 +154,15 @@ int OpaqueBrowserFrameViewLayout::NonClientTopHeight(bool restored) const {
+          kContentEdgeShadowThickness;
+ }
+ 
++int OpaqueBrowserFrameViewLayout::GetTabStripInsetsTop(bool restored) const {
++  const int top = NonClientTopHeight(restored);
++  const bool start_at_top_of_frame =
++      !restored && delegate_->IsFrameCondensed();
++  constexpr int kNonClientRestoredExtraThickness = 8;
++  return start_at_top_of_frame ? top
++                               : (top + kNonClientRestoredExtraThickness);
++}
++
+ gfx::Insets OpaqueBrowserFrameViewLayout::FrameEdgeInsets(bool restored) const {
+   return IsFrameEdgeVisible(restored) ? RestoredFrameEdgeInsets()
+                                       : gfx::Insets();
+@@ -163,7 +172,12 @@ int OpaqueBrowserFrameViewLayout::DefaultCaptionButtonY(bool restored) const {
+   // Maximized buttons start at window top, since the window has no border. This
+   // offset is for the image (the actual clickable bounds extend all the way to
+   // the top to take Fitts' Law into account).
+-  return kFrameShadowThickness;
++  const bool start_at_top_of_frame = !restored &&
++                                     delegate_->IsFrameCondensed() &&
++                                     features::IsThorium2024();
++  return start_at_top_of_frame
++             ? FrameBorderInsets(false).top()
++             : kFrameShadowThickness;
+ }
+ 
+ int OpaqueBrowserFrameViewLayout::CaptionButtonY(views::FrameButton button_id,
+diff --git a/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.h b/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.h
+index 4a92fd22a44b2..e4e690f02864f 100644
+--- a/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.h
++++ b/chrome/browser/ui/views/frame/opaque_browser_frame_view_layout.h
+@@ -86,6 +86,8 @@ class OpaqueBrowserFrameViewLayout : public views::LayoutManager {
+   // if the window was restored, regardless of its current state.
+   int NonClientTopHeight(bool restored) const;
+ 
++  int GetTabStripInsetsTop(bool restored) const;
++
+   // Returns the y-coordinate of the caption button when native frame buttons
+   // are disabled.  If |restored| is true, acts as if the window is restored
+   // regardless of the real mode.
+diff --git a/chrome/browser/ui/views/location_bar/location_bar_view.cc b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+index 5060aa43da14a..2e383a06ea35f 100644
+--- a/chrome/browser/ui/views/location_bar/location_bar_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_bar_view.cc
+@@ -214,9 +214,11 @@ int IncrementalMinimumWidth(const views::View* view) {
+ 
+ // The padding between the intent chip and the other trailing decorations.
+ constexpr int kIntentChipIntraItemPadding = 12;
++constexpr int kThoriumIntentChipIntraItemPadding = 6;
+ 
+ // The padding between the content setting icons and other trailing decorations.
+ constexpr int kContentSettingIntraItemPadding = 8;
++constexpr int kThoriumContentSettingIntraItemPadding = 4;
+ 
+ }  // namespace
+ 
+@@ -251,17 +253,24 @@ LocationBarView::LocationBarView(Browser* browser,
+       });
+   set_suppress_default_focus_handling();
+   if (!is_popup_mode_) {
+-    views::FocusRing::Install(this);
+-    views::FocusRing::Get(this)->SetHasFocusPredicate(
+-        base::BindRepeating([](const View* view) {
+-          const auto* v = views::AsViewClass<LocationBarView>(view);
+-          CHECK(v);
+-          // Show focus ring when the Omnibox is visibly focused and the popup
+-          // is closed.
+-          return v->GetOmniboxController()->edit_model()->is_caret_visible() &&
+-                 !v->GetOmniboxController()->IsPopupOpen();
+-        }));
+-    views::FocusRing::Get(this)->SetOutsetFocusRingDisabled(true);
++#if BUILDFLAG(IS_MAC)
++    constexpr bool kInstallViewsFocusRing = true;
++#else
++    const bool kInstallViewsFocusRing = !features::IsThorium2024();
++#endif
++    if (kInstallViewsFocusRing) {
++      views::FocusRing::Install(this);
++      views::FocusRing::Get(this)->SetHasFocusPredicate(
++          base::BindRepeating([](const View* view) {
++            const auto* v = views::AsViewClass<LocationBarView>(view);
++            CHECK(v);
++            // Show focus ring when the Omnibox is visibly focused and the popup
++            // is closed.
++            return v->GetOmniboxController()->edit_model()->is_caret_visible() &&
++                   !v->GetOmniboxController()->IsPopupOpen();
++          }));
++      views::FocusRing::Get(this)->SetOutsetFocusRingDisabled(true);
++    }
+     views::InstallPillHighlightPathGenerator(this);
+ 
+ #if BUILDFLAG(OS_LEVEL_GEOLOCATION_PERMISSION_SUPPORTED)
+@@ -321,10 +330,16 @@ void LocationBarView::Init() {
+   const gfx::FontList& font_list = typography_provider.GetFont(
+       CONTEXT_OMNIBOX_PRIMARY, views::style::STYLE_PRIMARY);
+ 
+-  const gfx::FontList& omnibox_chip_font_list = typography_provider.GetFont(
+-      CONTEXT_OMNIBOX_PRIMARY, views::style::STYLE_BODY_4_EMPHASIS);
+-  const gfx::FontList& page_action_font_list = typography_provider.GetFont(
+-      CONTEXT_OMNIBOX_PRIMARY, views::style::STYLE_BODY_3_EMPHASIS);
++  const gfx::FontList& omnibox_chip_font_list =
++      features::IsThorium2024()
++          ? font_list
++          : typography_provider.GetFont(CONTEXT_OMNIBOX_PRIMARY,
++                                        views::style::STYLE_BODY_4_EMPHASIS);
++  const gfx::FontList& page_action_font_list =
++      features::IsThorium2024()
++          ? font_list
++          : typography_provider.GetFont(CONTEXT_OMNIBOX_PRIMARY,
++                                        views::style::STYLE_BODY_3_EMPHASIS);
+ 
+   auto location_icon_view =
+       std::make_unique<LocationIconView>(omnibox_chip_font_list, this, this);
+@@ -485,7 +500,7 @@ void LocationBarView::Init() {
+   // if all page actions (i.e. up to bookmark star) are migrated.
+   const bool should_bridge_containers =
+       !IsPageActionMigrated(PageActionIconType::kBookmarkStar);
+-  static constexpr int kBetweenIconSpacing = 8;
++  const int kBetweenIconSpacing = features::IsThorium2024() ? 4 : 8;
+   const page_actions::PageActionViewParams page_action_params{
+       .icon_size =
+           GetLayoutConstant(LayoutConstant::kLocationBarTrailingIconSize),
+@@ -867,7 +882,7 @@ void LocationBarView::Layout(PassKey) {
+   // e.g. the page info icon, the google G icon, the selected suggestion icon.
+   int icon_left = 5;
+   // The padding between the LHS icon and the text.
+-  int text_left = 8;
++  int text_left = features::IsThorium2024() ? 0 : 8;
+ 
+   // Apply indentation to align the omnibox input icon and the text with those
+   // of the suggestions in the popup. However, there are two exceptions where
+@@ -886,22 +901,22 @@ void LocationBarView::Layout(PassKey) {
+                              !location_icon_view_->ShouldShowLabel() &&
+                              !ShouldShowKeywordBubble();
+   if (should_indent) {
+-    icon_left += 7 /*icon_indent*/;
++    icon_left += features::IsThorium2024() ? 9 : 7;
+     icon_left += omnibox_feature_configs::AdjustOmniboxIndent()
+                      .Get()
+                      .input_icon_indent_offset;
+-    text_left += 6 /*text_indent*/;
++    text_left += features::IsThorium2024() ? 1 : 6;
+     text_left += omnibox_feature_configs::AdjustOmniboxIndent()
+                      .Get()
+                      .input_text_indent_offset;
+   } else if (ShouldShowKeywordBubble()) {
+     // Otherwise, if in keyword mode, adjust indentation to align the icon and
+     // the text with the suggestion icons & texts.
+-    icon_left += 9; /*icon_indent_keyword_mode*/
++    icon_left += features::IsThorium2024() ? 10 : 9;
+     icon_left += omnibox_feature_configs::AdjustOmniboxIndent()
+                      .Get()
+                      .input_icon_indent_offset;
+-    text_left += -9; /*text_indent_keyword_mode*/
++    text_left += features::IsThorium2024() ? -10 : -9;
+   }
+ 
+   LocationBarLayout leading_decorations(LocationBarLayout::Position::kLeftEdge,
+@@ -933,7 +948,10 @@ void LocationBarView::Layout(PassKey) {
+                 !ShouldShowKeywordBubble()
+           : chip_controller_->chip()->GetVisible() &&
+                 !ShouldShowKeywordBubble();
++  const int text_overriding_permission_chip_indent =
++      features::IsThorium2024() ? 4 : 0;
+   if (show_overriding_permission_chip) {
++    text_left += text_overriding_permission_chip_indent;
+     if (base::FeatureList::IsEnabled(
+             content_settings::features::kLeftHandSideActivityIndicators)) {
+       leading_decorations.AddDecoration(vertical_padding, location_height,
+@@ -1028,13 +1046,17 @@ void LocationBarView::Layout(PassKey) {
+   add_trailing_decoration(ai_mode_hint_label_, /*intra_item_padding=*/0,
+                           /*edge_padding=*/trailing_decorations_edge_padding);
+   for (ContentSettingImageView* view : base::Reversed(content_setting_views_)) {
+-    int intra_item_padding = kContentSettingIntraItemPadding;
++    const int intra_item_padding = features::IsThorium2024()
++                                 ? kThoriumContentSettingIntraItemPadding
++                                 : kContentSettingIntraItemPadding;
+     add_trailing_decoration(view, intra_item_padding,
+                             /*edge_padding=*/trailing_decorations_edge_padding);
+   }
+ 
+   if (intent_chip_) {
+-    int intra_item_padding = kIntentChipIntraItemPadding;
++    const int intra_item_padding = features::IsThorium2024()
++                                 ? kThoriumIntentChipIntraItemPadding
++                                 : kIntentChipIntraItemPadding;
+     add_trailing_decoration(intent_chip_, intra_item_padding,
+                             /*edge_padding=*/trailing_decorations_edge_padding);
+   }
+@@ -1315,13 +1337,21 @@ SkColor LocationBarView::GetIconLabelBubbleSurroundingForegroundColor() const {
+   // fall back to the usual omnibox text color to ensure UI consistency.
+   // In either case, all IconLabelBubbleViews situated within the location bar
+   // will inherit the selected "surrounding foreground color".
+-  const auto color_id = ShouldShowKeywordBubble()
+-                            ? kColorOmniboxKeywordSeparator
+-                            : kColorOmniboxActionIcon;
++  ui::ColorId color_id;
++  if (ShouldShowKeywordBubble()) {
++    color_id = kColorOmniboxKeywordSeparator;
++  } else if (features::IsThorium2024()) {
++    color_id = kColorOmniboxText;
++  } else {
++    color_id = kColorOmniboxActionIcon;
++  }
+   return GetColorProvider()->GetColor(color_id);
+ }
+ 
+ SkAlpha LocationBarView::GetIconLabelBubbleSeparatorAlpha() const {
++  if (features::IsThorium2024()) {
++    return IconLabelBubbleView::Delegate::GetIconLabelBubbleSeparatorAlpha();
++  }
+   return 0xFF;
+ }
+ 
+@@ -1586,7 +1616,7 @@ void LocationBarView::RefreshBackground() {
+     // focused.
+     background_color_ =
+         color_provider->GetColor(kColorOmniboxResultsBackground);
+-  } else if (input_in_progress && !high_contrast) {
++  } else if (!features::IsThorium2024() && input_in_progress && !high_contrast) {
+     // Under CR23 guidelines, if the Omnibox is unfocused, but still contains
+     // in-progress user input, the background color matches the popup (unless
+     // high-contrast mode is enabled).
+@@ -1596,6 +1626,16 @@ void LocationBarView::RefreshBackground() {
+   }
+ 
+   SkColor border_color = SK_ColorTRANSPARENT;
++
++  // The custom focus border is disabled on macOS to avoid conflicting with
++  // native omnibox rendering.
++#if !BUILDFLAG(IS_MAC)
++  const bool is_open = GetOmniboxController()->IsPopupOpen();
++  if (is_caret_visible && !is_open && features::IsThorium2024()) {
++    border_color = color_provider->GetColor(ui::kColorFocusableBorderFocused);
++  }
++#endif
++
+   if (high_contrast) {
+     // High contrast schemes get a border stroke even on a rounded omnibox.
+     border_color =
+diff --git a/chrome/browser/ui/views/location_bar/location_icon_view.cc b/chrome/browser/ui/views/location_bar/location_icon_view.cc
+index 01ba0aa4ae8f4..7deec4f88e03c 100644
+--- a/chrome/browser/ui/views/location_bar/location_icon_view.cc
++++ b/chrome/browser/ui/views/location_bar/location_icon_view.cc
+@@ -84,8 +84,10 @@ LocationIconView::LocationIconView(
+ 
+   SetAccessibleProperties();
+ 
+-  ConfigureInkDropForRefresh2023(this, kColorOmniboxIconHover,
+-                                 kColorOmniboxIconPressed);
++  if (!features::IsThorium2024()) {
++    ConfigureInkDropForRefresh2023(this, kColorOmniboxIconHover,
++                                   kColorOmniboxIconPressed);
++  }
+ 
+   UpdateBorder();
+ }
+@@ -119,7 +121,7 @@ SkColor LocationIconView::GetForegroundColor() const {
+ }
+ 
+ bool LocationIconView::ShouldShowSeparator() const {
+-  return false;
++  return features::IsThorium2024();
+ }
+ 
+ bool LocationIconView::ShouldShowLabelAfterAnimation() const {
+@@ -343,23 +345,27 @@ void LocationIconView::UpdateIcon() {
+ 
+ void LocationIconView::UpdateBackground() {
+   CHECK(GetColorProvider());
+-  const std::u16string& display_text = GetText();
+-  const bool is_text_dangerous =
+-      display_text == l10n_util::GetStringUTF16(IDS_DANGEROUS_VERBOSE_STATE);
++  if (!features::IsThorium2024()) {
++    const std::u16string& display_text = GetText();
++    const bool is_text_dangerous =
++        display_text == l10n_util::GetStringUTF16(IDS_DANGEROUS_VERBOSE_STATE);
+ 
+-  const ui::ColorId id =
+-      delegate_->GetLocationIconBackgroundColorOverride().value_or(
+-          is_text_dangerous ? kColorOmniboxSecurityChipDangerousBackground
+-                            : kColorOmniboxIconBackground);
++    const ui::ColorId id =
++        delegate_->GetLocationIconBackgroundColorOverride().value_or(
++            is_text_dangerous ? kColorOmniboxSecurityChipDangerousBackground
++                              : kColorOmniboxIconBackground);
+ 
+-  SetBackgroundColor(GetColorProvider()->GetColor(id));
++    SetBackgroundColor(GetColorProvider()->GetColor(id));
+ 
+-  if (is_text_dangerous) {
+-    ConfigureInkDropForRefresh2023(this, kColorOmniboxSecurityChipInkDropHover,
+-                                   kColorOmniboxSecurityChipInkDropRipple);
++    if (is_text_dangerous) {
++      ConfigureInkDropForRefresh2023(this, kColorOmniboxSecurityChipInkDropHover,
++                                     kColorOmniboxSecurityChipInkDropRipple);
++    } else {
++      ConfigureInkDropForRefresh2023(this, kColorOmniboxIconHover,
++                                     kColorOmniboxIconPressed);
++    }
+   } else {
+-    ConfigureInkDropForRefresh2023(this, kColorOmniboxIconHover,
+-                                   kColorOmniboxIconPressed);
++    IconLabelBubbleView::UpdateBackground();
+   }
+ }
+ 
+@@ -382,7 +388,7 @@ void LocationIconView::Update(bool suppress_animations,
+   // level.
+   UpdateLabelColors();
+ 
+-  if (force_hide_background) {
++  if (force_hide_background && !features::IsThorium2024()) {
+     SetBackgroundColor(SK_ColorTRANSPARENT);
+   }
+ 
+@@ -438,26 +444,30 @@ void LocationIconView::UpdateBorder() {
+   // child views in the location bar have the same height. The visible height of
+   // the bubble should be smaller, so use an empty border to shrink down the
+   // content bounds so the background gets painted correctly.
+-  gfx::Insets insets = GetLayoutInsets(LOCATION_BAR_PAGE_INFO_ICON_PADDING);
+-  if (ShouldShowLabel()) {
+-    SecurityLevel level = GetSecurityLevel();
+-    if (level == security_state::DANGEROUS) {
+-      // Extra space between the left edge and label.
+-      const int kLeftHorizontalPadding = GetLayoutConstant(
+-          LayoutConstant::kLocationBarPageInfoIconDangerousLeadingPadding);
+-      // Extra space between the label and right edge.
+-      const int kRightHorizontalPadding = GetLayoutConstant(
+-          LayoutConstant::kLocationBarPageInfoIconDangerousTrailingPadding);
+-      insets.set_left(kLeftHorizontalPadding);
+-      insets.set_right(kRightHorizontalPadding);
+-    } else {
+-      // An extra space between chip's label and right edge.
+-      const int kExtraRightPadding = GetLayoutConstant(
+-          LayoutConstant::kLocationBarPageInfoIconLabelExtraTrailingPadding);
+-      insets.set_right(insets.right() + kExtraRightPadding);
++  if (!features::IsThorium2024()) {
++    gfx::Insets insets = GetLayoutInsets(LOCATION_BAR_PAGE_INFO_ICON_PADDING);
++    if (ShouldShowLabel()) {
++      SecurityLevel level = GetSecurityLevel();
++      if (level == security_state::DANGEROUS) {
++        // Extra space between the left edge and label.
++        const int kLeftHorizontalPadding = GetLayoutConstant(
++            LayoutConstant::kLocationBarPageInfoIconDangerousLeadingPadding);
++        // Extra space between the label and right edge.
++        const int kRightHorizontalPadding = GetLayoutConstant(
++            LayoutConstant::kLocationBarPageInfoIconDangerousTrailingPadding);
++        insets.set_left(kLeftHorizontalPadding);
++        insets.set_right(kRightHorizontalPadding);
++      } else {
++        // An extra space between chip's label and right edge.
++        const int kExtraRightPadding = GetLayoutConstant(
++            LayoutConstant::kLocationBarPageInfoIconLabelExtraTrailingPadding);
++        insets.set_right(insets.right() + kExtraRightPadding);
++      }
+     }
++    SetBorder(views::CreateEmptyBorder(insets));
++  } else {
++    IconLabelBubbleView::UpdateBorder();
+   }
+-  SetBorder(views::CreateEmptyBorder(insets));
+ }
+ 
+ gfx::Size LocationIconView::GetMinimumSizeForPreferredSize(
+diff --git a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+index d77dca2702c68..616340b0fcc8f 100644
+--- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
++++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.cc
+@@ -262,7 +262,7 @@ RoundedOmniboxResultsFrame::RoundedOmniboxResultsFrame(
+   contents_host->AddChildViewRaw(contents_.get());
+ 
+   // Initialize the shadow.
+-  SetElevation(kDefaultElevation);
++  SetElevation(GetBubbleElevation());
+ 
+   AddChildView(std::move(contents_host));
+ }
+@@ -290,11 +290,16 @@ void RoundedOmniboxResultsFrame::OnBeforeWidgetInit(
+   params->shadow_type = views::Widget::InitParams::ShadowType::kNone;
+ }
+ 
++// static
++int RoundedOmniboxResultsFrame::GetBubbleElevation() {
++  return features::IsThorium2024() ? 6 : kDefaultElevation;
++}
++
+ // static
+ int RoundedOmniboxResultsFrame::GetNonResultSectionHeight(bool include_cutout) {
+   return include_cutout
+              ? GetLayoutConstant(LayoutConstant::kLocationBarHeight) +
+-                   GetLocationBarAlignmentInsets().height()
++                   GetNonResultSectionInsets().height()
+              : 0;
+ }
+ 
+@@ -303,12 +308,26 @@ gfx::Insets RoundedOmniboxResultsFrame::GetLocationBarAlignmentInsets() {
+   if (ui::TouchUiController::Get()->touch_ui()) {
+     return gfx::Insets::TLBR(6, 1, 5, 1);
+   }
++  if (features::IsThorium2024()) {
++    return gfx::Insets::VH(3, 6);
++  }
++  return gfx::Insets::VH(5, 6);
++}
++
++// static
++gfx::Insets RoundedOmniboxResultsFrame::GetNonResultSectionInsets() {
++  if (ui::TouchUiController::Get()->touch_ui()) {
++    return gfx::Insets::TLBR(6, 1, 5, 1);
++  }
++  if (features::IsThorium2024()) {
++    return gfx::Insets::VH(4, 6);
++  }
+   return gfx::Insets::VH(5, 6);
+ }
+ 
+ // static
+ gfx::Insets RoundedOmniboxResultsFrame::GetShadowInsets() {
+-  return views::BubbleBorder::GetBorderAndShadowInsets(kDefaultElevation);
++  return views::BubbleBorder::GetBorderAndShadowInsets(GetBubbleElevation());
+ }
+ 
+ std::unique_ptr<views::View> RoundedOmniboxResultsFrame::ExtractContents() {
+@@ -350,6 +369,15 @@ void RoundedOmniboxResultsFrame::SetElevation(int elevation) {
+   if (elevation > 0) {
+     border->set_md_shadow_elevation(elevation);
+   }
++
++  // The custom border stroke is disabled on macOS to avoid conflicting with
++  // native popup shadow rendering.
++#if !BUILDFLAG(IS_MAC)
++  if (features::IsThorium2024()) {
++    border->set_draw_border_stroke(true);
++  }
++#endif
++
+   SetBorder(std::move(border));
+ }
+ 
+diff --git a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h
+index 6becfa6da8a41..8350629a15d70 100644
+--- a/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h
++++ b/chrome/browser/ui/views/omnibox/rounded_omnibox_results_frame.h
+@@ -33,12 +33,18 @@ class RoundedOmniboxResultsFrame : public views::View {
+   static void OnBeforeWidgetInit(views::Widget::InitParams* params,
+                                  views::Widget* widget);
+ 
++  // Bubble elevation metric for Omnibox popup shadows.
++  static int GetBubbleElevation();
++
+   // The height of the location bar view part of the omnibox popup.
+   static int GetNonResultSectionHeight(bool include_cutout = true);
+ 
+   // How the Widget is aligned relative to the location bar.
+   static gfx::Insets GetLocationBarAlignmentInsets();
+ 
++  // How the text area of the Widget is aligned relative to the location bar.
++  static gfx::Insets GetNonResultSectionInsets();
++
+   // Returns the blur region taken up by the Omnibox popup shadows.
+   static gfx::Insets GetShadowInsets();
+ 
+diff --git a/chrome/browser/ui/views/page_info/page_info_view_factory.cc b/chrome/browser/ui/views/page_info/page_info_view_factory.cc
+index 2f6613ef50fd4..7bca0c5935174 100644
+--- a/chrome/browser/ui/views/page_info/page_info_view_factory.cc
++++ b/chrome/browser/ui/views/page_info/page_info_view_factory.cc
+@@ -98,6 +98,12 @@ std::unique_ptr<views::View> PageInfoViewFactory::CreateSeparator(
+     int horizontal_inset) {
+   int separator_spacing = ChromeLayoutProvider::Get()->GetDistanceMetric(
+       DISTANCE_CONTENT_LIST_VERTICAL_MULTI);
++  if (features::IsThorium2024()) {
++    // Distance for multi content list is used, but split in half, since there
++    // is a separator in the middle of it. For ChromeRefresh2023, the separator
++    // spacing is larger hence no need to split in half.
++    separator_spacing /= 2;
++  }
+   auto separator = std::make_unique<views::Separator>();
+   separator->SetProperty(views::kMarginsKey,
+                          gfx::Insets::VH(separator_spacing, horizontal_inset));
+@@ -907,9 +913,9 @@ const ui::ImageModel PageInfoViewFactory::GetOpenSubpageIcon() {
+   // GetIconSize() does not work for subpage icons because the default size of
+   // features::IsRoundedIconsEnabled() ? vector_icons::kArrowRightFlippableIcon
+   // : kSubmenuArrowOldIcon is 8 rather than 16.
+-  constexpr int kIconSize = 20;
++  const int kIconSize = features::IsThorium2024() ? 9 : 20;
+   return ui::ImageModel::FromVectorIcon(
+-      features::IsRoundedIconsEnabled()
++      features::IsRoundedIconsEnabled() && !features::IsThorium2024()
+           ? vector_icons::kKeyboardArrowRightFlippableIcon
+           : vector_icons::kSubmenuArrowChromeRefreshOldIcon,
+       ui::kColorIcon, kIconSize);
+diff --git a/chrome/browser/ui/views/side_panel/side_panel.cc b/chrome/browser/ui/views/side_panel/side_panel.cc
+index 767354aa29145..b252a173cccf5 100644
+--- a/chrome/browser/ui/views/side_panel/side_panel.cc
++++ b/chrome/browser/ui/views/side_panel/side_panel.cc
+@@ -68,7 +68,8 @@ constexpr BrowserAnimationGroup kAnimationGroup =
+ // This thickness includes the solid-color background and the inner round-rect
+ // border-color stroke. It does not include the outer-color separator.
+ int GetBorderThickness() {
+-  return 8 + views::Separator::kThickness;
++  return (features::IsThorium2024() ? 12 : 8) +
++         views::Separator::kThickness;
+ }
+ 
+ // This is how many units of the toolbar are essentially expected to be
+diff --git a/chrome/browser/ui/views/side_panel/side_panel_resize_area.cc b/chrome/browser/ui/views/side_panel/side_panel_resize_area.cc
+index b7663b7b03f9b..c82d7aaf806bf 100644
+--- a/chrome/browser/ui/views/side_panel/side_panel_resize_area.cc
++++ b/chrome/browser/ui/views/side_panel/side_panel_resize_area.cc
+@@ -12,6 +12,7 @@
+ #include "ui/accessibility/mojom/ax_node_data.mojom.h"
+ #include "ui/base/l10n/l10n_util.h"
+ #include "ui/base/metadata/metadata_impl_macros.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/color/color_provider.h"
+ #include "ui/compositor/layer.h"
+ #include "ui/gfx/geometry/size.h"
+@@ -29,7 +30,7 @@ SidePanelResizeHandle::SidePanelResizeHandle(SidePanel* side_panel)
+     : side_panel_(side_panel) {
+   SetProperty(views::kElementIdentifierKey, kSidePanelResizeHandleElementId);
+   SetVisible(false);
+-  gfx::Size preferred_size(4, 24);
++  const gfx::Size preferred_size(features::IsThorium2024() ? 8 : 4, 24);
+   SetPreferredSize(preferred_size);
+   SetCanProcessEventsWithinSubtree(false);
+ 
+@@ -41,6 +42,10 @@ SidePanelResizeHandle::SidePanelResizeHandle(SidePanel* side_panel)
+ void SidePanelResizeHandle::OnThemeChanged() {
+   ImageView::OnThemeChanged();
+ 
++  if (features::IsThorium2024()) {
++    return;
++  }
++
+   const SkColor resize_handle_color =
+       GetColorProvider()->GetColor(kColorSidePanelHoverResizeAreaHandle);
+   SetBackground(CreateRoundedRectBackground(resize_handle_color, 2));
+diff --git a/chrome/browser/ui/views/tabs/tab.cc b/chrome/browser/ui/views/tabs/tab.cc
+index d9287b9ed5296..f3e5410e042f2 100644
+--- a/chrome/browser/ui/views/tabs/tab.cc
++++ b/chrome/browser/ui/views/tabs/tab.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors, Alex313031, and gz83
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -83,6 +83,7 @@
+ #include "ui/base/pointer/touch_ui_controller.h"
+ #include "ui/base/resource/resource_bundle.h"
+ #include "ui/base/theme_provider.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/compositor/clip_recorder.h"
+ #include "ui/compositor/compositor.h"
+ #include "ui/gfx/animation/tween.h"
+@@ -136,7 +137,9 @@ constexpr int kPinnedTabExtraWidthToRenderAsNormal = 30;
+ // Additional padding of close button to the right of the tab
+ // indicator when `extra_alert_indicator_padding_` is true.
+ constexpr int kTabAlertIndicatorCloseButtonPaddingAdjustmentTouchUI = 8;
++constexpr int kTabAlertIndicatorCloseButtonPaddingAdjustmentTh24 = 6;
+ constexpr int kTabAlertIndicatorCloseButtonPaddingAdjustment = 4;
++constexpr int kExtraLeftPaddingToBalanceCloseButtonPadding = 2;
+ 
+ bool g_show_hover_card_on_mouse_hover = true;
+ 
+@@ -386,7 +389,11 @@ void Tab::Layout(PassKey) {
+   const bool was_showing_icon = showing_icon_;
+   UpdateIconVisibility();
+ 
+-  const int start = contents_rect.x();
++  int start = contents_rect.x();
++
++  if (extra_padding_before_content_ && features::IsThorium2024()) {
++    start += kExtraLeftPaddingToBalanceCloseButtonPadding;
++  }
+ 
+   // Position the underline under the tab contents.
+   constexpr int kGlicUnderlineYOffset = 8;
+@@ -404,6 +411,13 @@ void Tab::Layout(PassKey) {
+   // indicator, but visually it will be smaller at kFaviconSize wide.
+   gfx::Rect favicon_bounds(start, contents_rect.y(), 0, 0);
+   if (showing_icon_) {
++    // Height should go to the bottom of the tab for the crashed tab animation
++    // to pop out of the bottom in Thorium 2024 UI.
++    favicon_bounds.set_y(contents_rect.y() +
++                         Center(features::IsThorium2024()
++                                    ? contents_rect.height()
++                                    : gfx::kFaviconSize,
++                                gfx::kFaviconSize));
+     if (center_icon_) {
+       // When centering the favicon, the favicon is allowed to escape the normal
+       // contents rect.
+@@ -466,7 +480,9 @@ void Tab::Layout(PassKey) {
+       if (extra_alert_indicator_padding_) {
+         right -= ui::TouchUiController::Get()->touch_ui()
+                      ? kTabAlertIndicatorCloseButtonPaddingAdjustmentTouchUI
+-                     : kTabAlertIndicatorCloseButtonPaddingAdjustment;
++                     : (features::IsThorium2024()
++                           ? kTabAlertIndicatorCloseButtonPaddingAdjustmentTh24
++                           : kTabAlertIndicatorCloseButtonPaddingAdjustment);
+       }
+     }
+     const gfx::Size image_size = alert_indicator_button_->GetPreferredSize();
+@@ -1062,6 +1078,9 @@ void Tab::UpdateIconVisibility() {
+   // a non-narrow tab.
+   if (!closing_) {
+     center_icon_ = false;
++    if (features::IsThorium2024()) {
++      extra_padding_before_content_ = false;
++    }
+   }
+ 
+   showing_icon_ = showing_alert_indicator_ = false;
+@@ -1099,6 +1118,9 @@ void Tab::UpdateIconVisibility() {
+     // While animating to or from the pinned state, pinned tabs are rendered as
+     // normal tabs. Force the extra padding on so the favicon doesn't jitter
+     // left and then back right again as it resizes through layout regimes.
++    if (features::IsThorium2024()) {
++      extra_padding_before_content_ = true;
++    }
+     extra_alert_indicator_padding_ = true;
+     return;
+   }
+@@ -1227,6 +1249,16 @@ void Tab::UpdateIconVisibility() {
+     }
+   }
+ 
++  // Don't update padding while the tab is closing, to avoid glitchy-looking
++  // behavior when the close animation causes the tab to get very small.
++  if (!closing_ && features::IsThorium2024()) {
++    // The extra padding is intended to visually balance the close button, so
++    // only include it when the close button is shown or will be shown on hover.
++    // We also check this for active tabs so that the extra padding doesn't pop
++    // in and out as you switch tabs.
++    extra_padding_before_content_ = large_enough_for_close_button;
++  }
++
+   extra_alert_indicator_padding_ = showing_alert_indicator_ &&
+                                    showing_close_button_ &&
+                                    large_enough_for_close_button;
+diff --git a/chrome/browser/ui/views/tabs/tab.h b/chrome/browser/ui/views/tabs/tab.h
+index 190d0cd9fd770..4bb45b158f396 100644
+--- a/chrome/browser/ui/views/tabs/tab.h
++++ b/chrome/browser/ui/views/tabs/tab.h
+@@ -317,6 +317,13 @@ class Tab : public gfx::AnimationDelegate,
+   // Whether the tab is currently animating from a pinned to an unpinned state.
+   bool is_animating_from_pinned_ = false;
+ 
++  // If there's room, we add additional padding to the left of the favicon to
++  // balance the whitespace inside the non-hovered close button image;
++  // otherwise, the tab contents look too close to the left edge. Once the tabs
++  // get too small, we let the tab contents take the full width, to maximize
++  // visible area.
++  bool extra_padding_before_content_ = false;
++
+   // When both the close button and alert indicator are visible, we add extra
+   // padding between them to space them out visually.
+   bool extra_alert_indicator_padding_ = false;
+diff --git a/chrome/browser/ui/views/tabs/tab_search_button.cc b/chrome/browser/ui/views/tabs/tab_search_button.cc
+index c62091a212ecf..92b1e02986950 100644
+--- a/chrome/browser/ui/views/tabs/tab_search_button.cc
++++ b/chrome/browser/ui/views/tabs/tab_search_button.cc
+@@ -31,7 +31,8 @@ TabSearchButton::TabSearchButton(
+     Edge animated_flat_edge)
+     : TabStripControlButton(browser_window_interface,
+                             PressedCallback(),
+-                            features::IsRoundedIconsEnabled()
++                            features::IsThorium2024() ||
++                                    features::IsRoundedIconsEnabled()
+                                 ? vector_icons::kKeyboardArrowDownIcon
+                                 : vector_icons::kExpandMoreOldIcon,
+                             fixed_flat_edge,
+@@ -42,11 +43,13 @@ TabSearchButton::TabSearchButton(
+   GetViewAccessibility().SetName(
+       l10n_util::GetStringUTF16(IDS_ACCNAME_TAB_SEARCH));
+ 
+-  SetForegroundFrameActiveColorId(kColorNewTabButtonForegroundFrameActive);
+-  SetForegroundFrameInactiveColorId(kColorNewTabButtonForegroundFrameInactive);
+-  SetBackgroundFrameActiveColorId(kColorNewTabButtonCRBackgroundFrameActive);
+-  SetBackgroundFrameInactiveColorId(
+-      kColorNewTabButtonCRBackgroundFrameInactive);
++  if (!features::IsThorium2024()) {
++    SetForegroundFrameActiveColorId(kColorNewTabButtonForegroundFrameActive);
++    SetForegroundFrameInactiveColorId(kColorNewTabButtonForegroundFrameInactive);
++    SetBackgroundFrameActiveColorId(kColorNewTabButtonCRBackgroundFrameActive);
++    SetBackgroundFrameInactiveColorId(
++        kColorNewTabButtonCRBackgroundFrameInactive);
++  }
+ 
+   UpdateColors();
+ }
+@@ -63,7 +66,9 @@ void TabSearchButton::NotifyClick(const ui::Event& event) {
+ }
+ 
+ int TabSearchButton::GetCornerRadius() const {
+-  return kCRTabSearchCornerRadius;
++  return features::IsThorium2024()
++             ? TabStripControlButton::kButtonSize.width() / 2
++             : kCRTabSearchCornerRadius;
+ }
+ 
+ int TabSearchButton::GetFlatCornerRadius() const {
+diff --git a/chrome/browser/ui/views/tabs/tab_style_views.cc b/chrome/browser/ui/views/tabs/tab_style_views.cc
+index 44a60df681ef2..33db8044c9c51 100644
+--- a/chrome/browser/ui/views/tabs/tab_style_views.cc
++++ b/chrome/browser/ui/views/tabs/tab_style_views.cc
+@@ -238,7 +238,7 @@ SkPath TabStyleViewsImpl::GetPath(TabStyle::PathType path_type,
+     // this. Detached tab shapes do not need to respect this.
+     if (path_type != TabStyle::PathType::kInteriorClip &&
+         path_type != TabStyle::PathType::kHitTest) {
+-      tab_height -= GetLayoutConstant(LayoutConstant::kTabStripPadding) * scale;
++      tab_height -= GetLayoutConstant(LayoutConstant::kTabMargin) * scale;
+       tab_height -=
+           GetLayoutConstant(LayoutConstant::kTabstripToolbarOverlap) * scale;
+     }
+@@ -251,7 +251,7 @@ SkPath TabStyleViewsImpl::GetPath(TabStyle::PathType path_type,
+ 
+     float left = aligned_bounds.x() + extension_corner_radius;
+     float top = aligned_bounds.y() +
+-                GetLayoutConstant(LayoutConstant::kTabStripPadding) * scale;
++                GetLayoutConstant(LayoutConstant::kTabInactivePadding) * scale;
+ 
+     float right = aligned_bounds.right() - extension_corner_radius;
+     const int bottom = top + tab_height;
+@@ -263,7 +263,7 @@ SkPath TabStyleViewsImpl::GetPath(TabStyle::PathType path_type,
+     // of the tab, encompassing the top padding. This makes it easy to click on
+     // tabs by moving the mouse to the top of the screen.
+     if (path_type == TabStyle::PathType::kHitTest && is_frame_condensed) {
+-      top -= GetLayoutConstant(LayoutConstant::kTabStripPadding) * scale;
++      top -= GetLayoutConstant(LayoutConstant::kTabMargin) * scale;
+       // Don't round the top corners to avoid creating dead space between tabs.
+       top_left_corner_radius = 0;
+       top_right_corner_radius = 0;
+diff --git a/chrome/browser/ui/views/toolbar/toolbar_button.cc b/chrome/browser/ui/views/toolbar/toolbar_button.cc
+index d4c4f01c14c21..8e906b84fef0e 100644
+--- a/chrome/browser/ui/views/toolbar/toolbar_button.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_button.cc
+@@ -188,9 +188,11 @@ void ToolbarButton::UpdateColorsAndInsets() {
+   SetEnabledTextColors(highlight_color_animation_.GetTextColor());
+ 
+   // ToolbarButton height is constrained by the height of the location bar.
++  const int target_height = GetLayoutConstant(
++      features::IsThorium2024() ? LayoutConstant::kToolbarButtonHeight
++                                : LayoutConstant::kLocationBarHeight);
+   const int extra_height =
+-      std::max(0, target_size.height() -
+-                      GetLayoutConstant(LayoutConstant::kLocationBarHeight));
++      std::max(0, target_size.height() - target_height);
+   const gfx::Insets paint_insets =
+       gfx::Insets(extra_height / 2) + *GetProperty(views::kInternalPaddingKey);
+ 
+diff --git a/chrome/browser/ui/webui/settings/settings_ui.cc b/chrome/browser/ui/webui/settings/settings_ui.cc
+index 5df96f4435834..2422661b9b61d 100644
+--- a/chrome/browser/ui/webui/settings/settings_ui.cc
++++ b/chrome/browser/ui/webui/settings/settings_ui.cc
+@@ -149,6 +149,7 @@
+ #include "third_party/blink/public/common/features.h"
+ #include "ui/accessibility/accessibility_features.h"
+ #include "ui/base/interaction/element_identifier.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/webui/tracked_element/tracked_element_handler_document_singleton.h"
+ #include "ui/webui/webui_util.h"
+ 
+@@ -181,7 +182,6 @@
+ #include "chromeos/constants/chromeos_features.h"
+ #include "components/account_manager_core/chromeos/account_manager.h"
+ #include "components/user_manager/user.h"
+-#include "ui/base/ui_base_features.h"
+ #else  // !BUILDFLAG(IS_CHROMEOS)
+ #include "chrome/browser/search/background/ntp_custom_background_service_factory.h"
+ #include "chrome/browser/signin/account_consistency_mode_manager.h"
+@@ -696,6 +696,9 @@ SettingsUI::SettingsUI(content::WebUI* web_ui)
+       "personalContextSettingsDescription",
+       IDS_ACCESSIBILITY_ANNOTATOR_SETTINGS_DESCRIPTION_DESKTOP);
+ 
++  html_source->AddString(
++      "thorium2024", features::IsThorium2024() ? "thorium-2024" : "");
++
+   html_source->AddString(
+       "webuiRefresh2026",
+       features::IsWebuiRefresh2026Enabled() ? "webui-refresh-2026" : "");
+diff --git a/chrome/browser/ui/webui/webui_toolbar/webui_toolbar_layout_css_helper.cc b/chrome/browser/ui/webui/webui_toolbar/webui_toolbar_layout_css_helper.cc
+index bc7c354550ad4..1c59bd5517619 100644
+--- a/chrome/browser/ui/webui/webui_toolbar/webui_toolbar_layout_css_helper.cc
++++ b/chrome/browser/ui/webui/webui_toolbar/webui_toolbar_layout_css_helper.cc
+@@ -102,6 +102,14 @@ std::string_view LayoutConstantToCssVarName(LayoutConstant layout_constant) {
+       return "--tab-strip-height";
+     case kTabStripPadding:
+       return "--tab-strip-padding";
++    case kTabMargin:
++      return "--tab-margin";
++    case kTabInactivePadding:
++      return "--tab-inactive-padding";
++    case kTabSearchPadding:
++      return "--tab-search-padding";
++    case kTabButtonOffset:
++      return "--tab-button-offset";
+     case kTabSeparatorHeight:
+       return "--tab-separator-height";
+     case kTabPreTitlePadding:
+diff --git a/ui/base/ui_base_features.cc b/ui/base/ui_base_features.cc
+index f9d1b0539a91e..91771b5b4d2b7 100644
+--- a/ui/base/ui_base_features.cc
++++ b/ui/base/ui_base_features.cc
+@@ -411,6 +411,16 @@ bool IsVariableRefreshRateAlwaysOn() {
+   return base::FeatureList::IsEnabled(kEnableVariableRefreshRateAlwaysOn);
+ }
+ 
++BASE_FEATURE(kThorium2024,
++             "Thorium2024",
++             base::FEATURE_DISABLED_BY_DEFAULT);
++
++bool IsThorium2024() {
++  static const bool th24_flag =
++      base::CommandLine::ForCurrentProcess()->HasSwitch("th24");
++  return base::FeatureList::IsEnabled(kThorium2024) || th24_flag;
++}
++
+ BASE_FEATURE(kBubbleMetricsApi, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
+ #if BUILDFLAG(IS_WIN)
+diff --git a/ui/base/ui_base_features.h b/ui/base/ui_base_features.h
+index a68a5fbcd74e7..f2c85b7721b0c 100644
+--- a/ui/base/ui_base_features.h
++++ b/ui/base/ui_base_features.h
+@@ -234,6 +234,10 @@ COMPONENT_EXPORT(UI_BASE_FEATURES)
+ BASE_DECLARE_FEATURE(kEnableVariableRefreshRateAlwaysOn);
+ COMPONENT_EXPORT(UI_BASE_FEATURES) bool IsVariableRefreshRateAlwaysOn();
+ 
++// Enables the legacy Thorium 2024 UI layout and styling.
++COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kThorium2024);
++COMPONENT_EXPORT(UI_BASE_FEATURES) bool IsThorium2024();
++
+ COMPONENT_EXPORT(UI_BASE_FEATURES)
+ BASE_DECLARE_FEATURE(kBubbleMetricsApi);
+ 
+diff --git a/ui/views/controls/button/toggle_button.cc b/ui/views/controls/button/toggle_button.cc
+index 585e7889f9af4..abb46b385ab80 100644
+--- a/ui/views/controls/button/toggle_button.cc
++++ b/ui/views/controls/button/toggle_button.cc
+@@ -18,6 +18,7 @@
+ #include "third_party/skia/include/core/SkRect.h"
+ #include "ui/accessibility/ax_enums.mojom.h"
+ #include "ui/accessibility/ax_node_data.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/base/metadata/metadata_header_macros.h"
+ #include "ui/base/metadata/metadata_impl_macros.h"
+ #include "ui/color/color_id.h"
+@@ -48,6 +49,13 @@ namespace {
+ 
+ // Constants are measured in dip.
+ constexpr gfx::Size kTrackSize = gfx::Size(26, 16);
++constexpr gfx::Size kTh24TrackSize = gfx::Size(30, 12);
++
++constexpr int kTrackVerticalMargin = 5;
++constexpr int kTrackHorizontalMargin = 4;
++
++// Insets from the rounded edge of the thumb to the rounded edge of the track.
++constexpr int kTh24ThumbInset = 2;
+ constexpr int kThumbInset = -4;
+ constexpr int kThumbInsetSelected = -2;
+ constexpr int kThumbPressedOutset = 1;
+@@ -55,10 +63,13 @@ constexpr int kHoverDiameter = 20;
+ constexpr float kBorderStrokeWidth = 1.0f;
+ 
+ const gfx::Size GetTrackSize() {
+-  return kTrackSize;
++  return features::IsThorium2024() ? kTh24TrackSize : kTrackSize;
+ }
+ 
+ int GetThumbInset(bool is_on) {
++  if (features::IsThorium2024()) {
++    return kTh24ThumbInset;
++  }
+   return is_on ? kThumbInsetSelected : kThumbInset;
+ }
+ 
+@@ -147,7 +158,7 @@ class ToggleButton::ThumbView : public View {
+         GetThumbColor(/*is_on=*/false).ResolveToSkColor(color_provider);
+     SkColor thumb_color =
+         color_utils::AlphaBlend(thumb_on_color, thumb_off_color, color_ratio_);
+-    if (is_hovered_ && is_on_) {
++    if (!features::IsThorium2024() && is_hovered_ && is_on_) {
+       // This will blend and additional color into the "on" state thumb color
+       // while the view is hovered. This will also take into account both the
+       // off->on color animating along with the hover animation. Those
+@@ -186,7 +197,8 @@ class ToggleButton::ThumbView : public View {
+ };
+ 
+ ToggleButton::ToggleButton(PressedCallback callback)
+-    : ToggleButton(std::move(callback), /*has_thumb_shadow=*/false) {}
++    : ToggleButton(std::move(callback),
++                   /*has_thumb_shadow=*/features::IsThorium2024()) {}
+ 
+ ToggleButton::ToggleButton(PressedCallback callback, bool has_thumb_shadow)
+     : Button(std::move(callback)) {
+@@ -203,14 +215,19 @@ ToggleButton::ToggleButton(PressedCallback callback, bool has_thumb_shadow)
+   // InkDrop event triggering is handled in NotifyClick().
+   SetHasInkDropActionOnClick(false);
+   InkDrop::UseInkDropForSquareRipple(InkDrop::Get(this),
+-                                     /*highlight_on_hover=*/true,
++                                     /*highlight_on_hover=*/
++                                     !features::IsThorium2024(),
+                                      /*highlight_on_focus=*/false,
+-                                     /*show_highlight_on_ripple=*/true);
++                                     /*show_highlight_on_ripple=*/
++                                     !features::IsThorium2024());
+   InkDrop::Get(this)->SetCreateRippleCallback(base::BindRepeating(
+       [](ToggleButton* host,
+          gfx::Insets insets) -> std::unique_ptr<InkDropRipple> {
+         gfx::Rect rect = host->thumb_view_->GetLocalBounds();
+         rect.Inset(insets);
++        if (features::IsThorium2024()) {
++          return InkDrop::Get(host)->CreateSquareRipple(rect.CenterPoint());
++        }
+         const SkColor pressed_color = host->GetPressedColor();
+         const float pressed_alpha = SkColorGetA(pressed_color);
+         std::unique_ptr<SquareInkDropRipple> ripple =
+@@ -229,20 +246,22 @@ ToggleButton::ToggleButton(PressedCallback callback, bool has_thumb_shadow)
+         return host->GetTrackColor(host->GetIsOn() || host->HasFocus());
+       },
+       this));
+-  InkDrop::Get(this)->SetCreateHighlightCallback(base::BindRepeating(
+-      [](ToggleButton* host) {
+-        const gfx::Rect thumb_bounds = host->thumb_view_->GetLocalBounds();
+-        const gfx::Size thumb_size(kHoverDiameter, kHoverDiameter);
+-        const SkColor hover_color = host->GetHoverColor();
+-        const float hover_alpha = SkColorGetA(hover_color);
+-        auto ink_drop_highlight = std::make_unique<InkDropHighlight>(
+-            thumb_size, thumb_size.height() / 2,
+-            gfx::PointF(thumb_bounds.CenterPoint()),
+-            SkColorSetA(hover_color, SK_AlphaOPAQUE));
+-        ink_drop_highlight->set_visible_opacity(hover_alpha / SK_AlphaOPAQUE);
+-        return ink_drop_highlight;
+-      },
+-      this));
++  if (!features::IsThorium2024()) {
++    InkDrop::Get(this)->SetCreateHighlightCallback(base::BindRepeating(
++        [](ToggleButton* host) {
++          const gfx::Rect thumb_bounds = host->thumb_view_->GetLocalBounds();
++          const gfx::Size thumb_size(kHoverDiameter, kHoverDiameter);
++          const SkColor hover_color = host->GetHoverColor();
++          const float hover_alpha = SkColorGetA(hover_color);
++          auto ink_drop_highlight = std::make_unique<InkDropHighlight>(
++              thumb_size, thumb_size.height() / 2,
++              gfx::PointF(thumb_bounds.CenterPoint()),
++              SkColorSetA(hover_color, SK_AlphaOPAQUE));
++          ink_drop_highlight->set_visible_opacity(hover_alpha / SK_AlphaOPAQUE);
++          return ink_drop_highlight;
++        },
++        this));
++  }
+ 
+   // Even though ToggleButton doesn't paint anything, declare us as flipped in
+   // RTL mode so that FocusRing correctly flips as well.
+@@ -347,6 +366,9 @@ void ToggleButton::RemoveLayerFromRegions(ui::Layer* layer) {
+ gfx::Size ToggleButton::CalculatePreferredSize(
+     const SizeBounds& /*available_size*/) const {
+   gfx::Rect rect(GetTrackSize());
++  if (features::IsThorium2024()) {
++    rect.Inset(gfx::Insets::VH(-kTrackVerticalMargin, -kTrackHorizontalMargin));
++  }
+   rect.Inset(-GetInsets());
+   return rect.size();
+ }
+@@ -366,7 +388,7 @@ gfx::Rect ToggleButton::GetThumbBounds() const {
+   // The thumb is a circle, so the width should match the height.
+   thumb_bounds.set_width(thumb_bounds.height());
+   thumb_bounds.Inset(thumb_view_->GetShadowOutsets());
+-  if (GetState() == STATE_PRESSED) {
++  if (GetState() == STATE_PRESSED && !features::IsThorium2024()) {
+     thumb_bounds.Outset(kThumbPressedOutset);
+   }
+   return thumb_bounds;
+@@ -381,7 +403,7 @@ void ToggleButton::UpdateThumb() {
+                       static_cast<float>(slide_animation_.GetCurrentValue()),
+                       static_cast<float>(hover_animation_.GetCurrentValue()),
+                       GetIsOn(), IsMouseHovered());
+-  if (IsMouseHovered()) {
++  if (!features::IsThorium2024() && IsMouseHovered()) {
+     InkDrop::Get(this)->GetInkDrop()->SetHovered(
+         !slide_animation_.is_animating());
+   }
+@@ -426,8 +448,10 @@ void ToggleButton::OnThemeChanged() {
+ void ToggleButton::NotifyClick(const ui::Event& event) {
+   AnimateIsOn(!GetIsOn());
+ 
+-  InkDrop::Get(this)->AnimateToState(InkDropState::ACTION_TRIGGERED,
+-                                     ui::LocatedEvent::FromIfValid(&event));
++  if (!features::IsThorium2024()) {
++    InkDrop::Get(this)->AnimateToState(InkDropState::ACTION_TRIGGERED,
++                                       ui::LocatedEvent::FromIfValid(&event));
++  }
+ 
+   Button::NotifyClick(event);
+ }
+@@ -440,14 +464,18 @@ void ToggleButton::StateChanged(ButtonState old_state) {
+   thumb_view_->SetEnabled(enabled);
+ 
+   // Update thumb bounds.
+-  if (GetState() == STATE_PRESSED || old_state == STATE_PRESSED) {
+-    UpdateThumb();
+-  } else if (GetState() == STATE_HOVERED || old_state == STATE_HOVERED) {
+-    if (old_state == STATE_HOVERED) {
+-      hover_animation_.Hide();
+-    } else {
+-      hover_animation_.Show();
++  if (!features::IsThorium2024()) {
++    if (GetState() == STATE_PRESSED || old_state == STATE_PRESSED) {
++      UpdateThumb();
++    } else if (GetState() == STATE_HOVERED || old_state == STATE_HOVERED) {
++      if (old_state == STATE_HOVERED) {
++        hover_animation_.Hide();
++      } else {
++        hover_animation_.Show();
++      }
++      UpdateThumb();
+     }
++  } else {
+     UpdateThumb();
+   }
+ }
+@@ -459,12 +487,42 @@ void ToggleButton::UpdateAccessibleCheckedState() {
+ }
+ 
+ SkPath ToggleButton::GetFocusRingPath() const {
++  if (features::IsThorium2024()) {
++    const gfx::Point center = GetThumbBounds().CenterPoint();
++    constexpr int kFocusRingRadius = 16;
++    return SkPath::Circle(center.x(), center.y(), kFocusRingRadius);
++  }
++
+   gfx::RectF bounds(GetTrackBounds());
+   const SkRect sk_rect = gfx::RectFToSkRect(bounds);
+   const float corner_radius = sk_rect.height() / 2;
+   return SkPath::RRect(sk_rect, corner_radius, corner_radius);
+ }
+ 
++void ToggleButton::OnFocus() {
++  Button::OnFocus();
++  if (features::IsThorium2024()) {
++    InkDrop::Get(this)->AnimateToState(views::InkDropState::ACTION_PENDING,
++                                       nullptr);
++    SchedulePaint();
++  }
++}
++
++void ToggleButton::OnBlur() {
++  Button::OnBlur();
++
++  if (features::IsThorium2024()) {
++    // The ink drop may have already gone away if the user clicked after
++    // focusing.
++    if (InkDrop::Get(this)->GetInkDrop()->GetTargetInkDropState() ==
++        views::InkDropState::ACTION_PENDING) {
++      InkDrop::Get(this)->AnimateToState(views::InkDropState::ACTION_TRIGGERED,
++                                         nullptr);
++    }
++    SchedulePaint();
++  }
++}
++
+ void ToggleButton::PaintButtonContents(gfx::Canvas* canvas) {
+   // Paint the toggle track. To look sharp even at fractional scale factors,
+   // round up to pixel boundaries.
+@@ -481,7 +539,7 @@ void ToggleButton::PaintButtonContents(gfx::Canvas* canvas) {
+   track_flags.setColor(color_utils::AlphaBlend(
+       GetTrackColor(true), GetTrackColor(false), color_ratio));
+   canvas->DrawRoundRect(track_rect, radius, track_flags);
+-  if (!GetIsOn() && inner_border_enabled_) {
++  if (!GetIsOn() && inner_border_enabled_ && !features::IsThorium2024()) {
+     track_rect.Inset(kBorderStrokeWidth * dsf / 2.0f);
+     track_flags.setColor(
+         GetColorProvider()->GetColor(ui::kColorToggleButtonShadow));
+@@ -493,7 +551,8 @@ void ToggleButton::PaintButtonContents(gfx::Canvas* canvas) {
+ }
+ 
+ void ToggleButton::AnimationEnded(const gfx::Animation* animation) {
+-  if (animation == &slide_animation_ && IsMouseHovered()) {
++  if (!features::IsThorium2024() && animation == &slide_animation_ &&
++      IsMouseHovered()) {
+     InkDrop::Get(this)->GetInkDrop()->SetHovered(true);
+   }
+ }
+diff --git a/ui/views/controls/button/toggle_button.h b/ui/views/controls/button/toggle_button.h
+index ed0c066ebb38c..a3feb75f19da9 100644
+--- a/ui/views/controls/button/toggle_button.h
++++ b/ui/views/controls/button/toggle_button.h
+@@ -99,6 +99,8 @@ class VIEWS_EXPORT ToggleButton : public Button {
+   // views::View:
+   bool CanAcceptEvent(const ui::Event& event) override;
+   void OnBoundsChanged(const gfx::Rect& previous_bounds) override;
++  void OnFocus() override;
++  void OnBlur() override;
+ 
+   // Button:
+   void PaintButtonContents(gfx::Canvas* canvas) override;
+diff --git a/ui/views/controls/combobox/combobox_util.cc b/ui/views/controls/combobox/combobox_util.cc
+index 10bd48f39898a..d26e114061b27 100644
+--- a/ui/views/controls/combobox/combobox_util.cc
++++ b/ui/views/controls/combobox/combobox_util.cc
+@@ -30,13 +30,17 @@ namespace views {
+ int GetComboboxArrowContainerWidthAndMargins() {
+   // add extra margins between combobox arrow container and edge of the
+   // combobox.
+-  return GetComboboxArrowContainerWidth() +
+-         LayoutProvider::Get()->GetDistanceMetric(
+-             DISTANCE_TEXTFIELD_HORIZONTAL_TEXT_PADDING);
++  return features::IsThorium2024()
++             ? GetComboboxArrowContainerWidth() + kComboboxArrowPaddingWidth
++             : GetComboboxArrowContainerWidth() +
++                   LayoutProvider::Get()->GetDistanceMetric(
++                       DISTANCE_TEXTFIELD_HORIZONTAL_TEXT_PADDING);
+ }
+ 
+ int GetComboboxArrowContainerWidth() {
+-  return ComboboxArrowSize().width() + kComboboxArrowPaddingWidth * 2;
++  const int combobox_padding =
++      features::IsThorium2024() ? 8 * 2 : kComboboxArrowPaddingWidth * 2;
++  return ComboboxArrowSize().width() + combobox_padding;
+ }
+ 
+ void PaintComboboxArrow(SkColor color,
+diff --git a/ui/views/controls/editable_combobox/editable_combobox.cc b/ui/views/controls/editable_combobox/editable_combobox.cc
+index a0b510de81c08..5b3a368fdf295 100644
+--- a/ui/views/controls/editable_combobox/editable_combobox.cc
++++ b/ui/views/controls/editable_combobox/editable_combobox.cc
+@@ -663,7 +663,9 @@ void EditableCombobox::UpdateTextfieldInsets() {
+   textfield_->SetExtraInsets(gfx::Insets::TLBR(
+       0, 0, 0,
+       std::max(control_elements_container_->GetPreferredSize({}).width() -
+-                   kComboboxArrowPaddingWidth,
++                   (features::IsThorium2024()
++                        ? 8
++                        : kComboboxArrowPaddingWidth),
+                0)));
+ }
+ 
+diff --git a/ui/views/controls/menu/menu_config.cc b/ui/views/controls/menu/menu_config.cc
+index a711c503287a7..1ef2f49f26e0e 100644
+--- a/ui/views/controls/menu/menu_config.cc
++++ b/ui/views/controls/menu/menu_config.cc
+@@ -82,17 +82,18 @@ bool MenuConfig::ShouldUseBubbleBorderForMenu(
+ }
+ 
+ void MenuConfig::InitCommon() {
++  const bool thorium_2024 = features::IsThorium2024();
+   context_menu_font_list = font_list = TypographyProvider::Get().GetFont(
+       style::CONTEXT_MENU, style::STYLE_BODY_3);
+   reserve_dedicated_arrow_column = false;
+-  menu_horizontal_border_size = 0;
+-  submenu_horizontal_overlap = 0;
+-  item_vertical_margin = 6;
+-  item_horizontal_border_padding = 12;
++  menu_horizontal_border_size = thorium_2024 ? 1 : 0;
++  submenu_horizontal_overlap = thorium_2024 ? -1 : 0;
++  item_vertical_margin = thorium_2024 ? 4 : 6;
++  item_horizontal_border_padding = thorium_2024 ? 0 : 12;
+   arrow_size = 16;
+-  separator_height = 17;
+-  separator_spacing_height = 4;
+-  use_outer_border = false;
++  separator_height = thorium_2024 ? 11 : 17;
++  separator_spacing_height = thorium_2024 ? 3 : 4;
++  use_outer_border = thorium_2024;
+ }
+ 
+ // static
+diff --git a/ui/views/controls/menu/menu_config_chromeos.cc b/ui/views/controls/menu/menu_config_chromeos.cc
+index aec943d266793..d91d14520979f 100644
+--- a/ui/views/controls/menu/menu_config_chromeos.cc
++++ b/ui/views/controls/menu/menu_config_chromeos.cc
+@@ -4,8 +4,24 @@
+ 
+ #include "ui/views/controls/menu/menu_config.h"
+ 
++#include "ui/base/ui_base_features.h"
++
+ namespace views {
+ 
+-void MenuConfig::InitPlatform() {}
++void MenuConfig::InitPlatform() {
++  if (features::IsThorium2024()) {
++    // Apply Thorium 2024-specific ChromeOS menu geometry.
++    arrow_to_edge_padding = 21;
++    corner_radius = 2;
++    minimum_text_item_height = 29;
++    minimum_container_item_height = 29;
++    menu_horizontal_border_size = 0;
++    separator_lower_height = 8;
++    separator_spacing_height = 7;
++    separator_upper_height = 8;
++    submenu_horizontal_overlap = 1;
++    use_outer_border = true;
++  }
++}
+ 
+ }  // namespace views
+diff --git a/ui/views/controls/menu/menu_config_linux.cc b/ui/views/controls/menu/menu_config_linux.cc
+index 09c03d1e87011..c32a8786a5ac6 100644
+--- a/ui/views/controls/menu/menu_config_linux.cc
++++ b/ui/views/controls/menu/menu_config_linux.cc
+@@ -4,12 +4,24 @@
+ 
+ #include "ui/views/controls/menu/menu_config.h"
+ 
++#include "ui/base/ui_base_features.h"
+ #include "ui/ozone/public/ozone_platform.h"
+ 
+ namespace views {
+ 
+ void MenuConfig::InitPlatform() {
+-  use_bubble_border = true;
++  const bool thorium_2024 = features::IsThorium2024();
++  use_bubble_border = !thorium_2024 || corner_radius > 0;
++  use_outer_border = thorium_2024;
++  menu_horizontal_border_size = thorium_2024 ? 1 : 0;
++  submenu_horizontal_overlap = thorium_2024 ? 2 : 0;
++  separator_horizontal_border_padding = thorium_2024 ? 5 : 0;
++  arrow_to_edge_padding = thorium_2024 ? 0 : 8;
++  separator_height = thorium_2024 ? 5 : 17;
++  separator_upper_height = thorium_2024 ? 2 : 3;
++  separator_lower_height = thorium_2024 ? 2 : 4;
++  separator_spacing_height = thorium_2024 ? 2 : 4;
++  nonrounded_menu_vertical_border_size = thorium_2024 ? 3 : 4;
+ }
+ 
+ }  // namespace views
+diff --git a/ui/views/controls/menu/menu_config_mac.mm b/ui/views/controls/menu/menu_config_mac.mm
+index eabfb364890d3..88d9709480c3e 100644
+--- a/ui/views/controls/menu/menu_config_mac.mm
++++ b/ui/views/controls/menu/menu_config_mac.mm
+@@ -1,17 +1,54 @@
+-// Copyright 2014 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
++#include "ui/base/ui_base_features.h"
+ #include "ui/views/controls/menu/menu_config.h"
+ 
++#include "ui/gfx/platform_font_mac.h"
++
++namespace {
++
++void InitMaterialMenuConfig(views::MenuConfig* config) {
++  // These config parameters are from https://crbug.com/829347 and the spec
++  // images linked from that bug.
++  config->submenu_horizontal_overlap = 0;
++  config->minimum_text_item_height = 28;
++  config->minimum_container_item_height = 40;
++  config->arrow_to_edge_padding = 16;
++  config->separator_height = 9;
++  config->separator_lower_height = 4;
++  config->separator_upper_height = 4;
++  config->separator_spacing_height = 5;
++  config->separator_thickness = 1;
++  config->reserve_dedicated_arrow_column = false;
++  config->icons_in_label = true;
++  config->icon_label_spacing = 8;
++  config->corner_radius = 8;
++  config->auxiliary_corner_radius = 4;
++  config->item_horizontal_border_padding = 0;
++}
++
++}  // namespace
++
+ namespace views {
+ 
+ void MenuConfig::InitPlatform() {
++  const bool thorium_2024 = features::IsThorium2024();
++  if (thorium_2024) {
++    context_menu_font_list = font_list = gfx::FontList(gfx::Font(
++        new gfx::PlatformFontMac(gfx::PlatformFontMac::SystemFontType::kMenu)));
++  }
+   check_selected_combobox_item = true;
+   arrow_key_selection_wraps = false;
+   use_mnemonics = false;
+   show_context_menu_accelerators = false;
+   all_menus_use_prefix_selection = true;
++  if (thorium_2024) {
++    menu_horizontal_border_size = 1;
++    use_outer_border = true;
++    InitMaterialMenuConfig(this);
++  }
+ }
+ 
+ }  // namespace views
+diff --git a/ui/views/controls/menu/menu_config_win.cc b/ui/views/controls/menu/menu_config_win.cc
+index d1461bbffb758..0c02bb10cb17e 100644
+--- a/ui/views/controls/menu/menu_config_win.cc
++++ b/ui/views/controls/menu/menu_config_win.cc
+@@ -8,6 +8,8 @@
+ 
+ #include <Vssym32.h>
+ 
++#include "base/win/windows_version.h"
++#include "ui/base/ui_base_features.h"
+ #include "ui/gfx/system_fonts_win.h"
+ 
+ namespace views {
+@@ -16,14 +18,48 @@ void MenuConfig::InitPlatform() {
+   context_menu_font_list = font_list =
+       gfx::FontList(gfx::win::GetSystemFont(gfx::win::SystemFont::kMenu));
+ 
++  const bool thorium_2024 = features::IsThorium2024();
++
+   BOOL show_cues;
+   show_mnemonics =
+       (SystemParametersInfo(SPI_GETKEYBOARDCUES, 0, &show_cues, 0) &&
+        show_cues == TRUE);
+ 
+-  separator_upper_height = 5;
+-  separator_lower_height = 7;
++  static const bool is_win11 =
++      base::win::GetVersion() >= base::win::Version::WIN11;
++  use_outer_border = thorium_2024;
++  nonrounded_menu_vertical_border_size = thorium_2024 ? 3 : 4;
+ 
++  if (thorium_2024) {
++    if (is_win11) {
++      corner_radius = 8;
++      arrow_to_edge_padding = 4;
++      menu_horizontal_border_size = 4;
++      submenu_horizontal_overlap = 1;
++      rounded_menu_vertical_border_size = 4;
++      item_horizontal_padding = 8;
++      between_item_vertical_padding = 2;
++      separator_height = 1;
++      separator_upper_height = 1;
++      separator_lower_height = 1;
++      item_corner_radius = 4;
++    } else {
++      corner_radius = 0;
++      arrow_to_edge_padding = 2;
++      menu_horizontal_border_size = 3;
++      submenu_horizontal_overlap = 0;
++      item_vertical_margin = 3;
++      item_horizontal_border_padding = 0;
++      icon_label_spacing = 10;
++      separator_height = 5;
++      separator_upper_height = 3;
++      separator_lower_height = 3;
++      separator_spacing_height = 2;
++    }
++  } else {
++    separator_upper_height = 5;
++    separator_lower_height = 7;
++  }
+   use_bubble_border = corner_radius > 0;
+ }
+ 
+diff --git a/ui/views/controls/menu/menu_item_view.cc b/ui/views/controls/menu/menu_item_view.cc
+index f22907bb8d3c8..559b43a5ee39d 100644
+--- a/ui/views/controls/menu/menu_item_view.cc
++++ b/ui/views/controls/menu/menu_item_view.cc
+@@ -1651,11 +1651,14 @@ void MenuItemView::UpdateSelectionBasedState(bool paint_as_selected) {
+   last_paint_as_selected_ = paint_as_selected;
+   const Colors colors = CalculateColors(paint_as_selected);
+   if (submenu_arrow_image_view_) {
+-    submenu_arrow_image_view_->SetImage(ui::ImageModel::FromVectorIcon(
+-        features::IsRoundedIconsEnabled()
+-            ? vector_icons::kKeyboardArrowRightFlippableIcon
+-            : vector_icons::kSubmenuArrowChromeRefreshOldIcon,
+-        colors.icon_color));
++    const gfx::VectorIcon& submenu_arrow_icon =
++        features::IsThorium2024()
++            ? vector_icons::kSubmenuArrowOldIcon
++            : features::IsRoundedIconsEnabled()
++                  ? vector_icons::kKeyboardArrowRightFlippableIcon
++                  : vector_icons::kSubmenuArrowChromeRefreshOldIcon;
++    submenu_arrow_image_view_->SetImage(
++        ui::ImageModel::FromVectorIcon(submenu_arrow_icon, colors.icon_color));
+   }
+   MenuDelegate* delegate = GetDelegate();
+   if (type_ == Type::kCheckbox && delegate &&
+diff --git a/ui/views/controls/tree/tree_view.cc b/ui/views/controls/tree/tree_view.cc
+index d6274d19a8bb5..b3da5c56f65e9 100644
+--- a/ui/views/controls/tree/tree_view.cc
++++ b/ui/views/controls/tree/tree_view.cc
+@@ -109,14 +109,28 @@ TreeView::TreeView()
+   // Always focusable, even on Mac (consistent with NSOutlineView).
+   SetFocusBehavior(FocusBehavior::ALWAYS);
+ 
+-  folder_icon_ = ui::ImageModel::FromVectorIcon(
+-      features::IsRoundedIconsEnabled()
+-          ? vector_icons::kFolderFlippableIcon
+-          : vector_icons::kFolderChromeRefreshOldIcon,
+-      ui::kColorIcon);
+-
+-  text_offset_ = folder_icon_.Size().width() + kImagePadding + kImagePadding +
+-                 kArrowRegionSize;
++  if (features::IsThorium2024()) {
++#if BUILDFLAG(IS_MAC)
++    closed_icon_ = open_icon_ = ui::ImageModel::FromVectorIcon(
++        vector_icons::kFolderChromeRefreshOldIcon, ui::kColorIcon);
++#else
++    closed_icon_ = ui::ImageModel::FromImage(
++        ui::ResourceBundle::GetSharedInstance().GetImageNamed(
++            IDR_FOLDER_CLOSED));
++    open_icon_ = ui::ImageModel::FromImage(
++        ui::ResourceBundle::GetSharedInstance().GetImageNamed(IDR_FOLDER_OPEN));
++#endif
++    text_offset_ = closed_icon_.Size().width() + kImagePadding + kImagePadding +
++                   kArrowRegionSize;
++  } else {
++    folder_icon_ = ui::ImageModel::FromVectorIcon(
++        features::IsRoundedIconsEnabled()
++            ? vector_icons::kFolderFlippableIcon
++            : vector_icons::kFolderChromeRefreshOldIcon,
++        ui::kColorIcon);
++    text_offset_ = folder_icon_.Size().width() + kImagePadding + kImagePadding +
++                   kArrowRegionSize;
++  }
+ 
+   SetInitialAccessibilityAttributes();
+ }
+@@ -1277,18 +1291,24 @@ void TreeView::PaintNodeIcon(gfx::Canvas* canvas,
+                              const gfx::Rect& bounds) {
+   std::optional<size_t> icon_index = model_->GetIconIndex(node->model_node());
+   int icon_x = kArrowRegionSize + kImagePadding;
++  const bool thorium_2024 = features::IsThorium2024();
++  const ui::ImageModel& default_icon =
++      thorium_2024 ? (node->is_expanded() ? open_icon_ : closed_icon_)
++                   : folder_icon_;
++  const ui::ImageModel& alignment_icon =
++      thorium_2024 ? open_icon_ : folder_icon_;
+   if (!icon_index.has_value()) {
+     // Flip just the |bounds| region of |canvas|.
+     gfx::ScopedCanvas scoped_canvas(canvas);
+     canvas->Translate(gfx::Vector2d(bounds.x(), 0));
+     scoped_canvas.FlipIfRTL(bounds.width());
+     // Now paint the icon local to that flipped region.
+-    PaintRowIcon(canvas, folder_icon_.Rasterize(GetColorProvider()), icon_x,
++    PaintRowIcon(canvas, default_icon.Rasterize(GetColorProvider()), icon_x,
+                  gfx::Rect(0, bounds.y(), bounds.width(), bounds.height()));
+   } else {
+     const gfx::ImageSkia& icon =
+         icons_[icon_index.value()].Rasterize(GetColorProvider());
+-    icon_x += (folder_icon_.Size().width() - icon.width()) / 2;
++    icon_x += (alignment_icon.Size().width() - icon.width()) / 2;
+     if (base::i18n::IsRTL()) {
+       icon_x = bounds.width() - icon_x - icon.width();
+     }
+diff --git a/ui/views/controls/tree/tree_view.h b/ui/views/controls/tree/tree_view.h
+index 07eab46b85ef2..dacd335baf4c3 100644
+--- a/ui/views/controls/tree/tree_view.h
++++ b/ui/views/controls/tree/tree_view.h
+@@ -468,6 +468,10 @@ class VIEWS_EXPORT TreeView : public View,
+   // Default folder icon.
+   ui::ImageModel folder_icon_;
+ 
++  // Default icons for closed/open.
++  ui::ImageModel closed_icon_;
++  ui::ImageModel open_icon_;
++
+   // Icons from the model.
+   std::vector<ui::ImageModel> icons_;
+ 
+diff --git a/ui/views/layout/layout_provider.cc b/ui/views/layout/layout_provider.cc
+index d243aa338748a..faa41ea3b6709 100644
+--- a/ui/views/layout/layout_provider.cc
++++ b/ui/views/layout/layout_provider.cc
+@@ -82,6 +82,7 @@ int LayoutProvider::GetDistanceMetric(int metric) const {
+   DCHECK_GE(metric, VIEWS_DISTANCE_START);
+   DCHECK_LT(metric, VIEWS_DISTANCE_END);
+ 
++  const bool thorium_2024 = features::IsThorium2024();
+   switch (static_cast<DistanceMetric>(metric)) {
+     case DISTANCE_BUBBLE_HEADER_VECTOR_ICON_SIZE:
+       return 20;
+@@ -92,11 +93,11 @@ int LayoutProvider::GetDistanceMetric(int metric) const {
+     case DISTANCE_BUTTON_MAX_LINKABLE_WIDTH:
+       return 112;
+     case DISTANCE_CLOSE_BUTTON_MARGIN:
+-      return 20;
++      return thorium_2024 ? 4 : 20;
+     case DISTANCE_CONTROL_LIST_VERTICAL:
+       return 12;
+     case DISTANCE_CONTROL_VERTICAL_TEXT_PADDING:
+-      return 10;
++      return thorium_2024 ? 8 : 10;
+     case DISTANCE_TABLE_VERTICAL_TEXT_PADDING:
+       return 6;
+     case DISTANCE_DIALOG_BUTTON_MINIMUM_WIDTH:
+@@ -139,7 +140,7 @@ int LayoutProvider::GetDistanceMetric(int metric) const {
+     case DISTANCE_TABLE_CELL_HORIZONTAL_MARGIN:
+       return 12;
+     case DISTANCE_TEXTFIELD_HORIZONTAL_TEXT_PADDING:
+-      return 10;
++      return thorium_2024 ? 8 : 10;
+     case DISTANCE_UNRELATED_CONTROL_HORIZONTAL:
+       return 16;
+     case DISTANCE_UNRELATED_INFOBAR_CONTAINER_HORIZONTAL:
+@@ -226,6 +227,31 @@ ShapeSysTokens GetShapeSysToken(ShapeContextTokens id) {
+ 
+ int LayoutProvider::GetCornerRadiusMetric(ShapeContextTokens id,
+                                           const gfx::Size& size) const {
++  if (features::IsThorium2024()) {
++    switch (id) {
++      case ShapeContextTokens::kBadgeRadius:
++        return 3;
++      case ShapeContextTokens::kButtonRadius:
++      case ShapeContextTokens::kComboboxRadius:
++      case ShapeContextTokens::kDialogRadius:
++      case ShapeContextTokens::kExtensionsMenuButtonRadius:
++      case ShapeContextTokens::kFindBarViewRadius:
++        return GetCornerRadiusMetric(Emphasis::kMedium, size);
++      case ShapeContextTokens::kMenuRadius:
++      case ShapeContextTokens::kMenuAuxRadius:
++        return GetCornerRadiusMetric(Emphasis::kNone);
++      case ShapeContextTokens::kMenuTouchRadius:
++        return GetCornerRadiusMetric(Emphasis::kHigh);
++      case ShapeContextTokens::kOmniboxExpandedRadius:
++        return 16;
++      case ShapeContextTokens::kTextfieldRadius:
++        return 4;
++      case ShapeContextTokens::kContentSeparatorRadius:
++        return 8;
++    }
++    NOTREACHED();
++  }
++
+   ShapeSysTokens token = GetShapeSysToken(id);
+   DCHECK_NE(token, ShapeSysTokens::kDefault)
+       << "kDefault token means there is a missing mapping between shape tokens";
+diff --git a/ui/webui/resources/cr_elements/cr_button/cr_button.css b/ui/webui/resources/cr_elements/cr_button/cr_button.css
+index f6a07cc72ab03..10eedd56ed38b 100644
+--- a/ui/webui/resources/cr_elements/cr_button/cr_button.css
++++ b/ui/webui/resources/cr_elements/cr_button/cr_button.css
+@@ -48,6 +48,10 @@
+   isolation: isolate;
+ }
+ 
++:host-context([thorium-2024]) {
++  border-radius: 4px;
++}
++
+ :host(.action-button) {
+   --cr-button-background-color: var(--color-button-background-prominent,
+       var(--cr-fallback-color-primary));
+@@ -95,6 +99,10 @@
+   transition: box-shadow 80ms linear;
+ }
+ 
++:host-context([thorium-2024]):host(.floating-button) {
++  border-radius: 4px;
++}
++
+ :host(.floating-button:hover) {
+   box-shadow: var(--cr-elevation-3);
+ }
+diff --git a/ui/webui/resources/cr_elements/cr_toggle/cr_toggle.css b/ui/webui/resources/cr_elements/cr_toggle/cr_toggle.css
+index 81d33bf3c3f99..d5a52a73b1bde 100644
+--- a/ui/webui/resources/cr_elements/cr_toggle/cr_toggle.css
++++ b/ui/webui/resources/cr_elements/cr_toggle/cr_toggle.css
+@@ -208,3 +208,120 @@
+   right: 50%;
+   transform: translate(50%, -50%);
+ }
++
++:host-context([thorium-2024]) {
++  --cr-toggle-ripple-diameter: 34px;
++  --cr-toggle-checked-bar-color:
++      var(--color-toggle-button-track-on, var(--cr-fallback-color-primary));
++  --cr-toggle-checked-button-color:
++      var(--color-toggle-button-thumb-on, var(--cr-fallback-color-on-primary));
++  --cr-toggle-checked-ripple-color:
++      var(--cr-active-neutral-on-subtle-background-color);
++  --cr-toggle-unchecked-bar-color:
++      var(--color-toggle-button-track-off,
++          var(--cr-fallback-color-surface-variant));
++  --cr-toggle-unchecked-button-color:
++      var(--color-toggle-button-thumb-off, var(--cr-fallback-color-outline));
++  --cr-toggle-unchecked-ripple-color:
++      var(--cr-active-neutral-on-subtle-background-color);
++  isolation: auto;
++  min-width: 34px;
++  width: 34px;
++}
++
++@media (prefers-color-scheme: dark) {
++  :host-context([thorium-2024]) {
++    --cr-toggle-checked-bar-color: var(--google-blue-300);
++    --cr-toggle-checked-button-color: var(--google-blue-300);
++    --cr-toggle-checked-ripple-color:
++        rgba(var(--google-blue-300-rgb), .4);
++    --cr-toggle-unchecked-bar-color: var(--google-grey-500);
++    --cr-toggle-unchecked-button-color: var(--google-grey-300);
++    --cr-toggle-unchecked-ripple-color:
++        rgba(var(--google-grey-300-rgb), .4);
++  }
++}
++
++:host-context([thorium-2024]):host([disabled]) {
++  --cr-toggle-checked-bar-color:
++      var(--color-toggle-button-track-on, var(--cr-fallback-color-primary));
++  --cr-toggle-checked-button-color:
++      var(--color-toggle-button-thumb-on, var(--cr-fallback-color-on-primary));
++  --cr-toggle-unchecked-bar-color:
++      var(--color-toggle-button-track-off,
++          var(--cr-fallback-color-surface-variant));
++  --cr-toggle-unchecked-button-color:
++      var(--color-toggle-button-thumb-off, var(--cr-fallback-color-outline));
++  opacity: var(--cr-disabled-opacity);
++}
++
++@media (prefers-color-scheme: dark) {
++  :host-context([thorium-2024]):host([disabled]) {
++    --cr-toggle-checked-bar-color: var(--google-blue-300);
++    --cr-toggle-checked-button-color: var(--google-blue-300);
++    --cr-toggle-checked-ripple-color:
++        rgba(var(--google-blue-300-rgb), .4);
++    --cr-toggle-unchecked-bar-color: var(--google-grey-500);
++    --cr-toggle-unchecked-button-color: var(--google-grey-300);
++    --cr-toggle-unchecked-ripple-color:
++        rgba(var(--google-grey-300-rgb), .4);
++  }
++}
++
++:host-context([thorium-2024]) #bar {
++  border: none;
++  border-radius: 8px;
++  box-sizing: content-box;
++  height: 12px;
++  left: 3px;
++  position: absolute;
++  top: 2px;
++  width: 30px;
++}
++
++:host-context([thorium-2024]):host([checked]) #bar {
++  opacity: 0.5;
++}
++
++:host-context([thorium-2024]) #knob {
++  background-color: var(--cr-toggle-unchecked-button-color);
++  box-shadow: var(--cr-toggle-box-shadow, 0 1px 3px 0 rgba(0, 0, 0, .6));
++  height: 16px;
++  margin-left: 0;
++  margin-right: auto;
++  position: relative;
++  top: auto;
++  transform: none;
++  transition: transform linear 80ms, background-color linear 80ms;
++  width: 16px;
++}
++
++:host-context([thorium-2024]):host([checked]) #knob {
++  background-color: var(--cr-toggle-checked-button-color);
++  transform: translate3d(18px, 0, 0);
++}
++
++:host-context([thorium-2024]):host-context([dir=rtl]) #knob {
++  transform: translate3d(18px, 0, 0);
++}
++
++:host-context([thorium-2024]):host-context([dir=rtl]):host([checked]) #knob {
++  transform: translate3d(0, 0, 0);
++}
++
++:host-context([thorium-2024]):host([checked]:active) #knob,
++:host-context([thorium-2024]):host([checked]:hover) #knob {
++  --cr-toggle-checked-button-color:
++      var(--color-toggle-button-thumb-on, var(--cr-fallback-color-on-primary));
++}
++
++@media (prefers-color-scheme: dark) {
++  :host-context([thorium-2024]):host([checked]:active) #knob,
++  :host-context([thorium-2024]):host([checked]:hover) #knob {
++    --cr-toggle-checked-button-color: var(--google-blue-300);
++  }
++}
++
++:host-context([thorium-2024]):host(:hover) #knob::before {
++  content: none;
++}
+diff --git a/ui/webui/resources/cr_elements/md_select_lit.css b/ui/webui/resources/cr_elements/md_select_lit.css
+index d427d50b6627d..d565faf7e020d 100644
+--- a/ui/webui/resources/cr_elements/md_select_lit.css
++++ b/ui/webui/resources/cr_elements/md_select_lit.css
+@@ -41,6 +41,10 @@
+   width: var(--md-select-width, 200px);
+ }
+ 
++:host-context([thorium-2024]) .md-select {
++  border-radius: 4px;
++}
++
+ @media (prefers-color-scheme: dark) {
+   .md-select {
+     --md-select-option-bg-color: var(--google-grey-900-white-4-percent);

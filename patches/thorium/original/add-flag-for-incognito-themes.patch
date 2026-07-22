@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
-index edab63d18ffd0..d11d5757b6c9c 100644
+index 8782ae107e30b..b50f1fde68ef3 100644
 --- a/chrome/browser/chrome_content_browser_client.cc
 +++ b/chrome/browser/chrome_content_browser_client.cc
-@@ -4153,9 +4153,12 @@ GetPreferredColorScheme(const WebPreferences& web_prefs,
+@@ -4154,9 +4154,12 @@ GetPreferredColorScheme(const WebPreferences& web_prefs,
      preferred_root_scrollbar_color_scheme = preferred_color_scheme;
    }
  #else  // !BUILDFLAG(IS_ANDROID)

@@ -1,0 +1,54 @@
+diff --git a/chrome/BUILD.gn b/chrome/BUILD.gn
+index 5705543001704..f97404c9a3ee1 100644
+--- a/chrome/BUILD.gn
++++ b/chrome/BUILD.gn
+@@ -1,4 +1,4 @@
+-# Copyright 2014 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+@@ -85,12 +85,12 @@ if (is_win) {
+     # initialexe/ is used so that the we can reorder imports and write back to
+     # the final destination at $root_out_dir/.
+     inputs = [
+-      "$root_out_dir/initialexe/chrome.exe",
+-      "$root_out_dir/initialexe/chrome.exe.pdb",
++      "$root_out_dir/initialexe/thorium.exe",
++      "$root_out_dir/initialexe/thorium.exe.pdb",
+     ]
+     outputs = [
+-      "$root_out_dir/chrome.exe",
+-      "$root_out_dir/chrome.exe.pdb",
++      "$root_out_dir/thorium.exe",
++      "$root_out_dir/thorium.exe.pdb",
+     ]
+     args = [
+       "-i",
+@@ -148,9 +148,11 @@ if (!is_android && !is_mac) {
+   }
+ 
+   if (is_win) {
+-    _chrome_output_name = "initialexe/chrome"
+-  } else {
++    _chrome_output_name = "initialexe/thorium"
++  } else if (is_chromeos) {
+     _chrome_output_name = "chrome"
++  } else {
++    _chrome_output_name = "thorium"
+   }
+ 
+   executable("chrome_initial") {
+@@ -1718,7 +1720,11 @@ if (is_linux || is_chromeos) {
+       }
+     }
+     extract_symbols("chrome_symbols") {
+-      binary = "$root_out_dir/chrome"
++      if (is_chromeos) {
++        binary = "$root_out_dir/chrome"
++      } else {
++        binary = "$root_out_dir/thorium"
++      }
+ 
+       if (current_cpu == "x86") {
+         # GYP used "ia32" so keep that naming for back-compat.

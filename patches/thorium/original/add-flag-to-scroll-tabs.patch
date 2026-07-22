@@ -1,8 +1,8 @@
 diff --git a/chrome/app/chrome_main_delegate.cc b/chrome/app/chrome_main_delegate.cc
-index e82004e05590d..8f9a26be9c429 100644
+index 90c0418ac4529..686aee77d5d12 100644
 --- a/chrome/app/chrome_main_delegate.cc
 +++ b/chrome/app/chrome_main_delegate.cc
-@@ -716,6 +716,15 @@ void InitLogging(const std::string& process_type) {
+@@ -721,6 +721,15 @@ void InitLogging(const std::string& process_type) {
                   << chrome::kChromeVersion << " (not a warning)";
      LOG(WARNING) << "In Loving Memory of Linda Louise Frick: Grandma, Mother, and Sister.";
    }

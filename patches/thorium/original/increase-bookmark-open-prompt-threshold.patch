@@ -1,0 +1,13 @@
+diff --git a/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc b/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc
+index 7629653dbf039..bf25013da7b21 100644
+--- a/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc
++++ b/chrome/browser/ui/bookmarks/bookmark_utils_desktop.cc
+@@ -63,7 +63,7 @@ using bookmarks::BookmarkNode;
+ 
+ namespace bookmarks {
+ 
+-size_t kNumBookmarkUrlsBeforePrompting = 15;
++size_t kNumBookmarkUrlsBeforePrompting = 50;
+ 
+ static BookmarkNavigationWrapper* g_nav_wrapper_test_instance = nullptr;
+ 

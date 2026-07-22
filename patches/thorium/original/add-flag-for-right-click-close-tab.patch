@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
-index 3787f4e327b47..9d8d4f12a3e1d 100644
+index 683eae9059294..c4b39b3526571 100644
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
 @@ -146,6 +146,11 @@ BASE_FEATURE(kPreloadTopChromeWebUILessNavigations,
@@ -29,7 +29,7 @@ index 1466c54bc0364..282691e5cfb63 100644
  BASE_DECLARE_FEATURE_PARAM(bool, kVerticalTabsGrabHandleRemovalAlways);
  
 diff --git a/chrome/browser/ui/views/tabs/tab.cc b/chrome/browser/ui/views/tabs/tab.cc
-index dcb7cb43a33d8..7079f4c665056 100644
+index cba272c4b497e..4b69f347fc260 100644
 --- a/chrome/browser/ui/views/tabs/tab.cc
 +++ b/chrome/browser/ui/views/tabs/tab.cc
 @@ -23,6 +23,7 @@

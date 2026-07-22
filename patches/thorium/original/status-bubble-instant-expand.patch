@@ -1,0 +1,13 @@
+diff --git a/chrome/browser/ui/status_bubble.h b/chrome/browser/ui/status_bubble.h
+index e1b85d1ae87d8..fbb4a6107a619 100644
+--- a/chrome/browser/ui/status_bubble.h
++++ b/chrome/browser/ui/status_bubble.h
+@@ -17,7 +17,7 @@ class GURL;
+ class StatusBubble {
+  public:
+   // On hover, expand status bubble to fit long URL after this delay.
+-  static const int kExpandHoverDelayMS = 1600;
++  static constexpr int kExpandHoverDelayMS = 1;
+ 
+   virtual ~StatusBubble() = default;
+ 

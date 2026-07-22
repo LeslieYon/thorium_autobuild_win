@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
-index 9d8d4f12a3e1d..1f7f270ffd093 100644
+index c4b39b3526571..ae57160ecd79e 100644
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
 @@ -151,6 +151,16 @@ BASE_FEATURE(kPressAndHoldEscToExitBrowserFullscreen,
@@ -34,7 +34,7 @@ index 282691e5cfb63..d2b5d9e87fa51 100644
  BASE_DECLARE_FEATURE_PARAM(bool, kVerticalTabsGrabHandleRemovalAlways);
  
 diff --git a/chrome/browser/ui/views/tabs/tab.cc b/chrome/browser/ui/views/tabs/tab.cc
-index 7079f4c665056..830267eed9d41 100644
+index 4b69f347fc260..e56f0ea663e4a 100644
 --- a/chrome/browser/ui/views/tabs/tab.cc
 +++ b/chrome/browser/ui/views/tabs/tab.cc
 @@ -773,9 +773,19 @@ void Tab::OnMouseMoved(const ui::MouseEvent& event) {

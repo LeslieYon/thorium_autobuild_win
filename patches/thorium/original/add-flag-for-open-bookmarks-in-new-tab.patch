@@ -32,7 +32,7 @@ index bf25013da7b21..1998487f7731e 100644
        nodes, initial_disposition == WindowOpenDisposition::OFF_THE_RECORD);
  
 diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
-index 1f7f270ffd093..3966288dfbbf3 100644
+index ae57160ecd79e..e344b0ab4ab14 100644
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
 @@ -161,6 +161,16 @@ BASE_FEATURE_PARAM(int,

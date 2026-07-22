@@ -1,0 +1,116 @@
+diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
+index 2aea9cd26fb29..402d1d45bef22 100644
+--- a/chrome/app/generated_resources.grd
++++ b/chrome/app/generated_resources.grd
+@@ -18556,6 +18556,24 @@ Please help our engineers fix this problem. Tell us what happened right before y
+     </message>
+ 
+     <!-- ChromeLabs bubble -->
++    <message name="IDS_CHROMELABS_THORIUM_2024_NAME" desc="Name of the Thorium 2024 UI experiment in Chrome Labs.">
++      Enable Thorium 2024 UI
++    </message>
++    <message name="IDS_CHROMELABS_THORIUM_2024_DESCRIPTION" desc="Description of the Thorium 2024 UI experiment in Chrome Labs.">
++      Enable an experimental UI that restores many parts of the interface from before Chrome Refresh 2023.
++    </message>
++    <message name="IDS_CHROMELABS_RESTORE_TAB_BUTTON_NAME" desc="Name of the Restore Tab Button experiment in Chrome Labs.">
++      Restore Tab Button
++    </message>
++    <message name="IDS_CHROMELABS_RESTORE_TAB_BUTTON_DESCRIPTION" desc="Description of the Restore Tab Button experiment in Chrome Labs.">
++      Enable a toolbar button to restore recently closed tabs.
++    </message>
++    <message name="IDS_CHROMELABS_MIDDLE_CLICK_AUTOSCROLL_NAME" desc="Name of the Middle Click Autoscroll experiment in Chrome Labs.">
++      Middle Click Autoscroll
++    </message>
++    <message name="IDS_CHROMELABS_MIDDLE_CLICK_AUTOSCROLL_DESCRIPTION" desc="Description of the Middle Click Autoscroll experiment in Chrome Labs.">
++      Enable autoscrolling when the middle mouse button is pressed.
++    </message>
+     <message name="IDS_CHROMELABS_RELAUNCH_BUTTON_LABEL"
+              desc="Label on the button in the footer of the Chrome Labs bubble which will relaunch the browser.">
+       Relaunch
+diff --git a/chrome/browser/ui/toolbar/chrome_labs/chrome_labs_model.cc b/chrome/browser/ui/toolbar/chrome_labs/chrome_labs_model.cc
+index 1a0111b03f5dd..96a93ebf7e562 100644
+--- a/chrome/browser/ui/toolbar/chrome_labs/chrome_labs_model.cc
++++ b/chrome/browser/ui/toolbar/chrome_labs/chrome_labs_model.cc
+@@ -10,6 +10,7 @@
+ #include "base/strings/utf_string_conversions.h"
+ #include "build/build_config.h"
+ #include "build/buildflag.h"
++#include "chrome/grit/generated_resources.h"
+ #include "ui/base/l10n/l10n_util.h"
+ 
+ namespace {
+@@ -36,8 +37,50 @@ const std::vector<LabInfo>& GetData() {
+     return GetTestData().value();
+   }
+ 
+-  static const base::NoDestructor<std::vector<LabInfo>> lab_info_(
+-      []() { return std::vector<LabInfo>(); }());
++  static const base::NoDestructor<std::vector<LabInfo>> lab_info_([]() {
++    std::vector<LabInfo> lab_info;
++
++    const char kThorium2024FlagId[] = "thorium-2024";
++    const std::u16string kThorium2024FlagName =
++        l10n_util::GetStringUTF16(IDS_CHROMELABS_THORIUM_2024_NAME);
++    const std::u16string kThorium2024FlagDescription =
++        l10n_util::GetStringUTF16(IDS_CHROMELABS_THORIUM_2024_DESCRIPTION);
++
++    lab_info.emplace_back(
++        kThorium2024FlagId,
++        kThorium2024FlagName,
++        kThorium2024FlagDescription,
++        "chrome-labs-thorium-2024", version_info::Channel::BETA);
++
++    const char kRestoreTabsFlagId[] = "restore-tab-button";
++    const std::u16string kRestoreTabsFlagName =
++        l10n_util::GetStringUTF16(IDS_CHROMELABS_RESTORE_TAB_BUTTON_NAME);
++    const std::u16string kRestoreTabsFlagDescription =
++        l10n_util::GetStringUTF16(IDS_CHROMELABS_RESTORE_TAB_BUTTON_DESCRIPTION);
++
++    lab_info.emplace_back(
++        kRestoreTabsFlagId,
++        kRestoreTabsFlagName,
++        kRestoreTabsFlagDescription,
++        "chrome-labs-restore-tab-button", version_info::Channel::BETA);
++
++#if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++    const char kMiddleScrollFlagId[] = "middle-click-autoscroll";
++    const std::u16string kMiddleScrollFlagName =
++        l10n_util::GetStringUTF16(IDS_CHROMELABS_MIDDLE_CLICK_AUTOSCROLL_NAME);
++    const std::u16string kMiddleScrollFlagDescription =
++        l10n_util::GetStringUTF16(
++            IDS_CHROMELABS_MIDDLE_CLICK_AUTOSCROLL_DESCRIPTION);
++
++    lab_info.emplace_back(
++        kMiddleScrollFlagId,
++        kMiddleScrollFlagName,
++        kMiddleScrollFlagDescription,
++        "chrome-labs-middle-click-autoscroll", version_info::Channel::BETA);
++#endif
++
++    return lab_info;
++  }());
+ 
+   return *lab_info_;
+ }
+diff --git a/chrome/browser/ui/views/toolbar/chrome_labs/chrome_labs_bubble_view.cc b/chrome/browser/ui/views/toolbar/chrome_labs/chrome_labs_bubble_view.cc
+index b31ae78a01b1b..b9b1f08236a05 100644
+--- a/chrome/browser/ui/views/toolbar/chrome_labs/chrome_labs_bubble_view.cc
++++ b/chrome/browser/ui/views/toolbar/chrome_labs/chrome_labs_bubble_view.cc
+@@ -107,7 +107,7 @@ ChromeLabsBubbleView::ChromeLabsBubbleView(views::Button* anchor_view,
+   SetLayoutManager(std::make_unique<views::BoxLayout>())
+       ->SetOrientation(views::BoxLayout::Orientation::kVertical);
+   set_fixed_width(views::LayoutProvider::Get()->GetDistanceMetric(
+-      views::DISTANCE_BUBBLE_PREFERRED_WIDTH));
++      views::DISTANCE_MODAL_DIALOG_PREFERRED_WIDTH));
+   set_margins(gfx::Insets(0));
+   SetEnableArrowKeyTraversal(true);
+   // Set `kDialog` to avoid the BubbleDialogDelegate returning a default of
+@@ -119,7 +119,7 @@ ChromeLabsBubbleView::ChromeLabsBubbleView(views::Button* anchor_view,
+   // TODO(crbug.com/40797818): Currently basing this off what extension menu
+   // uses for sizing as suggested as an initial fix by UI. Discuss a more formal
+   // solution.
+-  constexpr int kMaxChromeLabsHeightDp = 448;
++  constexpr int kMaxChromeLabsHeightDp = 560;
+   auto scroll_view = std::make_unique<views::ScrollView>(
+       views::ScrollView::ScrollWithLayers::kEnabled);
+   // TODO(elainechien): Check with UI whether we want to draw overflow

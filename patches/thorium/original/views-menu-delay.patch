@@ -1,0 +1,43 @@
+diff --git a/ui/views/controls/menu/menu_config.h b/ui/views/controls/menu/menu_config.h
+index 953cfa206baaf..5f530b921f3da 100644
+--- a/ui/views/controls/menu/menu_config.h
++++ b/ui/views/controls/menu/menu_config.h
+@@ -171,7 +171,7 @@ struct VIEWS_EXPORT MenuConfig {
+ 
+   // Delay, in ms, between when menus are selected or moused over and the menu
+   // appears.
+-  int show_delay = 400;
++  int show_delay = 1;
+ 
+   // Radius of selection background on menu items.
+   int item_corner_radius = 0;
+diff --git a/ui/views/controls/menu/menu_config_win.cc b/ui/views/controls/menu/menu_config_win.cc
+index a2dae078ccbd3..d1461bbffb758 100644
+--- a/ui/views/controls/menu/menu_config_win.cc
++++ b/ui/views/controls/menu/menu_config_win.cc
+@@ -21,7 +21,6 @@ void MenuConfig::InitPlatform() {
+       (SystemParametersInfo(SPI_GETKEYBOARDCUES, 0, &show_cues, 0) &&
+        show_cues == TRUE);
+ 
+-  SystemParametersInfo(SPI_GETMENUSHOWDELAY, 0, &show_delay, 0);
+   separator_upper_height = 5;
+   separator_lower_height = 7;
+ 
+diff --git a/ui/views/metrics_aura.cc b/ui/views/metrics_aura.cc
+index 63e9c8530135b..b2d1799c8bb36 100644
+--- a/ui/views/metrics_aura.cc
++++ b/ui/views/metrics_aura.cc
+@@ -25,12 +25,7 @@ base::TimeDelta GetDoubleClickInterval() {
+ 
+ base::TimeDelta GetMenuShowDelay() {
+ #if BUILDFLAG(IS_WIN)
+-  static base::TimeDelta delay = []() {
+-    DWORD show_delay;
+-    return SystemParametersInfo(SPI_GETMENUSHOWDELAY, 0, &show_delay, 0)
+-               ? base::Milliseconds(show_delay)
+-               : kDefaultMenuShowDelay;
+-  }();
++  static const base::TimeDelta delay = kDefaultMenuShowDelay;
+   return delay;
+ #else
+   return base::Milliseconds(0);

@@ -32,10 +32,10 @@ index 6fada0a2b1a1f..6b2ec4b67e015 100644
  			<key>CFBundleURLName</key>
  			<string>Local file URL</string>
 diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
-index 2c6afd4602195..77a15c733cc98 100644
+index 779262fae00af..95dbe0e3915e5 100644
 --- a/chrome/app/generated_resources.grd
 +++ b/chrome/app/generated_resources.grd
-@@ -14904,6 +14904,9 @@ This can include information about installed software, files, your browser, the
+@@ -14901,6 +14901,9 @@ This can include information about installed software, files, your browser, the
        <message name="IDS_DIRECTORY_LISTING_DATE_MODIFIED" desc="When viewing a local directory, this is the text for the column above the last modified dates.">
          Date Modified
        </message>
@@ -118,7 +118,7 @@ index c91cce0f0a87f..097de56c3b6f6 100644
  
    return network_context_params;
 diff --git a/chrome/browser/profiles/profile_io_data.cc b/chrome/browser/profiles/profile_io_data.cc
-index 080e9b0e43c70..df7293bb51dfb 100644
+index 3ffc9b793906c..3cd6597df28a8 100644
 --- a/chrome/browser/profiles/profile_io_data.cc
 +++ b/chrome/browser/profiles/profile_io_data.cc
 @@ -14,6 +14,7 @@
@@ -129,7 +129,7 @@ index 080e9b0e43c70..df7293bb51dfb 100644
  #include "url/gurl.h"
  
  #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
-@@ -61,6 +62,9 @@ bool ProfileIOData::IsHandledProtocol(std::string_view scheme) {
+@@ -62,6 +63,9 @@ bool ProfileIOData::IsHandledProtocol(std::string_view scheme) {
        webapps::kIsolatedAppScheme,
  #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
          // BUILDFLAG(IS_CHROMEOS)
@@ -219,7 +219,7 @@ index 2c71195692a74..18dc154e7e26f 100644
  
      return network_context_params;
 diff --git a/content/browser/browser_url_handler_impl.cc b/content/browser/browser_url_handler_impl.cc
-index 765c759db3e21..5bec9aeb07a5f 100644
+index 406da12b8eda7..b75d68741c721 100644
 --- a/content/browser/browser_url_handler_impl.cc
 +++ b/content/browser/browser_url_handler_impl.cc
 @@ -34,6 +34,7 @@ static bool HandleViewSource(GURL* url, BrowserContext* browser_context) {

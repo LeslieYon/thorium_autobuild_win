@@ -1,0 +1,48 @@
+diff --git a/chrome/browser/resources/downloads/item.css b/chrome/browser/resources/downloads/item.css
+index 7e38038946592..77cde1ad94857 100644
+--- a/chrome/browser/resources/downloads/item.css
++++ b/chrome/browser/resources/downloads/item.css
+@@ -275,6 +275,12 @@ cr-button {
+   margin-top: 6px;
+ }
+ 
++#url {
++  display: block;
++  max-width: 100%;
++  overflow-wrap: anywhere;
++}
++
+ :host-context([dir=rtl]) #name {
+   direction: ltr;
+ }
+@@ -341,7 +347,7 @@ cr-button {
+   --cr-icon-button-icon-size: 20px;
+   --cr-icon-button-margin-end: 0;
+   --cr-icon-button-margin-start: 0;
+-  gap: 12px;
++  gap: 6px;
+   margin-top: 12px;
+   margin-inline-start: 12px;
+   margin-inline-end: 12px;
+diff --git a/chrome/browser/resources/downloads/item.html.ts b/chrome/browser/resources/downloads/item.html.ts
+index 03b09f0363609..77978adef64b8 100644
+--- a/chrome/browser/resources/downloads/item.html.ts
++++ b/chrome/browser/resources/downloads/item.html.ts
+@@ -48,6 +48,9 @@ export function getHtml(this: DownloadsItemElement) {
+         <div id="initiator-origin">
+           ${this.computeInitiatorOriginText_()}
+         </div>
++        <a id="url" target="_blank"
++          @click="${this.onUrlClick_}" focus-row-control
++          focus-type="url">${this.data?.url || ''}</a>
+       </div>
+ 
+       <div class="description" role="gridcell"
+@@ -92,7 +95,6 @@ export function getHtml(this: DownloadsItemElement) {
+             focus-row-control focus-type="copyDownloadLink">
+         </cr-icon-button>
+         <cr-icon-button id="more-actions" iron-icon="cr:more-vert"
+-            ?hidden="${!this.computeShowActionMenu_()}"
+             class="dropdown-trigger" title="$i18n{moreActions}"
+             @click="${this.onMoreActionsClick_}" aria-haspopup="menu"
+             focus-row-control focus-type="actionMenuButton">

@@ -1,8 +1,16 @@
 diff --git a/chrome/browser/ui/browser_actions.cc b/chrome/browser/ui/browser_actions.cc
-index 44f0d03da121a..e67a072c3d217 100644
+index 5be3c74fb1d35..3122bb37ca9bd 100644
 --- a/chrome/browser/ui/browser_actions.cc
 +++ b/chrome/browser/ui/browser_actions.cc
-@@ -830,6 +830,9 @@ void BrowserActions::InitializeChromeMenuActions() {
+@@ -11,6 +11,7 @@
+ 
+ #include "base/check_deref.h"
+ #include "base/check_op.h"
++#include "base/command_line.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/metrics/user_metrics.h"
+@@ -829,6 +830,9 @@ void BrowserActions::InitializeChromeMenuActions() {
    TabStripModel* const tab_strip_model = bwi_->GetTabStripModel();
    BrowserWindowInterface* const bwi = base::to_address(bwi_);
    const bool is_guest_session = profile->IsGuestSession();
@@ -12,7 +20,7 @@ index 44f0d03da121a..e67a072c3d217 100644
  
    root_action_item_->AddChild(
        ChromeMenuAction(
-@@ -842,8 +845,12 @@ void BrowserActions::InitializeChromeMenuActions() {
+@@ -841,8 +845,12 @@ void BrowserActions::InitializeChromeMenuActions() {
                profile),
            kActionNewIncognitoWindow, IDS_NEW_INCOGNITO_WINDOW,
            IDS_NEW_INCOGNITO_WINDOW,
@@ -27,7 +35,7 @@ index 44f0d03da121a..e67a072c3d217 100644
            .SetEnabled(IncognitoModePrefs::IsIncognitoAllowed(profile))
            .Build());
  
-@@ -998,9 +1005,11 @@ void BrowserActions::InitializeChromeMenuActions() {
+@@ -997,9 +1005,11 @@ void BrowserActions::InitializeChromeMenuActions() {
                             bwi, is_incognito),
                         kActionClearBrowsingData, IDS_CLEAR_BROWSING_DATA,
                         IDS_CLEAR_BROWSING_DATA,
@@ -42,6 +50,17 @@ index 44f0d03da121a..e67a072c3d217 100644
            .SetEnabled(is_incognito ||
                        (!is_guest_session && !profile->IsSystemProfile()))
            .Build());
+@@ -1213,9 +1223,7 @@ void BrowserActions::InitializeChromeMenuActions() {
+                 },
+                 bwi),
+             kActionShowChromeLabs, IDS_CHROMELABS, IDS_CHROMELABS,
+-            features::IsRoundedIconsEnabled()   ? kScienceIcon
+-            : features::IsRoundedIconsEnabled() ? vector_icons::kScienceIcon
+-                                                : kScienceOldIcon)
++            disable_thorium_command_icons ? kScienceIcon : kScienceThoriumIcon)
+             .SetVisible(ShouldShowChromeLabsUI(profile))
+             .Build());
+   }
 diff --git a/chrome/browser/ui/content_settings/content_setting_image_model.cc b/chrome/browser/ui/content_settings/content_setting_image_model.cc
 index bcdbd0957b0e7..c0eba8e182044 100644
 --- a/chrome/browser/ui/content_settings/content_setting_image_model.cc
@@ -735,6 +754,32 @@ index dc2df50dd75f8..f5aa0de7661c5 100644
    close_button->SetTooltipText(l10n_util::GetStringUTF16(IDS_APP_CLOSE));
    close_button->GetViewAccessibility().SetName(
        l10n_util::GetStringUTF16(IDS_APP_CLOSE));
+diff --git a/ui/views/controls/button/md_text_button_with_down_arrow.cc b/ui/views/controls/button/md_text_button_with_down_arrow.cc
+index 4171cd3e9380a..887f198b5e94f 100644
+--- a/ui/views/controls/button/md_text_button_with_down_arrow.cc
++++ b/ui/views/controls/button/md_text_button_with_down_arrow.cc
+@@ -6,6 +6,7 @@
+ 
+ #include <utility>
+ 
++#include "base/command_line.h"
+ #include "ui/base/metadata/metadata_impl_macros.h"
+ #include "ui/base/ui_base_features.h"
+ #include "ui/gfx/color_utils.h"
+@@ -57,8 +58,11 @@ void MdTextButtonWithDownArrow::StateChanged(ButtonState old_state) {
+ void MdTextButtonWithDownArrow::SetDropArrowImage() {
+   SkColor drop_arrow_color = label()->GetEnabledColor();
+   auto drop_arrow_image = ui::ImageModel::FromVectorIcon(
+-      features::IsRoundedIconsEnabled() ? kArrowDropDownIcon
+-                                        : kArrowDropDownOldIcon,
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons")
++          ? (features::IsRoundedIconsEnabled() ? kArrowDropDownIcon
++                                               : kArrowDropDownOldIcon)
++          : kArrowDropDownThoriumIcon,
+       drop_arrow_color, kDropdownArrowSize);
+   SetImageModel(Button::STATE_NORMAL, drop_arrow_image);
+ }
 diff --git a/ui/views/controls/menu/menu_item_view.cc b/ui/views/controls/menu/menu_item_view.cc
 index 559b43a5ee39d..d580c90c6cfa5 100644
 --- a/ui/views/controls/menu/menu_item_view.cc

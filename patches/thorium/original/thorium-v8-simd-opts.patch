@@ -1,7 +1,7 @@
-diff --git a/v8/BUILD.gn b/v8/BUILD.gn
+diff --git a/v8/v8/BUILD.gn b/v8/v8/BUILD.gn
 index a19ec521254..f009d4a85e1 100644
---- a/v8/BUILD.gn
-+++ b/v8/BUILD.gn
+--- a/v8/v8/BUILD.gn
++++ b/v8/v8/BUILD.gn
 @@ -6,6 +6,7 @@
  
  import("//build/config/android/config.gni")

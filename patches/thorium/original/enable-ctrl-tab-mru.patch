@@ -1,16 +1,3 @@
-diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
-index e2f470d579aad..c146c2e6d7d7d 100644
---- a/chrome/browser/prefs/browser_prefs.cc
-+++ b/chrome/browser/prefs/browser_prefs.cc
-@@ -1661,7 +1661,7 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
-   contextual_search::ContextualSearchService::RegisterProfilePrefs(registry);
-   contextual_tasks::RegisterProfilePrefs(registry);
-   registry->RegisterIntegerPref(prefs::kContextualTasksNextPanelOpenCount, 0);
--  registry->RegisterBooleanPref(prefs::kCtrlTabMru, false);
-+  registry->RegisterBooleanPref(prefs::kCtrlTabMru, true);
-   cross_device::RegisterProfilePrefs(registry);
-   enterprise::RegisterIdentifiersProfilePrefs(registry);
-   enterprise_connectors::RegisterProfilePrefs(registry);
 diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
 index 3787f4e327b47..683eae9059294 100644
 --- a/chrome/browser/ui/ui_features.cc

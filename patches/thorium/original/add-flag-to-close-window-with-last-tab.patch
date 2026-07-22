@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/ui/browser_commands.cc b/chrome/browser/ui/browser_commands.cc
-index b91efafbbccf6..080a565c118f1 100644
+index 992b3ccb14f14..e02816897b70c 100644
 --- a/chrome/browser/ui/browser_commands.cc
 +++ b/chrome/browser/ui/browser_commands.cc
-@@ -1263,6 +1263,25 @@ void NewTabFromClipboardURL(BrowserWindowInterface* browser) {
+@@ -1264,6 +1264,25 @@ void NewTabFromClipboardURL(BrowserWindowInterface* browser) {
  void CloseTab(BrowserWindowInterface* browser) {
    base::RecordAction(UserMetricsAction("CloseTab_Accelerator"));
  

@@ -1,0 +1,27 @@
+diff --git a/chrome/browser/ui/bookmarks/bookmark_utils.cc b/chrome/browser/ui/bookmarks/bookmark_utils.cc
+index 31a8cb627f99c..699e5eb7ba95c 100644
+--- a/chrome/browser/ui/bookmarks/bookmark_utils.cc
++++ b/chrome/browser/ui/bookmarks/bookmark_utils.cc
+@@ -7,6 +7,7 @@
+ #include <stddef.h>
+ 
+ #include "base/check.h"
++#include "base/command_line.h"
+ #include "base/feature_list.h"
+ #include "base/functional/bind.h"
+ #include "base/memory/raw_ptr.h"
+@@ -393,6 +394,14 @@ ui::ImageModel GetBookmarkFolderIcon(BookmarkFolderIconType icon_type,
+     return ui::ImageModel::FromImageSkia(
+         *ui::ResourceBundle::GetSharedInstance().GetImageSkiaNamed(default_id));
+   }
++#elif BUILDFLAG(IS_LINUX)
++  if (thorium_2024 &&
++      base::CommandLine::ForCurrentProcess()->HasSwitch("classic-bookmarks") &&
++      icon_type == BookmarkFolderIconType::kNormal) {
++    return ui::ImageModel::FromImageSkia(
++        *ui::ResourceBundle::GetSharedInstance().GetImageSkiaNamed(
++            IDR_FOLDER_CLOSED));
++  }
+ #endif
+ 
+   const gfx::VectorIcon* icon_id;

@@ -1,0 +1,13 @@
+diff --git a/third_party/zstd/src/lib/common/portability_macros.h b/third_party/zstd/src/lib/common/portability_macros.h
+index bcca634e4..869beaf63 100644
+--- a/third_party/zstd/src/lib/common/portability_macros.h
++++ b/third_party/zstd/src/lib/common/portability_macros.h
+@@ -78,7 +78,7 @@
+ #ifndef STATIC_BMI2
+ #  if defined(__BMI2__)
+ #    define STATIC_BMI2 1
+-#  elif defined(_MSC_VER) && defined(__AVX2__)
++#  elif defined(_MSC_VER) && !defined(__clang__) && defined(__AVX2__)
+ #    define STATIC_BMI2 1 /* MSVC does not have a BMI2 specific flag, but every CPU that supports AVX2 also supports BMI2 */
+ #  endif
+ #endif

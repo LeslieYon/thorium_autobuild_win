@@ -1,0 +1,83 @@
+diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
+index 1b21ed26d86af..94c2191e6dcd0 100644
+--- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
++++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
+@@ -1,4 +1,4 @@
+-// Copyright 2015 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -61,7 +61,7 @@ public abstract class ChromeFeatureList {
+      * |kFeaturesExposedToJava| in chrome/browser/flags/android/chrome_feature_list.cc
+      */
+     public static String getFieldTrialParamByFeature(String featureName, String paramName) {
+-        return ChromeFeatureMap.getInstance().getFieldTrialParamByFeature(featureName, paramName);
++        return "";
+     }
+ 
+     /**
+@@ -73,8 +73,7 @@ public abstract class ChromeFeatureList {
+      */
+     public static boolean getFieldTrialParamByFeatureAsBoolean(
+             String featureName, String paramName, boolean defaultValue) {
+-        return ChromeFeatureMap.getInstance()
+-                .getFieldTrialParamByFeatureAsBoolean(featureName, paramName, defaultValue);
++        return defaultValue;
+     }
+ 
+     /**
+@@ -86,8 +85,7 @@ public abstract class ChromeFeatureList {
+      */
+     public static int getFieldTrialParamByFeatureAsInt(
+             String featureName, String paramName, int defaultValue) {
+-        return ChromeFeatureMap.getInstance()
+-                .getFieldTrialParamByFeatureAsInt(featureName, paramName, defaultValue);
++        return defaultValue;
+     }
+ 
+     /**
+@@ -99,8 +97,7 @@ public abstract class ChromeFeatureList {
+      */
+     public static double getFieldTrialParamByFeatureAsDouble(
+             String featureName, String paramName, double defaultValue) {
+-        return ChromeFeatureMap.getInstance()
+-                .getFieldTrialParamByFeatureAsDouble(featureName, paramName, defaultValue);
++        return defaultValue;
+     }
+ 
+     /**
+diff --git a/components/variations/service/variations_service.cc b/components/variations/service/variations_service.cc
+index c4710d8c7f8c7..4d213b4f74a8b 100644
+--- a/components/variations/service/variations_service.cc
++++ b/components/variations/service/variations_service.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -226,22 +226,7 @@ bool GetInstanceManipulations(const net::HttpResponseHeaders* headers,
+ // Variations seed fetching is only enabled in official Chrome builds, if a URL
+ // is specified on the command line, and for testing.
+ bool IsFetchingEnabled() {
+-#if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+-          switches::kDisableVariationsSeedFetch)) {
+-    return false;
+-  }
+-#else
+-  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+-          switches::kVariationsServerURL) &&
+-      !g_should_fetch_for_testing) {
+-    DVLOG(1)
+-        << "Not performing repeated fetching in unofficial build without --"
+-        << switches::kVariationsServerURL << " specified.";
+-    return false;
+-  }
+-#endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
+-  return true;
++  return false;
+ }
+ 
+ // Returns the already downloaded first run seed, and clear the seed from the

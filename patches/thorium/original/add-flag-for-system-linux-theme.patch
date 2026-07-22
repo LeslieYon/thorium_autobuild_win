@@ -1,0 +1,35 @@
+diff --git a/ui/linux/linux_ui_factory.cc b/ui/linux/linux_ui_factory.cc
+index 714cb4ec5caa5..d93b5fca058f9 100644
+--- a/ui/linux/linux_ui_factory.cc
++++ b/ui/linux/linux_ui_factory.cc
+@@ -186,6 +186,10 @@ GetLinuxUiThemes() {
+ SystemTheme GetDefaultSystemTheme() {
+   std::unique_ptr<base::Environment> env = base::Environment::Create();
+ 
++  const bool use_system_linux_theme =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "use-system-linux-theme");
++
+   switch (base::nix::GetDesktopEnvironment(env.get())) {
+     case base::nix::DESKTOP_ENVIRONMENT_CINNAMON:
+     case base::nix::DESKTOP_ENVIRONMENT_GNOME:
+@@ -193,7 +197,8 @@ SystemTheme GetDefaultSystemTheme() {
+     case base::nix::DESKTOP_ENVIRONMENT_UNITY:
+     case base::nix::DESKTOP_ENVIRONMENT_XFCE:
+     case base::nix::DESKTOP_ENVIRONMENT_COSMIC:
+-      return SystemTheme::kGtk;
++      return use_system_linux_theme ? SystemTheme::kGtk
++                                    : SystemTheme::kDefault;
+     case base::nix::DESKTOP_ENVIRONMENT_KDE3:
+     case base::nix::DESKTOP_ENVIRONMENT_KDE4:
+     case base::nix::DESKTOP_ENVIRONMENT_KDE5:
+@@ -201,7 +206,8 @@ SystemTheme GetDefaultSystemTheme() {
+     case base::nix::DESKTOP_ENVIRONMENT_UKUI:
+     case base::nix::DESKTOP_ENVIRONMENT_DEEPIN:
+     case base::nix::DESKTOP_ENVIRONMENT_LXQT:
+-      return SystemTheme::kQt;
++      return use_system_linux_theme ? SystemTheme::kQt
++                                    : SystemTheme::kDefault;
+     case base::nix::DESKTOP_ENVIRONMENT_OTHER:
+       return SystemTheme::kDefault;
+   }

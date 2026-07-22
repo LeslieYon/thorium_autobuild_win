@@ -1,27 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 The Thorium Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
-"""Synchronize reviewed Thorium GRD/GRDP replacements and XTB translations.
-
-This script replaces the string-replacement hunks in
-patches/thorium/branding/ with a configuration-driven workflow.
-
-Key improvements over the legacy sync_brand_strings.py:
-  - Configuration-driven file selection via file_allowlist.csv
-  - Auto-discovery of branding messages (avoids static ID set maintenance)
-  - Feature-patch message ownership (branding won't touch feature-patch strings)
-  - Better GRIT ID generation (handles use_name_for_id, <ph> placeholders, meaning)
-  - XTB conflict detection and missing translation reporting
-  - Machine-readable dry-run output (TSV format)
-
-Usage:
-  # Dry run
-  python3 patch_scripts/grd_rebase/sync_grd_strings.py <source_root> --dry-run
-
-  # Apply
-  python3 patch_scripts/grd_rebase/sync_grd_strings.py <source_root>
-"""
+# Copyright (c) 2026 Alex313031 and gz83.
+"""Synchronize reviewed Thorium GRD/GRDP replacements and XTB translations."""
 
 import argparse
 import csv
@@ -33,15 +12,12 @@ import re
 import sys
 from typing import Iterable
 
-# ---------------------------------------------------------------------------
-# Brand string replacement rules
-# ---------------------------------------------------------------------------
-
-CHROMIUM_PROJECT_LINK_MESSAGE_IDS = frozenset({
-    "IDS_VERSION_UI_LICENSE",
-    "IDS_VERSION_UI_LICENSE_CHROMIUM",
-})
-
+CHROMIUM_PROJECT_LINK_MESSAGE_IDS = frozenset(
+    {
+        "IDS_VERSION_UI_LICENSE",
+        "IDS_VERSION_UI_LICENSE_CHROMIUM",
+    }
+)
 DINO_SOURCE_TEXT_REPLACEMENTS = {
     "IDS_ERRORPAGES_GAME_INSTRUCTIONS": (
         ("Tap the dino to play", "Tap the Dino to play"),
@@ -57,32 +33,42 @@ DINO_SOURCE_TEXT_REPLACEMENTS = {
         ("Start slower", "Start slower&#63;"),
     ),
 }
-
-ENGLISH_FALLBACK_MESSAGE_IDS = frozenset({
-    "IDS_ACCESSIBLE_TEXT_CHROMELABS_BUTTON_ADDED_BY_ENTERPRISE_POLICY",
-    "IDS_ACCESSIBLE_TEXT_CHROMELABS_BUTTON_REMOVED_BY_ENTERPRISE_POLICY",
-    "IDS_TOOLTIP_CHROMELABS_BUTTON",
-    "IDS_SAD_TAB_TITLE",
-    "IDS_ERRORPAGES_GAME_INSTRUCTIONS",
-    "IDS_ERRORPAGE_DINO_ARIA_LABEL",
-    "IDS_ERRORPAGE_DINO_SLOW_SPEED_TOGGLE",
-    "IDS_CHROME_REENGAGEMENT_NOTIFICATION_3_TITLE",
-    "IDS_VERSION_UI_LICENSE_CHROMIUM",
-    "IDS_VERSION_UI_LICENSE_OTHER",
-})
-
+ENGLISH_FALLBACK_MESSAGE_IDS = frozenset(
+    {
+        "IDS_ACCESSIBLE_TEXT_CHROMELABS_BUTTON_ADDED_BY_ENTERPRISE_POLICY",
+        "IDS_ACCESSIBLE_TEXT_CHROMELABS_BUTTON_REMOVED_BY_ENTERPRISE_POLICY",
+        "IDS_TOOLTIP_CHROMELABS_BUTTON",
+        "IDS_SAD_TAB_TITLE",
+        "IDS_ERRORPAGES_GAME_INSTRUCTIONS",
+        "IDS_ERRORPAGE_DINO_ARIA_LABEL",
+        "IDS_ERRORPAGE_DINO_SLOW_SPEED_TOGGLE",
+        "IDS_CHROME_REENGAGEMENT_NOTIFICATION_3_TITLE",
+        "IDS_VERSION_UI_LICENSE_CHROMIUM",
+        "IDS_VERSION_UI_LICENSE_OTHER",
+    }
+)
 EXTERNAL_ADDITION_MESSAGE_IDS = frozenset({"IDS_VERSION_UI_LICENSE"})
+EXPERIMENT_TITLE_MESSAGE_IDS = frozenset(
+    {
+        "IDS_ACCNAME_CHROMELABS_BUTTON",
+        "IDS_WINDOW_TITLE_EXPERIMENTS",
+    }
+)
+ALEX313031_RECOMMENDATION_MESSAGE_IDS = frozenset(
+    {"IDS_CHROME_REENGAGEMENT_NOTIFICATION_3_TITLE"}
+)
+WEB_STORE_BRAND_MESSAGE_IDS = frozenset(
+    {
+        "IDS_EXTENSIONS_BLOCKLISTED_CWS_POLICY_VIOLATION",
+        "IDS_EXTENSIONS_ITEM_CHROME_WEB_STORE",
+        "IDS_EXTENSIONS_SC_POLICY_VIOLATION_OFF",
+        "IDS_EXTENSIONS_SC_POLICY_VIOLATION_ON",
+    }
+)
 
-WEB_STORE_BRAND_MESSAGE_IDS = frozenset({
-    "IDS_EXTENSIONS_BLOCKLISTED_CWS_POLICY_VIOLATION",
-    "IDS_EXTENSIONS_ITEM_CHROME_WEB_STORE",
-    "IDS_EXTENSIONS_SC_POLICY_VIOLATION_OFF",
-    "IDS_EXTENSIONS_SC_POLICY_VIOLATION_ON",
-})
 
-
-def branding_replace(text: str) -> str:
-    """Apply brand replacement (case-sensitive, longest-first)."""
+def apply_ordered_replacements(text: str) -> str:
+    """Apply reviewed Thorium replacements in their required order."""
     for old, new in (
         ("Chromium", "Thorium"),
         ("Chrome", "Thorium"),
@@ -103,8 +89,8 @@ def branding_replace(text: str) -> str:
     return text
 
 
-def branding_replace_preserving_chrome(text: str) -> str:
-    """Apply branding while preserving Chrome-owned service names."""
+def apply_replacements_preserving_chrome(text: str) -> str:
+    """Apply product replacements while preserving Chrome-owned service names."""
     for old, new in (
         ("Chromium", "Thorium"),
         ("Google Thorium", "Thorium"),
@@ -139,22 +125,16 @@ def normalize_xtb_translation_text(text: str) -> str:
     return "\n".join(line.rstrip() for line in text.splitlines())
 
 
-# ---------------------------------------------------------------------------
-# GRD/GRDP -> XTB mapping
-# ---------------------------------------------------------------------------
-
 TRANSLATION_FILE_RE = re.compile(
     r"<file\b(?=[^>]*\bpath=\"([^\"]+)\")"
     r"(?=[^>]*\blang=\"([^\"]+)\")[^>]*/?>"
 )
-
 GRDP_PARENT_GRD_PATHS = {
     "chrome/app/app_management_strings.grdp": "chrome/app/generated_resources.grd",
     "chrome/app/extensions_strings.grdp": "chrome/app/generated_resources.grd",
     "chrome/app/settings_chromium_strings.grdp": "chrome/app/chromium_strings.grd",
     "chrome/app/settings_strings.grdp": "chrome/app/generated_resources.grd",
     "chrome/app/shared_settings_strings.grdp": "chrome/app/generated_resources.grd",
-    "chrome/app/thorium_strings.grdp": "chrome/app/generated_resources.grd",
     "components/autofill_payments_strings.grdp": "components/components_strings.grd",
     "components/autofill_strings.grdp": "components/components_strings.grd",
     "components/components_settings_strings.grdp": "components/components_strings.grd",
@@ -186,8 +166,7 @@ def _normalize_chromium_path(path: str) -> str:
     return path.replace("\\", "/").strip("/")
 
 
-def resolve_translation_grd_path(chromium_path: str) -> str:
-    """Resolve a GRD or GRDP path to the parent GRD that defines XTB files."""
+def get_translation_grd_path(chromium_path: str) -> str:
     normalized = _normalize_chromium_path(chromium_path)
     if normalized.endswith(".grd"):
         return normalized
@@ -201,14 +180,16 @@ def resolve_translation_grd_path(chromium_path: str) -> str:
     raise ValueError(f"not a GRD/GRDP path: {chromium_path}")
 
 
-def read_xtb_files_for_grd(source_root: Path, grd_path: str) -> tuple[XtbFile, ...]:
-    """Read XTB file declarations from a GRD file."""
-    normalized = _normalize_chromium_path(grd_path)
-    grd_file = source_root / normalized
+def read_xtb_files_for_grd(
+    source_root: Path,
+    grd_path: str,
+) -> tuple[XtbFile, ...]:
+    normalized_grd_path = _normalize_chromium_path(grd_path)
+    grd_file = source_root / normalized_grd_path
     if not grd_file.is_file():
-        raise FileNotFoundError(f"missing GRD file: {normalized}")
+        raise FileNotFoundError(f"missing GRD file: {normalized_grd_path}")
     grd_text = grd_file.read_text(encoding="utf-8", errors="replace")
-    grd_dir = Path(normalized).parent
+    grd_dir = Path(normalized_grd_path).parent
     xtb_files = tuple(
         XtbFile(
             lang=match.group(2),
@@ -219,7 +200,7 @@ def read_xtb_files_for_grd(source_root: Path, grd_path: str) -> tuple[XtbFile, .
         for match in TRANSLATION_FILE_RE.finditer(grd_text)
     )
     if not xtb_files:
-        raise ValueError(f"GRD has no translation files: {normalized}")
+        raise ValueError(f"GRD has no translation files: {normalized_grd_path}")
     return xtb_files
 
 
@@ -227,21 +208,18 @@ def build_grd_xtb_mapping(
     source_root: Path,
     chromium_paths: list[str],
 ) -> dict[str, GrdXtbMapping]:
-    """Build a mapping from GRD/GRDP paths to their XTB file lists."""
     mappings: dict[str, GrdXtbMapping] = {}
     xtb_cache: dict[str, tuple[XtbFile, ...]] = {}
     for chromium_path in chromium_paths:
         normalized = _normalize_chromium_path(chromium_path)
-        parent = resolve_translation_grd_path(normalized)
+        parent = get_translation_grd_path(normalized)
         if parent not in xtb_cache:
             xtb_cache[parent] = read_xtb_files_for_grd(source_root, parent)
-        mappings[normalized] = GrdXtbMapping(xtb_files=xtb_cache[parent])
+        mappings[normalized] = GrdXtbMapping(
+            xtb_files=xtb_cache[parent],
+        )
     return mappings
 
-
-# ---------------------------------------------------------------------------
-# GRIT Message ID generation (replica of grit's GenerateMessageId())
-# ---------------------------------------------------------------------------
 
 MESSAGE_RE = re.compile(
     r"<message\b(?=[^>]*\bname=\"([^\"]+)\")([^>]*)>(.*?)</message>",
@@ -266,8 +244,10 @@ CHROMIUM_LINK_BLOCK_RE = re.compile(
 
 
 def _grit_fingerprint(text: str) -> int:
-    """Compute the signed 64-bit MD5 fingerprint used by GRIT."""
-    digest = hashlib.md5(text.encode("utf-8"), usedforsecurity=False)
+    digest = hashlib.md5(
+        text.encode("utf-8"),
+        usedforsecurity=False,
+    )
     value = int(digest.hexdigest()[:16], 16)
     if value & 0x8000000000000000:
         value = -((~value & 0xFFFFFFFFFFFFFFFF) + 1)
@@ -275,32 +255,24 @@ def _grit_fingerprint(text: str) -> int:
 
 
 def message_block_to_id(message_block: str) -> str:
-    """Calculate Chromium GRIT's translation ID for one complete <message> block."""
+    """Calculate Chromium GRIT's translation ID for one message block."""
     match = MESSAGE_RE.fullmatch(message_block.strip())
     if not match:
         raise ValueError("not a complete GRD/GRDP <message> block")
     message_name, attrs, body = match.groups()
-    # use_name_for_id="true" means the message name IS the ID
     if GRIT_USE_NAME_FOR_ID_RE.search(attrs):
         return message_name
-    # Build presentable content: <ph name="X"> -> X, strip <ex> blocks, strip markup
     body = GRIT_PH_BLOCK_RE.sub(lambda item: item.group(1), body)
     body = GRIT_PH_SELF_CLOSING_RE.sub(lambda item: item.group(1), body)
     body = GRIT_EX_BLOCK_RE.sub("", body)
     body = html.unescape(MARKUP_TAG_RE.sub("", body)).strip()
     value = _grit_fingerprint(body)
-    # Combine with meaning if present
     meaning_match = MEANING_RE.search(attrs)
     if meaning_match:
         meaning_value = _grit_fingerprint(html.unescape(meaning_match.group(1)))
         value = meaning_value + (value << 1) + (1 if value < 0 else 0)
-    # Strip the high bit to get a positive ID
     return str(value & 0x7FFFFFFFFFFFFFFF)
 
-
-# ---------------------------------------------------------------------------
-# XTB parsing and manipulation
-# ---------------------------------------------------------------------------
 
 DESC_RE = re.compile(r"\bdesc=\"([^\"]*)\"")
 TRANSLATEABLE_FALSE_RE = re.compile(r"\btranslateable=\"false\"")
@@ -310,14 +282,17 @@ XTB_TRANSLATION_RE = re.compile(
     re.DOTALL,
 )
 XTB_ID_ATTR_RE = re.compile(r'(\bid=")([^"]+)(")')
-
-TEXT_SYNC_FILE_ROLES = frozenset({
-    "overlay_text_sync",
-    "overlay_text_and_feature_patch",
-    "mixed_text_and_structural",
-    "mixed_text_and_feature_messages",
-})
-
+CHROMIUM_PROJECT_LINK_END_RE = re.compile(
+    r'Thorium(?=<ph\b[^>]*\bname="END_LINK_CHROMIUM")'
+)
+TEXT_SYNC_FILE_ROLES = frozenset(
+    {
+        "overlay_text_sync",
+        "overlay_text_and_feature_patch",
+        "mixed_text_and_structural",
+        "mixed_text_and_feature_messages",
+    }
+)
 THORIUM_ADDED_FILE_ROLES = frozenset({"thorium_added_file"})
 
 
@@ -400,11 +375,6 @@ class XtbTranslationConflict:
     rejected_block: str
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def _sample_values(values: Iterable[str], limit: int = 8) -> str:
     unique = sorted(set(values))
     sample = unique[:limit]
@@ -417,11 +387,6 @@ def xtb_locale_from_path(chromium_path: str) -> str:
     filename = Path(chromium_path).name
     match = re.search(r"_([A-Za-z-]+)\.xtb$", filename)
     return match.group(1) if match else ""
-
-
-# ---------------------------------------------------------------------------
-# File I/O helpers
-# ---------------------------------------------------------------------------
 
 
 def readable_file(path: str) -> Path:
@@ -446,8 +411,8 @@ def load_csv_rows(
     path: Path,
     required_columns: set[str] | None = None,
 ) -> list[dict[str, str]]:
-    """Read CSV rows, accepting UTF-8 files with or without a BOM."""
-    with path.open(newline="", encoding="utf-8-sig") as csv_file:
+    """Read UTF-8 CSV rows."""
+    with path.open(newline="", encoding="utf-8") as csv_file:
         reader = csv.DictReader(csv_file)
         fieldnames = set(reader.fieldnames or ())
         missing_columns = (required_columns or set()) - fieldnames
@@ -473,7 +438,8 @@ def load_allowed_source_files(
                 f"allowlisted source file is missing: {chromium_path}"
             )
         contents[chromium_path] = source_path.read_text(
-            encoding="utf-8", errors="replace"
+            encoding="utf-8",
+            errors="replace",
         )
     return contents
 
@@ -500,15 +466,18 @@ def select_thorium_added_file_rows(
     ]
 
 
-def build_message_keys(rows: list[dict[str, str]]) -> set[tuple[str, str]]:
-    """Return normalized (chromium_path, message_id) ownership keys."""
+def build_message_keys(
+    rows: list[dict[str, str]],
+) -> set[tuple[str, str]]:
+    """Return normalized `(chromium_path, message_id)` ownership keys."""
     return {
         (
             row.get("chromium_path", "").strip(),
             row.get("message_id", "").strip(),
         )
         for row in rows
-        if row.get("chromium_path", "").strip() and row.get("message_id", "").strip()
+        if row.get("chromium_path", "").strip()
+        and row.get("message_id", "").strip()
     }
 
 
@@ -522,9 +491,7 @@ def validate_feature_messages_excluded(
         & build_message_keys(feature_message_rows)
     )
     if overlap:
-        formatted = ", ".join(
-            f"{path}:{message_id}" for path, message_id in overlap
-        )
+        formatted = ", ".join(f"{path}:{message_id}" for path, message_id in overlap)
         raise ValueError(
             "feature-patch messages must not enter branding replacements: "
             f"{formatted}"
@@ -568,15 +535,12 @@ def _build_message_allowlist_from_keys(
     return allowlist
 
 
-# ---------------------------------------------------------------------------
-# Replacement logic
-# ---------------------------------------------------------------------------
-
-
 def _replace_attr(tag_attrs: str, attr_re: re.Pattern[str]) -> str:
     return attr_re.sub(
         lambda match: match.group(0).replace(
-            match.group(1), branding_replace(match.group(1)), 1
+            match.group(1),
+            apply_ordered_replacements(match.group(1)),
+            1,
         ),
         tag_attrs,
     )
@@ -588,27 +552,27 @@ def _replace_outside_markup(text: str) -> str:
     cursor = 0
     for match in MARKUP_TAG_RE.finditer(text):
         if match.start() > cursor:
-            parts.append(branding_replace(text[cursor : match.start()]))
+            parts.append(apply_ordered_replacements(text[cursor : match.start()]))
         parts.append(match.group(0))
         cursor = match.end()
     if cursor < len(text):
-        parts.append(branding_replace(text[cursor:]))
+        parts.append(apply_ordered_replacements(text[cursor:]))
     return "".join(parts)
 
 
 def _replace_outside_markup_preserving_chrome(text: str) -> str:
-    """Apply branding without rewriting Chrome-owned service names."""
+    """Apply text replacements without rewriting Chrome-owned service names."""
     parts: list[str] = []
     cursor = 0
     for match in MARKUP_TAG_RE.finditer(text):
         if match.start() > cursor:
             parts.append(
-                branding_replace_preserving_chrome(text[cursor : match.start()])
+                apply_replacements_preserving_chrome(text[cursor : match.start()])
             )
         parts.append(match.group(0))
         cursor = match.end()
     if cursor < len(text):
-        parts.append(branding_replace_preserving_chrome(text[cursor:]))
+        parts.append(apply_replacements_preserving_chrome(text[cursor:]))
     return "".join(parts)
 
 
@@ -646,17 +610,20 @@ def _replace_message_body(body: str) -> str:
     return "".join(parts)
 
 
-def _apply_message_specific_body_exceptions(message_id: str, body: str) -> str:
+def _apply_message_specific_body_exceptions(
+    message_id: str,
+    body: str,
+) -> str:
     """Restore product/project names that broad branding cannot distinguish."""
     if message_id in CHROMIUM_PROJECT_LINK_MESSAGE_IDS:
-        return CHROMIUM_LINK_BLOCK_RE.sub(
-            lambda m: m.group(0).replace("Thorium", "Chromium"),
-            body,
-        )
+        return CHROMIUM_PROJECT_LINK_END_RE.sub("Chromium", body)
     return body
 
 
-def _apply_source_message_body_overrides(message_id: str, body: str) -> str:
+def _apply_source_message_body_overrides(
+    message_id: str,
+    body: str,
+) -> str:
     """Apply exact overlay-owned source rewrites outside global branding."""
     for old_text, new_text in DINO_SOURCE_TEXT_REPLACEMENTS.get(message_id, ()):
         if new_text not in body:
@@ -676,16 +643,15 @@ def build_branding_replacement_block(
     new_attrs = _replace_attr(new_attrs, MEANING_RE)
     new_body = _replace_message_body(body)
     if apply_source_overrides:
-        new_body = _apply_source_message_body_overrides(message_id, new_body)
-    new_body = _apply_message_specific_body_exceptions(message_id, new_body)
-    if new_attrs == attrs and new_body == body:
-        return ""  # No change
-    return f"<message{new_attrs}>{new_body}</message>"
-
-
-# ---------------------------------------------------------------------------
-# Auto-discovery
-# ---------------------------------------------------------------------------
+        new_body = _apply_source_message_body_overrides(
+            message_id,
+            new_body,
+        )
+    new_body = _apply_message_specific_body_exceptions(
+        message_id,
+        new_body,
+    )
+    return f'<message{new_attrs}>{new_body}</message>'
 
 
 def discover_auto_branding_message_keys(
@@ -711,14 +677,22 @@ def discover_auto_branding_message_keys(
                 match.group(3),
                 apply_source_overrides=False,
             )
-            if new_block:
+            if new_block != match.group(0):
                 message_keys.add(key)
     return message_keys
 
 
-# ---------------------------------------------------------------------------
-# XTB translation strategy
-# ---------------------------------------------------------------------------
+def _apply_translation_specific_replacements(
+    message_id: str,
+    body: str,
+) -> str:
+    """Apply safe locale-independent transformations to copied translations."""
+    body = _apply_message_specific_body_exceptions(message_id, body)
+    if message_id in EXPERIMENT_TITLE_MESSAGE_IDS and "Thorium" not in body:
+        body = f"Thorium {body}"
+    if message_id in ALEX313031_RECOMMENDATION_MESSAGE_IDS:
+        body = body.replace("Google", "Alex313031", 1)
+    return body
 
 
 def xtb_translation_strategy(change: MessageChange) -> str:
@@ -731,11 +705,6 @@ def xtb_translation_strategy(change: MessageChange) -> str:
     if change.message_id in EXTERNAL_ADDITION_MESSAGE_IDS:
         return "external_xtb_addition"
     return "copy_old_translation"
-
-
-# ---------------------------------------------------------------------------
-# Phase 1: Apply message replacements
-# ---------------------------------------------------------------------------
 
 
 def apply_message_replacements(
@@ -758,31 +727,31 @@ def apply_message_replacements(
             attrs = match.group(2)
             body = match.group(3)
             new_block = build_branding_replacement_block(
-                message_id, attrs, body, apply_source_overrides=True
+                message_id,
+                attrs,
+                body,
+                apply_source_overrides=True,
             )
-            if not new_block:
-                return match.group(0)
             old_block = match.group(0)
-            changes.append(
-                MessageChange(
-                    chromium_path=chromium_path,
-                    message_id=message_id,
-                    old_translation_id=message_block_to_id(old_block),
-                    new_translation_id=message_block_to_id(new_block),
-                    old_block=old_block,
-                    new_block=new_block,
-                    xtb_sync_needed=not TRANSLATEABLE_FALSE_RE.search(attrs),
+            if new_block != old_block:
+                changes.append(
+                    MessageChange(
+                        chromium_path=chromium_path,
+                        message_id=message_id,
+                        old_translation_id=message_block_to_id(old_block),
+                        new_translation_id=message_block_to_id(new_block),
+                        old_block=old_block,
+                        new_block=new_block,
+                        xtb_sync_needed=not TRANSLATEABLE_FALSE_RE.search(attrs),
+                    )
                 )
-            )
             return new_block
 
-        updated_contents[chromium_path] = MESSAGE_RE.sub(replace_match, contents)
+        updated_contents[chromium_path] = MESSAGE_RE.sub(
+            replace_match,
+            contents,
+        )
     return updated_contents, changes
-
-
-# ---------------------------------------------------------------------------
-# Phase 2: XTB synchronisation
-# ---------------------------------------------------------------------------
 
 
 def _build_xtb_cache(
@@ -801,7 +770,11 @@ def _build_xtb_cache(
         block = match.group(0)
         by_id[translation_id] = (block, match.group(2), match.group(3))
         block_spans[block] = [(match.start(), match.end())]
-    return XtbFileCache(text=xtb_text, by_id=by_id, block_spans=block_spans)
+    return XtbFileCache(
+        text=xtb_text,
+        by_id=by_id,
+        block_spans=block_spans,
+    )
 
 
 def find_old_translations(
@@ -832,7 +805,8 @@ def find_old_translations(
                     )
                 xtb_text = xtb_path.read_text(encoding="utf-8", errors="replace")
                 xtb_cache[xtb_file.chromium_path] = _build_xtb_cache(
-                    xtb_text, xtb_file.chromium_path
+                    xtb_text,
+                    xtb_file.chromium_path,
                 )
 
             old_translation = xtb_cache[xtb_file.chromium_path].by_id.get(
@@ -862,17 +836,13 @@ def find_old_translations(
 
         lookups.append(
             MessageTranslationLookup(
-                change=change, matches=tuple(matches), missing=tuple(missing)
+                change=change,
+                matches=tuple(matches),
+                missing=tuple(missing),
             )
         )
 
     return lookups, xtb_cache
-
-
-def _apply_translation_specific_replacements(message_id: str, body: str) -> str:
-    """Apply safe locale-independent transformations to copied translations."""
-    body = _apply_message_specific_body_exceptions(message_id, body)
-    return body
 
 
 def build_translation_insertions(
@@ -882,16 +852,12 @@ def build_translation_insertions(
     insertions: list[XtbTranslationInsertion] = []
     for lookup in lookups:
         change = lookup.change
-        if xtb_translation_strategy(change) in (
-            "english_source_fallback",
-            "external_xtb_addition",
-        ):
+        if xtb_translation_strategy(change) == "english_source_fallback":
             continue
         if change.old_translation_id == change.new_translation_id:
             continue
 
         for match in lookup.matches:
-            # Replace the id attribute value
             copied_attrs, replacement_count = XTB_ID_ATTR_RE.subn(
                 rf"\g<1>{change.new_translation_id}\g<3>",
                 match.attrs,
@@ -903,7 +869,6 @@ def build_translation_insertions(
                     f"{change.old_translation_id} in {match.chromium_path}"
                 )
 
-            # Apply branding to translation text
             if change.message_id in WEB_STORE_BRAND_MESSAGE_IDS:
                 replaced_body = _replace_outside_markup_preserving_chrome(match.body)
             else:
@@ -911,11 +876,13 @@ def build_translation_insertions(
                     match.body
                 )
             replaced_body = _apply_translation_specific_replacements(
-                change.message_id, replaced_body
+                change.message_id,
+                replaced_body,
             )
             replaced_body = normalize_xtb_translation_text(replaced_body)
             replaced_block = (
-                f"<translation{copied_attrs}>{replaced_body}</translation>"
+                f"<translation{copied_attrs}>"
+                f"{replaced_body}</translation>"
             )
             insertions.append(
                 XtbTranslationInsertion(
@@ -1056,19 +1023,17 @@ def insert_new_translations(
                 "",
             )
         xtb_text = _insert_blocks_at_anchor_spans(
-            xtb_text, blocks_by_anchor, anchor_spans
+            xtb_text,
+            blocks_by_anchor,
+            anchor_spans,
         )
         updated_contents[chromium_path] = xtb_text
     return updated_contents, conflicts
 
 
-# ---------------------------------------------------------------------------
-# Reporting
-# ---------------------------------------------------------------------------
-
-
 def write_xtb_conflict_summary_report(
-    conflicts: list[XtbTranslationConflict], output_path: Path
+    conflicts: list[XtbTranslationConflict],
+    output_path: Path,
 ) -> None:
     """Write a compact summary of converged-ID translation conflicts."""
     grouped: dict[tuple[str, str, str, str, str], list[XtbTranslationConflict]] = {}
@@ -1110,9 +1075,7 @@ def write_xtb_conflict_summary_report(
         ), items in sorted(grouped.items()):
             locales = [
                 locale
-                for locale in (
-                    xtb_locale_from_path(item.chromium_path) for item in items
-                )
+                for locale in (xtb_locale_from_path(item.chromium_path) for item in items)
                 if locale
             ]
             risk = (
@@ -1139,12 +1102,11 @@ def write_xtb_conflict_summary_report(
 
 
 def write_xtb_missing_summary_report(
-    missing: list[XtbTranslationMissing], output_path: Path
+    missing: list[XtbTranslationMissing],
+    output_path: Path,
 ) -> None:
     """Write a compact summary of missing old-ID translation lookups."""
-    grouped: dict[
-        tuple[str, str, str, str], list[XtbTranslationMissing]
-    ] = {}
+    grouped: dict[tuple[str, str, str, str], list[XtbTranslationMissing]] = {}
     for item in missing:
         key = (
             item.source_chromium_path,
@@ -1177,11 +1139,7 @@ def write_xtb_missing_summary_report(
             new_translation_id,
         ), items in sorted(grouped.items()):
             locales = [item.lang for item in items if item.lang]
-            risk = (
-                "review_many_missing_locales"
-                if len(set(locales)) >= 40
-                else "low"
-            )
+            risk = "review_many_missing_locales" if len(set(locales)) >= 40 else "low"
             writer.writerow(
                 [
                     source_chromium_path,
@@ -1197,9 +1155,7 @@ def write_xtb_missing_summary_report(
             )
 
 
-def write_updated_files(
-    source_root: Path, updated_contents: dict[str, str]
-) -> None:
+def write_updated_files(source_root: Path, updated_contents: dict[str, str]) -> None:
     """Write prepared source-relative file contents."""
     for chromium_path, contents in updated_contents.items():
         (source_root / chromium_path).write_bytes(contents.encode("utf-8"))
@@ -1243,11 +1199,6 @@ def configure_stdout_utf8() -> None:
     reconfigure = getattr(sys.stdout, "reconfigure", None)
     if reconfigure is not None:
         reconfigure(encoding="utf-8", newline="")
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -1300,13 +1251,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
+def main() -> int:
     parser = build_arg_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
 
     # Validate all configuration inputs before preparing or writing changes.
     file_allowlist_rows = load_csv_rows(
-        args.file_allowlist, required_columns={"chromium_path", "role"}
+        args.file_allowlist,
+        required_columns={"chromium_path", "role"},
     )
     message_allowlist_rows = load_csv_rows(
         args.message_allowlist,
@@ -1341,24 +1293,29 @@ def main(argv: list[str] | None = None) -> int:
 
     text_sync_file_rows = select_text_sync_file_rows(file_allowlist_rows)
     added_file_rows = select_thorium_added_file_rows(file_allowlist_rows)
-    validate_feature_messages_excluded(message_allowlist_rows, feature_message_rows)
+    validate_feature_messages_excluded(
+        message_allowlist_rows,
+        feature_message_rows,
+    )
     if not text_sync_file_rows:
         raise ValueError("file allowlist contains no text-sync roles")
-
-    source_contents = load_allowed_source_files(args.source_root, text_sync_file_rows)
+    source_contents = load_allowed_source_files(
+        args.source_root,
+        text_sync_file_rows,
+    )
     explicit_message_keys = build_message_keys(message_allowlist_rows)
     feature_message_keys = build_message_keys(feature_message_rows)
     auto_branding_message_keys = discover_auto_branding_message_keys(
-        source_contents, feature_message_keys
+        source_contents,
+        feature_message_keys,
     )
     message_allowlist = _build_message_allowlist_from_keys(
         auto_branding_message_keys | explicit_message_keys
     )
-
     updated_contents, changes = apply_message_replacements(
-        source_contents, message_allowlist
+        source_contents,
+        message_allowlist,
     )
-
     xtb_sync_changes = [
         change
         for change in changes
@@ -1369,7 +1326,9 @@ def main(argv: list[str] | None = None) -> int:
         sorted({change.chromium_path for change in xtb_sync_changes}),
     )
     translation_lookups, xtb_cache = find_old_translations(
-        args.source_root, xtb_sync_changes, xtb_mappings
+        args.source_root,
+        xtb_sync_changes,
+        xtb_mappings,
     )
     missing_old_translations = [
         missing
@@ -1378,26 +1337,28 @@ def main(argv: list[str] | None = None) -> int:
     ]
     translation_insertions = build_translation_insertions(translation_lookups)
     updated_xtb_contents, xtb_conflicts = insert_new_translations(
-        args.source_root, translation_insertions, xtb_cache
+        args.source_root,
+        translation_insertions,
+        xtb_cache,
     )
-
     if args.xtb_conflict_report is not None:
         write_xtb_conflict_summary_report(xtb_conflicts, args.xtb_conflict_report)
     if args.xtb_missing_report is not None:
         write_xtb_missing_summary_report(
-            missing_old_translations, args.xtb_missing_report
+            missing_old_translations,
+            args.xtb_missing_report,
         )
-
     if xtb_conflicts:
         print(
-            f"info: selected the first translation candidate for "
+            "info: selected the first translation candidate for "
             f"{len(xtb_conflicts)} converged XTB conflicts",
             file=sys.stderr,
         )
     if added_file_rows:
         print(
-            f"info: routed {len(added_file_rows)} Thorium-added files "
-            f"to the separate additions workflow",
+            "info: routed "
+            f"{len(added_file_rows)} Thorium-added files to the separate "
+            "additions workflow",
             file=sys.stderr,
         )
     if missing_old_translations:
@@ -1406,12 +1367,11 @@ def main(argv: list[str] | None = None) -> int:
             for item in missing_old_translations
         }
         print(
-            f"info: old translation IDs were missing from "
+            "info: old translation IDs were missing from "
             f"{len(missing_old_translations)} mapped XTB lookups across "
             f"{len(missing_messages)} messages; continuing without them",
             file=sys.stderr,
         )
-
     if args.dry_run:
         configure_stdout_utf8()
         write_dry_run_report(changes)
@@ -1419,13 +1379,6 @@ def main(argv: list[str] | None = None) -> int:
         write_updated_files(args.source_root, updated_contents)
         write_updated_files(args.source_root, updated_xtb_contents)
 
-    print(
-        f"summary: {len(changes)} messages changed, "
-        f"{len(xtb_sync_changes)} XTB-sync needed, "
-        f"{len(xtb_conflicts)} conflicts, "
-        f"{len(missing_old_translations)} missing lookups",
-        file=sys.stderr,
-    )
     return 0
 
 

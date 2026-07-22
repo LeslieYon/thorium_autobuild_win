@@ -1,6 +1,6 @@
 # GRD/XTB Rebase
 
-This directory contains the Thorium GRD/GRDP and XTB rebase tooling
+This directory contains the reviewed Thorium GRD/GRDP and XTB rebase tooling
 for moving Thorium string changes out of the overlay and into repeatable
 scripts.
 
@@ -10,7 +10,7 @@ The runtime surface is intentionally small:
   old and new GRIT translation IDs, and copies compatible upstream XTB
   translations to the new Thorium IDs.
 - `merge_thorium_xtb.py` merges reviewed Thorium-owned translation additions
-  from `config/xtb_additions.tsv` into Chromium XTB bundles.
+  from `config/m150_xtb_additions.tsv` into Chromium XTB bundles.
 - `update_config_from_patches.py` refreshes low-risk config rows that can be
   derived from the current patch series.
 
@@ -33,39 +33,18 @@ The files in `config/` are reviewed inputs, not generated setup output:
 - `feature_patch_message_ownership.csv`: feature-patch and overlay-added
   message ownership; used to prevent feature-patch strings from being handled
   by the overlay replacement workflow.
-- `xtb_additions.tsv`: canonical reviewed translation additions (currently
-  empty; populated when feature-patch messages need translations).
+- `m150_xtb_additions.tsv`: canonical reviewed translation additions; currently
+  3888 translation rows across 324 XTB files. Rows are grouped by the explicit
+  `owner_patch` column, then by bundle, translation ID, and locale;
+  `source_path` separately records where each translation was recovered or
+  reviewed.
 
 `update_config_from_patches.py` may rewrite
 `config/feature_patch_message_ownership.csv` and
 `config/file_allowlist.csv` by default. It does not rewrite
-`message_allowlist.csv` or `xtb_additions.tsv`; those remain reviewed
+`message_allowlist.csv` or `m150_xtb_additions.tsv`; those remain reviewed
 inputs because they contain special text behavior or translation-data
 decisions.
-
-## Differences from the legacy sync_brand_strings.py
-
-The legacy `patch_scripts/sync_brand_strings.py` used:
-
-- A hard-coded `GRD_XTB_MAP` list
-- A static `BRAND_STRING_IDS` set (2227 IDs, manually maintained)
-- `xml.etree.ElementTree` for XML parsing (fragile XTB serialization)
-- No concept of feature-patch message ownership
-
-The new `sync_grd_strings.py` improves on this with:
-
-- **Configuration-driven file mapping**: `file_allowlist.csv` defines which
-  files to process and how they map to XTB files.
-- **Auto-discovery**: Branding messages are discovered by applying the
-  branding replacements to the source text and checking which messages change.
-  This eliminates the need to manually maintain the ID set.
-- **Feature-patch isolation**: Messages owned by feature patches (GPC, download
-  shelf restore, etc.) are automatically excluded from branding replacement.
-- **Better GRIT ID replica**: Handles `use_name_for_id="true"`, `<ph>` placeholder
-  extraction, and `meaning` attribute combination.
-- **Conflict detection**: When multiple old translation IDs converge to the same
-  new ID, conflicts are detected and reported.
-- **Machine-readable reporting**: Dry-run mode outputs TSV format for audit.
 
 ## Run Order
 
@@ -87,7 +66,8 @@ python3 patch_scripts/grd_rebase/merge_thorium_xtb.py --help
 ```
 
 On Windows, either `py -3.11`, a normal `python.exe`, or
-`C:\src\depot_tools\python3.bat` can be used.
+`C:\src\depot_tools\python3.bat` can be used. The depot_tools wrapper is only a
+convenient Chromium-environment Python, not a requirement for these scripts.
 
 All config paths stored in this directory use repository-relative POSIX-style
 paths. Command-line paths may use native platform separators or `/`; the scripts
@@ -95,13 +75,13 @@ normalize them internally where needed.
 
 ## Dry Run
 
-Refresh low-risk config from the current patch series:
+Dry-run low-risk config refresh:
 
 ```bash
 python3 patch_scripts/grd_rebase/update_config_from_patches.py --dry-run
 ```
 
-Dry-run the overlay string sync:
+Dry-run the overlay string sync and write compact audit summaries:
 
 ```bash
 python3 patch_scripts/grd_rebase/sync_grd_strings.py \
@@ -109,9 +89,9 @@ python3 patch_scripts/grd_rebase/sync_grd_strings.py \
   --file-allowlist patch_scripts/grd_rebase/config/file_allowlist.csv \
   --message-allowlist patch_scripts/grd_rebase/config/message_allowlist.csv \
   --dry-run \
-  --xtb-conflict-report out/grd_rebase/xtb_conflicts_summary.tsv \
-  --xtb-missing-report out/grd_rebase/xtb_missing_summary.tsv \
-  > out/grd_rebase/grd_sync_dry_run.tsv
+  --xtb-conflict-report out/grd_rebase/m150_xtb_conflicts_summary.tsv \
+  --xtb-missing-report out/grd_rebase/m150_xtb_missing_summary.tsv \
+  > out/grd_rebase/m150_grd_sync_dry_run.tsv
 ```
 
 Dry-run the reviewed additions merge:
@@ -122,6 +102,12 @@ python3 patch_scripts/grd_rebase/merge_thorium_xtb.py \
   --dry-run
 ```
 
+Expected current additions summary:
+
+```text
+validated 3888 Thorium translations across 324 XTB files: 3807 inserted, 74 refreshed, 7 already present, 324 files changed
+```
+
 Equivalent PowerShell form:
 
 ```powershell
@@ -130,9 +116,13 @@ py -3.11 patch_scripts/grd_rebase/sync_grd_strings.py `
   --file-allowlist patch_scripts/grd_rebase/config/file_allowlist.csv `
   --message-allowlist patch_scripts/grd_rebase/config/message_allowlist.csv `
   --dry-run `
-  --xtb-conflict-report out/grd_rebase/xtb_conflicts_summary.tsv `
-  --xtb-missing-report out/grd_rebase/xtb_missing_summary.tsv `
-  > out/grd_rebase/grd_sync_dry_run.tsv
+  --xtb-conflict-report out/grd_rebase/m150_xtb_conflicts_summary.tsv `
+  --xtb-missing-report out/grd_rebase/m150_xtb_missing_summary.tsv `
+  > out/grd_rebase/m150_grd_sync_dry_run.tsv
+
+py -3.11 patch_scripts/grd_rebase/merge_thorium_xtb.py `
+  C:\src\chromium\src `
+  --dry-run
 ```
 
 ## Apply
@@ -174,6 +164,11 @@ Chromium's `GenerateMessageId()` fingerprint and meaning-combination behavior:
 - `<ph name="...">` uses the placeholder presentation/name in presentable
   content.
 
+The replica is intentionally scoped to reviewed text-sync files plus explicit
+special messages. If future special entries include conditional message bodies
+that need platform-specific active-branch resolution, compare against Chromium
+GRIT parser output before enabling them.
+
 ## Reports
 
 `sync_grd_strings.py` can write compact audit reports:
@@ -186,17 +181,25 @@ Chromium's `GenerateMessageId()` fingerprint and meaning-combination behavior:
   translation ID was not found. Missing translations are reported but do not
   block the run.
 
-## Integration with build.py
+Current dry-runs may print warnings for converged XTB conflicts and missing old
+IDs. Those warnings are expected when their TSV reports are reviewed.
 
-The new scripts are designed to be called from `build.py` after non-branding
-patches have been applied:
+## Validation
 
-```python
-from patch_scripts.grd_rebase.sync_grd_strings import main as sync_grd_main
-# Or use the CLI directly:
-# python3 patch_scripts/grd_rebase/sync_grd_strings.py ...
+Basic syntax checks:
+
+```bash
+python3 -m py_compile \
+  patch_scripts/grd_rebase/update_config_from_patches.py \
+  patch_scripts/grd_rebase/sync_grd_strings.py \
+  patch_scripts/grd_rebase/merge_thorium_xtb.py
 ```
 
-The legacy `patch_scripts/sync_brand_strings.py` and
-`patch_scripts/brand_string_ids.py` remain in the repository for reference
-but should be replaced by the new workflow in a future cleanup.
+Behavior validation should run the dry-run command and inspect the compact
+reports:
+
+- conflict summary should be grouped into a small number of review buckets;
+- missing summary should group all missing locales per message.
+
+The full dry-run TSV is useful for script refactors and spot checks, but it is
+not intended to be reviewed line by line.

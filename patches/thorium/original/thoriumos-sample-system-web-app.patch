@@ -1,0 +1,344 @@
+diff --git a/ash/webui/sample_system_web_app_ui/BUILD.gn b/ash/webui/sample_system_web_app_ui/BUILD.gn
+index 42f3aa192abda..55c05ed871ca6 100644
+--- a/ash/webui/sample_system_web_app_ui/BUILD.gn
++++ b/ash/webui/sample_system_web_app_ui/BUILD.gn
+@@ -1,13 +1,12 @@
+-# Copyright 2019 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//build/config/chromeos/ui_mode.gni")
+ import("//chrome/test/base/ash/js2gtest.gni")
+ import("//third_party/closure_compiler/compile_js.gni")
+ 
+-assert(is_chromeos, "Sample System Web App is ChromeOS only")
+-assert(!is_official_build,
+-       "Sample System Web App is only built for unofficial builds")
++assert(is_chromeos_ash, "Sample System Web App is ash-chrome only")
+ 
+ static_library("sample_system_web_app_ui") {
+   sources = [
+diff --git a/ash/webui/sample_system_web_app_ui/mojom/BUILD.gn b/ash/webui/sample_system_web_app_ui/mojom/BUILD.gn
+index 79feb42f93d5e..4073fc1aa2f5b 100644
+--- a/ash/webui/sample_system_web_app_ui/mojom/BUILD.gn
++++ b/ash/webui/sample_system_web_app_ui/mojom/BUILD.gn
+@@ -1,12 +1,11 @@
+-# Copyright 2021 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//build/config/chromeos/ui_mode.gni")
+ import("//mojo/public/tools/bindings/mojom.gni")
+ 
+-assert(is_chromeos, "Sample System Web App is ChromeOS only")
+-assert(!is_official_build,
+-       "Sample System Web App is only built for unofficial builds")
++assert(is_chromeos_ash, "Sample System Web App is ash-chrome only")
+ 
+ mojom("mojo_bindings") {
+   sources = [
+diff --git a/ash/webui/sample_system_web_app_ui/resources/trusted/BUILD.gn b/ash/webui/sample_system_web_app_ui/resources/trusted/BUILD.gn
+index b262da1a8b7ba..55f1af9aafe5a 100644
+--- a/ash/webui/sample_system_web_app_ui/resources/trusted/BUILD.gn
++++ b/ash/webui/sample_system_web_app_ui/resources/trusted/BUILD.gn
+@@ -1,15 +1,14 @@
+-# Copyright 2021 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
+ import("//ash/webui/tools/mwc_path_mappings.gni")
++import("//build/config/chromeos/ui_mode.gni")
+ import("//tools/typescript/ts_library.gni")
+ import("//ui/webui/resources/tools/build_webui.gni")
+ import("//ui/webui/resources/tools/generate_grd.gni")
+ 
+-assert(is_chromeos, "Sample System Web App is ChromeOS only")
+-assert(!is_official_build,
+-       "Sample System Web App is only built for unofficial builds")
++assert(is_chromeos_ash, "Sample System Web App is ash-chrome only")
+ 
+ build_webui("build") {
+   grd_prefix = "ash_sample_system_web_app"
+@@ -53,7 +52,6 @@ build_webui("build") {
+         [ _mwc_mapping[0] + "|" + rebase_path(_mwc_mapping[1], target_gen_dir) ]
+   }
+ 
+-  webui_context_type = "trusted"
+   grit_output_dir = "$root_gen_dir/ash/webui"
+   extra_grdp_deps = [ ":build_worker_grdp" ]
+   extra_grdp_files = [ "$target_gen_dir/worker_resources.grdp" ]
+diff --git a/ash/webui/sample_system_web_app_ui/resources/untrusted/BUILD.gn b/ash/webui/sample_system_web_app_ui/resources/untrusted/BUILD.gn
+index 6cc7f87afb675..c5ced53ba1597 100644
+--- a/ash/webui/sample_system_web_app_ui/resources/untrusted/BUILD.gn
++++ b/ash/webui/sample_system_web_app_ui/resources/untrusted/BUILD.gn
+@@ -1,12 +1,11 @@
+-# Copyright 2021 The Chromium Authors
++# Copyright 2026 The Chromium Authors and Alex313031
+ # Use of this source code is governed by a BSD-style license that can be
+ # found in the LICENSE file.
+ 
++import("//build/config/chromeos/ui_mode.gni")
+ import("//ui/webui/resources/tools/build_webui.gni")
+ 
+-assert(is_chromeos, "Sample System Web App is ChromeOS only")
+-assert(!is_official_build,
+-       "Sample System Web App is only built for unofficial builds")
++assert(is_chromeos_ash, "Sample System Web App is ash-chrome only")
+ 
+ build_webui("build") {
+   grd_prefix = "ash_sample_system_web_app_untrusted"
+@@ -28,6 +27,5 @@ build_webui("build") {
+   ts_composite = true
+   ts_deps = [ "//ui/webui/resources/mojo:build_ts" ]
+ 
+-  webui_context_type = "untrusted"
+   grit_output_dir = "$root_gen_dir/ash/webui"
+ }
+diff --git a/ash/webui/sample_system_web_app_ui/sample_system_web_app_ui.h b/ash/webui/sample_system_web_app_ui/sample_system_web_app_ui.h
+index e93621924aefd..7327b4b7a665c 100644
+--- a/ash/webui/sample_system_web_app_ui/sample_system_web_app_ui.h
++++ b/ash/webui/sample_system_web_app_ui/sample_system_web_app_ui.h
+@@ -5,9 +5,7 @@
+ #ifndef ASH_WEBUI_SAMPLE_SYSTEM_WEB_APP_UI_SAMPLE_SYSTEM_WEB_APP_UI_H_
+ #define ASH_WEBUI_SAMPLE_SYSTEM_WEB_APP_UI_SAMPLE_SYSTEM_WEB_APP_UI_H_
+ 
+-#if defined(OFFICIAL_BUILD)
+-#error Sample System Web App should only be included in unofficial builds.
+-#endif
++
+ 
+ #include <memory>
+ 
+diff --git a/ash/webui/sample_system_web_app_ui/sample_system_web_app_untrusted_ui.h b/ash/webui/sample_system_web_app_ui/sample_system_web_app_untrusted_ui.h
+index 1c4952ef447da..a20b39920c956 100644
+--- a/ash/webui/sample_system_web_app_ui/sample_system_web_app_untrusted_ui.h
++++ b/ash/webui/sample_system_web_app_ui/sample_system_web_app_untrusted_ui.h
+@@ -12,9 +12,6 @@
+ #include "mojo/public/cpp/bindings/receiver.h"
+ #include "ui/webui/untrusted_web_ui_controller.h"
+ 
+-#if defined(OFFICIAL_BUILD)
+-#error Sample System Web App should only be included in unofficial builds.
+-#endif
+ 
+ namespace content {
+ class WebUI;
+diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
+index 99d70b84f6e06..53a6fa4fad4ee 100644
+--- a/chrome/browser/BUILD.gn
++++ b/chrome/browser/BUILD.gn
+@@ -4297,12 +4297,10 @@ static_library("browser") {
+       deps += [ "//chrome/browser/nearby_sharing/internal/icons:vector_icons" ]
+     }
+ 
+-    if (!is_official_build) {
+-      deps += [
+-        "//ash/webui/sample_system_web_app_ui",
+-        "//ash/webui/sample_system_web_app_ui/mojom:mojo_bindings",
+-      ]
+-    }
++    deps += [
++      "//ash/webui/sample_system_web_app_ui",
++      "//ash/webui/sample_system_web_app_ui/mojom:mojo_bindings",
++    ]
+ 
+     if (enable_server_based_recognition) {
+       deps += [ "//chrome/services/speech/internal:lib" ]
+diff --git a/chrome/browser/ash/system_web_apps/apps/BUILD.gn b/chrome/browser/ash/system_web_apps/apps/BUILD.gn
+index a8f16907b19c2..c8bf0165d4b4a 100644
+--- a/chrome/browser/ash/system_web_apps/apps/BUILD.gn
++++ b/chrome/browser/ash/system_web_apps/apps/BUILD.gn
+@@ -185,17 +185,15 @@ static_library("apps") {
+     "//url",
+   ]
+ 
+-  if (!is_official_build) {
+-    sources += [
+-      "sample_system_web_app_info.cc",
+-      "sample_system_web_app_info.h",
+-    ]
++  sources += [
++    "sample_system_web_app_info.cc",
++    "sample_system_web_app_info.h",
++  ]
+ 
+-    deps += [
+-      "//ash/webui/sample_system_web_app_ui",
+-      "//ash/webui/sample_system_web_app_ui/resources/trusted:resources",
+-    ]
+-  }
++  deps += [
++    "//ash/webui/sample_system_web_app_ui",
++    "//ash/webui/sample_system_web_app_ui/resources/trusted:resources",
++  ]
+ }
+ 
+ source_set("browser_tests") {
+diff --git a/chrome/browser/ash/system_web_apps/apps/sample_system_web_app_info.h b/chrome/browser/ash/system_web_apps/apps/sample_system_web_app_info.h
+index c80f8c0a8995c..d30b7ca6de16f 100644
+--- a/chrome/browser/ash/system_web_apps/apps/sample_system_web_app_info.h
++++ b/chrome/browser/ash/system_web_apps/apps/sample_system_web_app_info.h
+@@ -12,9 +12,6 @@ namespace web_app {
+ struct WebAppInstallInfo;
+ }  // namespace web_app
+ 
+-#if defined(OFFICIAL_BUILD)
+-#error Demo Mode should only be included in unofficial builds.
+-#endif
+ 
+ class SampleSystemAppDelegate : public ash::SystemWebAppDelegate {
+  public:
+diff --git a/chrome/browser/ash/system_web_apps/system_web_app_manager.cc b/chrome/browser/ash/system_web_apps/system_web_app_manager.cc
+index a40e8c795b241..d6f44749a4c41 100644
+--- a/chrome/browser/ash/system_web_apps/system_web_app_manager.cc
++++ b/chrome/browser/ash/system_web_apps/system_web_app_manager.cc
+@@ -97,9 +97,7 @@
+ #include "ui/base/l10n/l10n_util.h"
+ #include "url/gurl.h"
+ #include "url/origin.h"
+-#if !defined(OFFICIAL_BUILD)
+ #include "chrome/browser/ash/system_web_apps/apps/sample_system_web_app_info.h"
+-#endif  // !defined(OFFICIAL_BUILD)
+ 
+ namespace ash {
+ 
+@@ -152,9 +150,7 @@ SystemWebAppDelegateMap CreateSystemWebApps(Profile* profile) {
+         std::make_unique<graduation::GraduationAppDelegate>(profile));
+   }
+ 
+-#if !defined(OFFICIAL_BUILD)
+   info_vec.push_back(std::make_unique<SampleSystemAppDelegate>(profile));
+-#endif  // !defined(OFFICIAL_BUILD)
+ 
+   SystemWebAppDelegateMap delegate_map;
+   for (auto& info : info_vec) {
+diff --git a/chrome/browser/chrome_browser_interface_binders_webui_parts_chromeos.cc b/chrome/browser/chrome_browser_interface_binders_webui_parts_chromeos.cc
+index 6776c46efba9d..8340a844ee778 100644
+--- a/chrome/browser/chrome_browser_interface_binders_webui_parts_chromeos.cc
++++ b/chrome/browser/chrome_browser_interface_binders_webui_parts_chromeos.cc
+@@ -172,10 +172,10 @@
+ #include "media/capture/video/chromeos/mojom/camera_app.mojom.h"
+ #include "mojo/public/cpp/bindings/binder_map.h"
+ 
+-#if !defined(OFFICIAL_BUILD)
+ #include "ash/webui/sample_system_web_app_ui/mojom/sample_system_web_app_ui.mojom.h"
+ #include "ash/webui/sample_system_web_app_ui/sample_system_web_app_ui.h"
+ #include "ash/webui/sample_system_web_app_ui/sample_system_web_app_untrusted_ui.h"
++#if !defined(OFFICIAL_BUILD)
+ #include "ash/webui/status_area_internals/mojom/status_area_internals.mojom.h"
+ #include "ash/webui/status_area_internals/status_area_internals_ui.h"
+ #endif  // defined(OFFICIAL_BUILD)
+@@ -600,10 +600,10 @@ void PopulateChromeWebUIFrameInterfaceBrokersTrustedPartsCros(
+   registry.ForWebUI<ash::smb_dialog::SmbCredentialsDialogUI>();
+   registry.ForWebUI<ash::MallUI>().Add<ash::mall::mojom::PageHandler>();
+ 
+-#if !defined(OFFICIAL_BUILD)
+   registry.ForWebUI<ash::SampleSystemWebAppUI>()
+       .Add<ash::mojom::sample_swa::PageHandlerFactory>();
+ 
++#if !defined(OFFICIAL_BUILD)
+   registry.ForWebUI<ash::StatusAreaInternalsUI>()
+       .Add<ash::mojom::status_area_internals::PageHandler>();
+ #endif  // !defined(OFFICIAL_BUILD)
+@@ -643,10 +643,8 @@ void PopulateChromeWebUIFrameInterfaceBrokersUntrustedPartsCros(
+   registry.ForWebUI<ash::ScannerFeedbackUntrustedUI>()
+       .Add<ash::mojom::scanner_feedback_ui::PageHandler>();
+ 
+-#if !defined(OFFICIAL_BUILD)
+   registry.ForWebUI<ash::SampleSystemWebAppUntrustedUI>()
+       .Add<ash::mojom::sample_swa::UntrustedPageInterfacesFactory>();
+-#endif  // !defined(OFFICIAL_BUILD)
+ }
+ 
+ }  // namespace chrome::internal
+diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
+index 5b8bb04a2fa99..21c413d3f709d 100644
+--- a/chrome/browser/ui/BUILD.gn
++++ b/chrome/browser/ui/BUILD.gn
+@@ -2954,9 +2954,7 @@ static_library("ui") {
+       ]
+     }
+ 
+-    if (!is_official_build) {
+-      deps += [ "//ash/webui/sample_system_web_app_ui" ]
+-    }
++    deps += [ "//ash/webui/sample_system_web_app_ui" ]
+   }
+ 
+   if (is_win || is_mac || is_linux || is_chromeos) {
+diff --git a/chrome/browser/ui/webui/ash/config/BUILD.gn b/chrome/browser/ui/webui/ash/config/BUILD.gn
+index fed60eca096f7..96b4f7db01c8c 100644
+--- a/chrome/browser/ui/webui/ash/config/BUILD.gn
++++ b/chrome/browser/ui/webui/ash/config/BUILD.gn
+@@ -114,10 +114,9 @@ static_library("config") {
+     "//ui/webui",
+   ]
+ 
+-  if (!is_official_build) {
+-    deps += [ "//ash/webui/sample_system_web_app_ui" ]
+-    if (!use_real_dbus_clients) {
+-      deps += [ "//chrome/browser/ui/webui/ash/emulator" ]
+-    }
++  deps += [ "//ash/webui/sample_system_web_app_ui" ]
++
++  if (!is_official_build && !use_real_dbus_clients) {
++    deps += [ "//chrome/browser/ui/webui/ash/emulator" ]
+   }
+ }
+diff --git a/chrome/browser/ui/webui/ash/config/chrome_untrusted_web_ui_configs_chromeos.cc b/chrome/browser/ui/webui/ash/config/chrome_untrusted_web_ui_configs_chromeos.cc
+index b564b12f102af..1cd846325a0c1 100644
+--- a/chrome/browser/ui/webui/ash/config/chrome_untrusted_web_ui_configs_chromeos.cc
++++ b/chrome/browser/ui/webui/ash/config/chrome_untrusted_web_ui_configs_chromeos.cc
+@@ -31,9 +31,7 @@
+ #include "content/public/browser/webui_config.h"
+ #include "content/public/browser/webui_config_map.h"
+ 
+-#if !defined(OFFICIAL_BUILD)
+ #include "ash/webui/sample_system_web_app_ui/sample_system_web_app_untrusted_ui.h"
+-#endif  // !defined(OFFICIAL_BUILD)
+ 
+ namespace ash {
+ 
+@@ -92,10 +90,8 @@ void RegisterAshChromeUntrustedWebUIConfigs() {
+   map.AddUntrustedWebUIConfig(std::make_unique<FocusModeUntrustedUIConfig>());
+   map.AddUntrustedWebUIConfig(
+       std::make_unique<ScannerFeedbackUntrustedUIConfig>());
+-#if !defined(OFFICIAL_BUILD)
+   map.AddUntrustedWebUIConfig(
+       std::make_unique<SampleSystemWebAppUntrustedUIConfig>());
+-#endif  // !defined(OFFICIAL_BUILD)
+ }
+ 
+ }  // namespace ash
+diff --git a/chrome/browser/ui/webui/ash/config/chrome_web_ui_configs_chromeos.cc b/chrome/browser/ui/webui/ash/config/chrome_web_ui_configs_chromeos.cc
+index 2f7aeed9469b3..a48742f8e54de 100644
+--- a/chrome/browser/ui/webui/ash/config/chrome_web_ui_configs_chromeos.cc
++++ b/chrome/browser/ui/webui/ash/config/chrome_web_ui_configs_chromeos.cc
+@@ -119,12 +119,10 @@
+ #include "chromeos/ash/components/install_attributes/install_attributes.h"
+ #include "chromeos/ash/experiences/guest_os/borealis/motd/borealis_motd_ui.h"
+ #include "ui/webui/webui_util.h"
+-#if !defined(OFFICIAL_BUILD)
+ #include "ash/webui/sample_system_web_app_ui/sample_system_web_app_ui.h"
+-#if !defined(USE_REAL_DBUS_CLIENTS)
++#if !defined(OFFICIAL_BUILD) && !defined(USE_REAL_DBUS_CLIENTS)
+ #include "chrome/browser/ui/webui/ash/emulator/device_emulator_ui.h"
+-#endif  // !defined(USE_REAL_DBUS_CLIENTS)
+-#endif  // !defined(OFFICIAL_BUILD)
++#endif  // !defined(OFFICIAL_BUILD) && !defined(USE_REAL_DBUS_CLIENTS)
+ 
+ namespace content {
+ class WebUI;
+@@ -354,8 +352,8 @@ void RegisterAshChromeWebUIConfigs() {
+       base::BindRepeating(vc_background_ui::CreateVcBackgroundUI)));
+   map.AddWebUIConfig(std::make_unique<GrowthInternalsUIConfig>());
+   map.AddWebUIConfig(std::make_unique<FloatingWorkspaceUIConfig>());
+-#if !defined(OFFICIAL_BUILD)
+   map.AddWebUIConfig(std::make_unique<SampleSystemWebAppUIConfig>());
++#if !defined(OFFICIAL_BUILD)
+   map.AddWebUIConfig(std::make_unique<StatusAreaInternalsUIConfig>());
+ #if !defined(USE_REAL_DBUS_CLIENTS)
+   map.AddWebUIConfig(std::make_unique<DeviceEmulatorUIConfig>());

@@ -39,6 +39,19 @@ index 0a543bf7a5eea..b397681ca7e22 100644
    const auto* aim_eligibility_service =
        AimEligibilityServiceFactory::GetForProfile(profile);
    const bool is_aim_entrypoint_enabled =
+diff --git a/components/lens/lens_features.cc b/components/lens/lens_features.cc
+index 83c00289ecd84..058c34e1067b1 100644
+--- a/components/lens/lens_features.cc
++++ b/components/lens/lens_features.cc
+@@ -23,7 +23,7 @@ BASE_FEATURE(kLensOverlay,
+ #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+              base::FEATURE_DISABLED_BY_DEFAULT
+ #else
+-             base::FEATURE_ENABLED_BY_DEFAULT
++             base::FEATURE_DISABLED_BY_DEFAULT
+ #endif
+ );
+ 
 diff --git a/components/omnibox/browser/omnibox_prefs.cc b/components/omnibox/browser/omnibox_prefs.cc
 index c9f108fcfa793..380fa2bbdb079 100644
 --- a/components/omnibox/browser/omnibox_prefs.cc

@@ -1,0 +1,15 @@
+diff --git a/v8/BUILD.gn b/v8/BUILD.gn
+index a19ec521254..3e7b59612b0 100644
+--- a/v8/BUILD.gn
++++ b/v8/BUILD.gn
+@@ -1748,10 +1748,6 @@ config("toolchain") {
+ 
+   if (v8_current_cpu == "x86") {
+     defines += [ "V8_TARGET_ARCH_IA32" ]
+-    if (is_win) {
+-      # Ensure no surprising artifacts from 80bit double math with x86.
+-      cflags += [ "/arch:SSE2" ]
+-    }
+   }
+   if (v8_current_cpu == "x64") {
+     defines += [ "V8_TARGET_ARCH_X64" ]

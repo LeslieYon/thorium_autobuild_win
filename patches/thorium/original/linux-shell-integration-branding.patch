@@ -1,0 +1,19 @@
+diff --git a/chrome/browser/shell_integration_linux.cc b/chrome/browser/shell_integration_linux.cc
+index 94c5e9be9e9a4..3ca3b89331de6 100644
+--- a/chrome/browser/shell_integration_linux.cc
++++ b/chrome/browser/shell_integration_linux.cc
+@@ -1,4 +1,4 @@
+-// Copyright 2012 The Chromium Authors
++// Copyright 2026 The Chromium Authors and Alex313031
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -461,7 +461,7 @@ std::string GetIconName() {
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+   return "google-chrome";
+ #else  // BUILDFLAG(CHROMIUM_BRANDING)
+-  return "chromium-browser";
++  return "thorium-browser";
+ #endif
+ }
+ 

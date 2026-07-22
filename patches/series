@@ -38,11 +38,14 @@ thorium/original/add-ac3-eac3-ffmpeg-decoders.patch
 thorium/original/change-libavcodec-header.patch
 thorium/original/fix-policy-templates.patch
 thorium/original/ftp-support-thorium.patch
-thorium/original/thorium-2024-ui.patch
+# views-menu-delay must be BEFORE thorium-2024-ui-core (removes SPI_GETMENUSHOWDELAY line)
+thorium/original/views-menu-delay.patch
+thorium/original/thorium-2024-ui-core.patch
+thorium/original/thorium-2024-menu-interactions.patch
+thorium/original/windows-menu-style-overrides.patch
 thorium/original/mini_installer.patch
 thorium/original/open_in_same_tab.patch
 thorium/original/thorium_webui.patch
-thorium/original/win_updater.patch
 thorium/original/keyboard_shortcuts.patch
 #
 # === Additional patches (present in Thorium other/ but not in main patchThor path) ===
@@ -54,7 +57,7 @@ thorium/original/enable-hevc-ffmpeg-decoding.patch
 thorium/original/enable-webrtc-h265-l1t2-l1t3-by-default.patch
 thorium/original/enable-mpeg2-ac3-eac3-decoding.patch
 thorium/original/thorium-media-switches.patch
-thorium/original/widevine-cdm-host-verification.patch
+thorium/original/widevine-cdm-prebuilt-signatures.patch
 # Third-party patches (category 05)
 # ffmpeg-branding: ffmpeg_options.gni branding (Chrome -> Thorium)
 thorium/original/ffmpeg-branding.patch
@@ -64,8 +67,8 @@ thorium/original/widevine-cdm-support.patch
 thorium/original/thorium-search-engines-data.patch
 # abseil-bmi2-include-immintrin: Fix abseil BMI2 include for AVX2 builds
 thorium/original/abseil-bmi2-include-immintrin.patch
-# thorium-v8-simd-opts: V8 SIMD optimization flags
-thorium/original/thorium-v8-simd-opts.patch
+# v8-remove-local-sse2-override: Remove V8 local SSE2 override for compatibility
+thorium/original/v8-remove-local-sse2-override.patch
 # Branding, resources, defaults (category 20)
 # thorium/original/disable-fetching-field-trials.patch - removed, extra/core/bromite/disable-fetching-field-trials.patch covers same files
 thorium/original/thorium-blink-feature-defaults.patch
@@ -77,8 +80,11 @@ thorium/original/thorium-startup-logging.patch
 thorium/original/thorium-app-metadata-branding.patch
 thorium/original/thorium-theme-resources.patch
 thorium/original/thorium-app-vector-icons.patch
-thorium/original/thorium-app-grd-registration.patch
-thorium/original/default-apps-ublock-origin.patch
+thorium/original/preinstall-ublock-origin.patch
+thorium/original/bookmark-dialog-default-folder.patch
+thorium/original/increase-bookmark-open-prompt-threshold.patch
+thorium/original/tab-search-button-position.patch
+thorium/original/tab-search-button-pinning.patch
 thorium/original/bookmark-default-prefs.patch
 thorium/original/thorium-browser-ui-default-prefs.patch
 thorium/original/dom-distiller-reader-mode.patch
@@ -91,8 +97,8 @@ thorium/original/thorium-build-config-and-simd.patch
 thorium/original/thorium-root-build-targets.patch
 # thorium-build-platform-tools.patch: Platform toolchain adjustments
 thorium/original/thorium-build-platform-tools.patch
-# llvm-optimized-avx2-build.patch: LLVM/clang AVX2 optimization
-thorium/original/llvm-optimized-avx2-build.patch
+# llvm-optimized-toolchain-build.patch: LLVM/clang toolchain optimization
+thorium/original/llvm-optimized-toolchain-build.patch
 thorium/original/thorium-webui-image-resources.patch
 thorium/original/thorium-browser-resource-branding.patch
 thorium/original/thorium-ui-debug-shell.patch
@@ -113,9 +119,29 @@ thorium/original/enable-whats-new-by-default.patch
 thorium/original/restore_download_shelf.patch
 # disable-middle-click-paste-with-autoscroll: Split from thorium-2024-ui.patch
 thorium/original/disable-middle-click-paste-with-autoscroll.patch
+# New UI patches (category 50)
+thorium/original/classic-bookmarks.patch
+thorium/original/classic-omnibox.patch
+thorium/original/custom-tab-width.patch
+thorium/original/downloads-page-enhancements.patch
+thorium/original/enable-sharing-hub-page-action.patch
+thorium/original/expand-chrome-color-choices.patch
+thorium/original/new-tab-button-middle-click.patch
+thorium/original/new-tab-to-left-context-menu.patch
+thorium/original/prominent-active-tab-titles.patch
+thorium/original/rectangular-tabs.patch
+thorium/original/restore-tab-button.patch
+thorium/original/status-bubble-instant-expand.patch
+thorium/original/thorium-chrome-labs-experiments.patch
+thorium/original/thorium-debug-mode.patch
+thorium/original/thorium-first-run-welcome.patch
+thorium/original/thorium-internal-url-scheme-alias.patch
+thorium/original/thorium-internal-url-scheme-branding.patch
+thorium/original/thorium-views-vector-icons.patch
+thorium/original/toolbar-avatar-button-visibility.patch
+thorium/original/transparent-tabs.patch
 
 # Windows installer (category 60)
-thorium/original/thorium-mini-installer-manifest.patch
 # Windows support for thorium-flags.conf
 thorium/original/windows-thorium-flags-conf.patch
 
@@ -181,4 +207,3 @@ thorium/new/thorium-set-api-keys.patch
 # noto color emoji support (our custom patch, needs adaptation to 150)
 thorium/new/add-support-Noto-Color-Emoji.patch
 thorium/new/thorium-build-output-1.patch
-

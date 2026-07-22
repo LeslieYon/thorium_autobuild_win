@@ -1,0 +1,200 @@
+diff --git a/base/BUILD.gn b/base/BUILD.gn
+index 4dae6c29c574c..a2e1b6211c5df 100644
+--- a/base/BUILD.gn
++++ b/base/BUILD.gn
+@@ -1166,6 +1166,7 @@ component("base") {
+     "//build:chromecast_buildflags",
+     "//build:robolectric_buildflags",
+     "//third_party/abseil-cpp:absl",
++    "//ui/base:buildflags",
+   ]
+ 
+   sources += [
+@@ -2892,6 +2893,7 @@ buildflag_header("debugging_buildflags") {
+     "ENABLE_ALLOCATION_TRACE_RECORDER_FULL_REPORTING=$build_allocation_trace_recorder_full_reporting",
+     "PRINT_UNSYMBOLIZED_STACK_TRACES=$print_unsymbolized_stack_traces",
+     "ENABLE_CHECK_ELISION_WARNING=$enable_check_elision_warning",
++    "THORIUM_DEBUG=$thorium_debug",
+   ]
+ }
+ 
+diff --git a/base/check.cc b/base/check.cc
+index a91851e30eee2..4baf345deb7c2 100644
+--- a/base/check.cc
++++ b/base/check.cc
+@@ -337,6 +337,7 @@ std::ostream& CheckError::stream() {
+ }
+ 
+ CheckError::~CheckError() {
++#if !BUILDFLAG(THORIUM_DEBUG)
+   // TODO(crbug.com/40254046): Consider splitting out CHECK from DCHECK so that
+   // the destructor can be marked [[noreturn]] and we don't need to check
+   // severity in the destructor.
+@@ -354,6 +355,7 @@ CheckError::~CheckError() {
+   if (is_fatal) {
+     base::ImmediateCrash();
+   }
++#endif // !BUILDFLAG(THORIUM_DEBUG)
+ }
+ 
+ // Note: This function ends up in crash stack traces. If its full name changes,
+diff --git a/base/debug/debug.gni b/base/debug/debug.gni
+index 5b22ac50c50af..acbe6482224f1 100644
+--- a/base/debug/debug.gni
++++ b/base/debug/debug.gni
+@@ -26,6 +26,13 @@ declare_args() {
+   # Even if it's disabled we still collect some data, i.e. total number of
+   # allocations. All other data will be set to a default value.
+   build_allocation_trace_recorder_full_reporting = false
++
++  # A special build flag for the Thorium debug builds.
++  #
++  # This enables stack traces in logs and non-fatalizes DCHECKs.
++  # Ultimately, it should help users collect necessary data for browser issues
++  # without setting up a dedicated debugger.
++  thorium_debug = false
+ }
+ 
+ declare_args() {
+diff --git a/base/files/file_util_win.cc b/base/files/file_util_win.cc
+index ffb6b3ebb35dd..0ce1f343ff1a3 100644
+--- a/base/files/file_util_win.cc
++++ b/base/files/file_util_win.cc
+@@ -1116,8 +1116,9 @@ bool IsLink(const FilePath& file_path) {
+ }
+ 
+ bool GetFileInfo(const FilePath& file_path, File::Info* results) {
++#if !BUILDFLAG(THORIUM_DEBUG)
+   ScopedBlockingCall scoped_blocking_call(FROM_HERE, BlockingType::MAY_BLOCK);
+-
++#endif // !BUILDFLAG(THORIUM_DEBUG)
+   WIN32_FILE_ATTRIBUTE_DATA attr;
+   if (!GetFileAttributesEx(file_path.value().c_str(), GetFileExInfoStandard,
+                            &attr)) {
+diff --git a/base/logging.cc b/base/logging.cc
+index 726c5cb00266b..eb856a3ed1739 100644
+--- a/base/logging.cc
++++ b/base/logging.cc
+@@ -10,6 +10,7 @@
+ #include <algorithm>
+ #include <array>
+ #include <atomic>
++#include <cstdlib>
+ #include <cstring>
+ #include <ctime>
+ #include <iomanip>
+@@ -429,6 +430,7 @@ void WriteToFd(int fd, const char* data, size_t length) {
+ }
+ 
+ void SetLogFatalCrashKey(LogMessage* log_message) {
++#if !BUILDFLAG(THORIUM_DEBUG)
+   // In case of an out-of-memory condition, this code could be reentered when
+   // constructing and storing the key. Using a static is not thread-safe, but if
+   // multiple threads are in the process of a fatal crash at the same time, this
+@@ -445,6 +447,7 @@ void SetLogFatalCrashKey(LogMessage* log_message) {
+   static auto* const crash_key = base::debug::AllocateCrashKeyString(
+       "LOG_FATAL", base::debug::CrashKeySize::Size1024);
+   base::debug::SetCrashKeyString(crash_key, log_message->BuildCrashString());
++#endif // !BUILDFLAG(THORIUM_DEBUG)
+ }
+ 
+ std::string BuildCrashString(const char* file,
+@@ -554,10 +557,24 @@ int GetMinLogLevel() {
+   return g_min_log_level;
+ }
+ 
++bool IsVerbose() {
++  const char* const env = std::getenv("THORIUM_DEBUG");
++  const std::string_view env_str =
++      env ? std::string_view(env) : std::string_view();
++  if (env_str == "1" || env_str == "true" || env_str == "TRUE") {
++    return true;
++  } else {
++    return false;
++  }
++}
++
+ bool ShouldCreateLogMessage(int severity) {
+   if (severity < g_min_log_level) {
+     return false;
+   }
++  if (IsVerbose()) {
++    return true;
++  }
+ 
+   // Return true here unless we know ~LogMessage won't do anything.
+   return g_logging_destination != LOG_NONE || g_log_message_handler ||
+@@ -569,7 +586,7 @@ bool ShouldCreateLogMessage(int severity) {
+ // set, or only LOG_TO_FILE is set, since that is useful for local development
+ // and debugging.
+ bool ShouldLogToStderr(int severity) {
+-  if (g_logging_destination & LOG_TO_STDERR) {
++  if (g_logging_destination & LOG_TO_STDERR || IsVerbose()) {
+     return true;
+   }
+ 
+@@ -680,7 +697,7 @@ void DisplayDebugMessageInDialog(std::string_view str) {
+   // You can just look at stderr.
+   if (base::win::IsUser32AndGdi32Available()) {
+     MessageBoxW(nullptr, base::as_wcstr(base::UTF8ToUTF16(str)), L"Fatal error",
+-                MB_OK | MB_ICONHAND | MB_TOPMOST);
++                MB_OK | MB_ICONERROR | MB_DEFBUTTON1 | MB_APPLMODAL);
+   } else {
+     OutputDebugStringW(base::as_wcstr(base::UTF8ToUTF16(str)));
+   }
+@@ -701,8 +718,11 @@ void LogMessage::Flush() {
+   // Don't let actions from this method affect the system error after returning.
+   base::ScopedClearLastError scoped_clear_last_error;
+ 
++#if !BUILDFLAG(THORIUM_DEBUG)
+   size_t stack_start = stream_.view().length();
+-#if !defined(OFFICIAL_BUILD) && !defined(__UCLIBC__) && !BUILDFLAG(IS_AIX)
++#endif // !BUILDFLAG(THORIUM_DEBUG)
++#if (!defined(OFFICIAL_BUILD) || BUILDFLAG(THORIUM_DEBUG)) && \
++    !defined(__UCLIBC__) && !BUILDFLAG(IS_AIX)
+   // Include a stack trace on a fatal, unless a debugger is attached.
+   if (severity_ == LOGGING_FATAL && !base::debug::BeingDebugged()) {
+     base::debug::StackTrace stack_trace;
+@@ -736,6 +756,7 @@ void LogMessage::Flush() {
+   std::string str_newline(stream_.str());
+   TraceLogMessage(file_, line_, str_newline.substr(message_start_));
+ 
++#if !BUILDFLAG(THORIUM_DEBUG)
+   // FATAL messages should always run the assert handler and crash, even if a
+   // message handler marks them as otherwise handled.
+   absl::Cleanup handle_fatal_message = [&] {
+@@ -747,6 +768,7 @@ void LogMessage::Flush() {
+   if (severity_ == LOGGING_FATAL) {
+     SetLogFatalCrashKey(this);
+   }
++#endif // !BUILDFLAG(THORIUM_DEBUG)
+ 
+   // Give any log message handler first dibs on the message.
+   if (g_log_message_handler &&
+diff --git a/base/logging.h b/base/logging.h
+index 2d72f112e9b9f..567503f15f329 100644
+--- a/base/logging.h
++++ b/base/logging.h
+@@ -225,6 +225,9 @@ BASE_EXPORT void SetMinLogLevel(int level);
+ // Gets the current log level.
+ BASE_EXPORT int GetMinLogLevel();
+ 
++// Whether to always log in verbose mode
++BASE_EXPORT bool IsVerbose();
++
+ // Used by LOG_IS_ON to lazy-evaluate stream arguments.
+ BASE_EXPORT bool ShouldCreateLogMessage(int severity);
+ 
+diff --git a/content/browser/renderer_host/render_process_host_impl.cc b/content/browser/renderer_host/render_process_host_impl.cc
+index 773173cd93819..3e8c4db4f1edb 100644
+--- a/content/browser/renderer_host/render_process_host_impl.cc
++++ b/content/browser/renderer_host/render_process_host_impl.cc
+@@ -4019,7 +4019,7 @@ void RenderProcessHostImpl::PropagateBrowserCommandLineToRenderer(
+     }
+   }
+ 
+-#if BUILDFLAG(IS_WIN) && !defined(OFFICIAL_BUILD)
++#if BUILDFLAG(IS_WIN) && !defined(OFFICIAL_BUILD) || BUILDFLAG(THORIUM_DEBUG)
+   // Needed because we can't show the dialog from the sandbox. Don't pass
+   // --no-sandbox in official builds because that would bypass the bad_flgs
+   // prompt.

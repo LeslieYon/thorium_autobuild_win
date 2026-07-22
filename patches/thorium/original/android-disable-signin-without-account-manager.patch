@@ -1,0 +1,168 @@
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninAndHistorySyncActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninAndHistorySyncActivity.java
+index d250a3314fd94..3c6d25a34f1f4 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninAndHistorySyncActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninAndHistorySyncActivity.java
+@@ -359,10 +359,12 @@ public class SigninAndHistorySyncActivity extends FullscreenSigninAndHistorySync
+                                 return;
+                             }
+                             if (intent == null) {
+-                                // AccountManagerFacade couldn't create the intent, use SigninUtils
+-                                // to open settings instead.
+                                 SigninMetricsUtils.logAddAccountStateHistogram(State.FAILED);
+-                                SigninUtils.openSettingsForAllAccounts(this);
++                                if (AccountManagerFacadeProvider.hasAccountManagerDelegate()) {
++                                    // AccountManagerFacade couldn't create the intent, use
++                                    // SigninUtils to open settings instead.
++                                    SigninUtils.openSettingsForAllAccounts(this);
++                                }
+                                 return;
+                             }
+                             SigninMetricsUtils.logAddAccountStateHistogram(State.STARTED);
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninBridge.java b/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninBridge.java
+index 54b9c64ae4725..31d1939c5c2c0 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninBridge.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninBridge.java
+@@ -145,6 +145,9 @@ final class SigninBridge {
+             boolean isWebSignin,
+             @SigninAccessPoint int accessPoint) {
+         ThreadUtils.assertOnUiThread();
++        if (!AccountManagerFacadeProvider.hasAccountManagerDelegate()) {
++            return;
++        }
+         WindowAndroid windowAndroid = tab.getWindowAndroid();
+         if (windowAndroid == null || !tab.isUserInteractable()) {
+             // The page is opened in the background, ignore the header. See
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninFirstRunFragment.java b/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninFirstRunFragment.java
+index 782efa1301f59..09af3ca35e3db 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninFirstRunFragment.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/signin/SigninFirstRunFragment.java
+@@ -211,9 +211,11 @@ public class SigninFirstRunFragment extends Fragment
+                                 return;
+                             }
+ 
+-                            // AccountManagerFacade couldn't create intent, use SigninUtils to open
+-                            // settings instead.
+-                            SigninUtils.openSettingsForAllAccounts(getActivity());
++                            if (AccountManagerFacadeProvider.hasAccountManagerDelegate()) {
++                                // AccountManagerFacade couldn't create intent, use SigninUtils to
++                                // open settings instead.
++                                SigninUtils.openSettingsForAllAccounts(getActivity());
++                            }
+                         });
+     }
+ 
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/sync/settings/AccountManagementFragment.java b/chrome/android/java/src/org/chromium/chrome/browser/sync/settings/AccountManagementFragment.java
+index a7dc77b9edfd2..44bbc1a706af3 100644
+--- a/chrome/android/java/src/org/chromium/chrome/browser/sync/settings/AccountManagementFragment.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/sync/settings/AccountManagementFragment.java
+@@ -299,7 +299,9 @@ public class AccountManagementFragment extends ChromeBaseSettingsFragment
+                 accountsCategory.addPreference(createAccountPreference(account));
+             }
+         }
+-        accountsCategory.addPreference(createAddAccountPreference());
++        if (AccountManagerFacadeProvider.hasAccountManagerDelegate()) {
++            accountsCategory.addPreference(createAddAccountPreference());
++        }
+         notifyPreferencesUpdated();
+     }
+ 
+@@ -370,7 +372,8 @@ public class AccountManagementFragment extends ChromeBaseSettingsFragment
+ 
+                                 if (intent != null) {
+                                     startActivity(intent);
+-                                } else {
++                                } else if (AccountManagerFacadeProvider
++                                        .hasAccountManagerDelegate()) {
+                                     // AccountManagerFacade couldn't create intent, use SigninUtils
+                                     // to open settings instead.
+                                     SigninUtils.openSettingsForAllAccounts(getActivity());
+diff --git a/chrome/browser/signin/services/android/java/src/org/chromium/chrome/browser/signin/services/SigninManagerImpl.java b/chrome/browser/signin/services/android/java/src/org/chromium/chrome/browser/signin/services/SigninManagerImpl.java
+index 31ac0eba8b42e..5c74638425c66 100644
+--- a/chrome/browser/signin/services/android/java/src/org/chromium/chrome/browser/signin/services/SigninManagerImpl.java
++++ b/chrome/browser/signin/services/android/java/src/org/chromium/chrome/browser/signin/services/SigninManagerImpl.java
+@@ -233,6 +233,9 @@ class SigninManagerImpl implements SigninManager, AccountsChangeObserver {
+ 
+     @Override
+     public boolean isSigninSupported(boolean requireUpdatedPlayServices) {
++        if (!AccountManagerFacadeProvider.hasAccountManagerDelegate()) {
++            return false;
++        }
+         if (requireUpdatedPlayServices) {
+             return ExternalAuthUtils.getInstance().canUseGooglePlayServices();
+         }
+diff --git a/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/fullscreen_signin/FullscreenSigninMediator.java b/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/fullscreen_signin/FullscreenSigninMediator.java
+index 61d5838e7059b..63350aa9fba05 100644
+--- a/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/fullscreen_signin/FullscreenSigninMediator.java
++++ b/chrome/browser/ui/android/signin/java/src/org/chromium/chrome/browser/ui/signin/fullscreen_signin/FullscreenSigninMediator.java
+@@ -369,7 +369,8 @@ public class FullscreenSigninMediator
+     }
+ 
+     private boolean isSigninSupported(Profile profile) {
+-        return ExternalAuthUtils.getInstance().canUseGooglePlayServices()
++        return AccountManagerFacadeProvider.hasAccountManagerDelegate()
++                && ExternalAuthUtils.getInstance().canUseGooglePlayServices()
+                 && UserPrefs.get(profile).getBoolean(Pref.SIGNIN_ALLOWED)
+                 && !mConfig.shouldDisableSignin;
+     }
+diff --git a/components/signin/internal/identity_manager/primary_account_manager.cc b/components/signin/internal/identity_manager/primary_account_manager.cc
+index e6ef4ee147774..ee10efb5e5c93 100644
+--- a/components/signin/internal/identity_manager/primary_account_manager.cc
++++ b/components/signin/internal/identity_manager/primary_account_manager.cc
+@@ -368,7 +368,11 @@ void PrimaryAccountManager::RegisterProfilePrefs(PrefRegistrySimple* registry) {
+       prefs::kGoogleServicesSyncingUsernameMigratedToSignedIn, std::string());
+   registry->RegisterIntegerPref(prefs::kGoogleServicesSyncingUserMigrationType,
+                                 /*SyncToSigninMigrationType::kUnknown=*/0);
+-  registry->RegisterBooleanPref(prefs::kSigninAllowed, true);
++#if BUILDFLAG(IS_ANDROID)
++   registry->RegisterBooleanPref(prefs::kSigninAllowed, false);
++#else
++   registry->RegisterBooleanPref(prefs::kSigninAllowed, true);
++#endif
+   registry->RegisterBooleanPref(prefs::kSignedInWithCredentialProvider, false);
+   registry->RegisterBooleanPref(prefs::kExplicitBrowserSignin, false);
+   registry->RegisterBooleanPref(
+diff --git a/components/signin/public/android/java/src/org/chromium/components/signin/AccountManagerFacadeProvider.java b/components/signin/public/android/java/src/org/chromium/components/signin/AccountManagerFacadeProvider.java
+index 779a09fee674c..b0f64537891be 100644
+--- a/components/signin/public/android/java/src/org/chromium/components/signin/AccountManagerFacadeProvider.java
++++ b/components/signin/public/android/java/src/org/chromium/components/signin/AccountManagerFacadeProvider.java
+@@ -22,10 +22,12 @@ public class AccountManagerFacadeProvider {
+     // Holder needed to avoid init on instrumentation thread in tests.
+     private static class Holder {
+         private static final AccountManagerFacade INSTANCE;
++        private static final boolean HAS_ACCOUNT_MANAGER_DELEGATE;
+ 
+         static {
+             AccountManagerDelegate delegate =
+                     ServiceLoaderUtil.maybeCreate(AccountManagerDelegate.class);
++            HAS_ACCOUNT_MANAGER_DELEGATE = delegate != null;
+             if (delegate == null) {
+                 delegate = new NullAccountManagerDelegate();
+             }
+@@ -58,4 +60,13 @@ public class AccountManagerFacadeProvider {
+         }
+         return Holder.INSTANCE;
+     }
++
++    /** Returns whether this build provides a functional platform account backend. */
++    @AnyThread
++    public static boolean hasAccountManagerDelegate() {
++        if (sInstanceForTesting != null) {
++            return true;
++        }
++        return Holder.HAS_ACCOUNT_MANAGER_DELEGATE;
++    }
+ }
+diff --git a/components/signin/public/android/java/src/org/chromium/components/signin/NullAccountManagerDelegate.java b/components/signin/public/android/java/src/org/chromium/components/signin/NullAccountManagerDelegate.java
+index fcf64ef942ddb..d426745545107 100644
+--- a/components/signin/public/android/java/src/org/chromium/components/signin/NullAccountManagerDelegate.java
++++ b/components/signin/public/android/java/src/org/chromium/components/signin/NullAccountManagerDelegate.java
+@@ -50,8 +50,7 @@ public class NullAccountManagerDelegate implements AccountManagerDelegate {
+     @Override
+     public void createAddAccountIntent(
+             @Nullable String prefilledEmail, Callback<@Nullable Intent> callback) {
+-        throw new UnsupportedOperationException(
+-                "NullAccountManagerDelegate does not implement createAddAccountIntent");
++        callback.onResult(null);
+     }
+ 
+     @Override

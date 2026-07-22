@@ -1,0 +1,13 @@
+diff --git a/chrome/browser/chrome_browser_main.cc b/chrome/browser/chrome_browser_main.cc
+index 057be98e715c6..89865a9d7fe82 100644
+--- a/chrome/browser/chrome_browser_main.cc
++++ b/chrome/browser/chrome_browser_main.cc
+@@ -1269,6 +1269,8 @@ int ChromeBrowserMainParts::PreCreateThreadsImpl() {
+   if (first_run::IsChromeFirstRun()) {
+     if (!base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kApp) &&
+         !base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kAppId)) {
++      // Open Welcome page on first run.
++      browser_creator_->AddFirstRunTabs({GURL("https://thorium.rocks/welcome/")});
+       browser_creator_->AddFirstRunTabs(master_prefs_->new_tabs);
+     }
+   }

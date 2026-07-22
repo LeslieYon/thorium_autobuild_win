@@ -26,6 +26,22 @@
      "Enable a new \"hybrid\" UI, which restores many parts of the pre-Chrome Refresh 2023 UI. Good for people "
      "who find the new UI ugly or harder to use.",
      kOsDesktop, FEATURE_VALUE_TYPE(features::kThorium2024)},
+    {"thorium-internal-url-scheme",
+     "Use thorium:// for internal URLs",
+     "Displays and copies internal browser URLs using the thorium:// alias. "
+     "The canonical internal scheme remains chrome://, and both schemes are "
+     "accepted.",
+     kOsDesktop | kOsAndroid,
+     FEATURE_VALUE_TYPE(features::kThoriumInternalUrlSchemeBranding)},
+#if !BUILDFLAG(IS_ANDROID)
+    {"left-aligned-tab-search-button",
+     "Left-Aligned Tab Search Button",
+     "Places the standalone Tab Search button on the physical left side of "
+     "the tab strip. The button is on the right by default. This does not "
+     "control the Horizontal Tab Strip Combo Button.",
+     kOsDesktop,
+     FEATURE_VALUE_TYPE(tabs::kThoriumLeftAlignedTabSearchButton)},
+#endif  // !BUILDFLAG(IS_ANDROID)
     {"restore-tab-button",
      "Restore Tab Button",
      "Enable a new toolbar button to restore your recently closed tabs.",
@@ -54,7 +70,7 @@
     {"extensions-menu-quick-toggles",
      "Extensions Menu Quick Toggles",
      "Shows a quick enable/disable section for installed extensions in the extensions menu.",
-     kOsDesktop, FEATURE_VALUE_TYPE(features::kExtensionsMenuQuickToggle)},     
+     kOsDesktop, FEATURE_VALUE_TYPE(features::kExtensionsMenuQuickToggle)},
 #endif  // BUILDFLAG(ENABLE_EXTENSIONS) && !BUILDFLAG(IS_ANDROID)
     {"classic-omnibox",
      "Classic Omnibox UI",
@@ -77,10 +93,12 @@
      "Disable Thorium Custom DNS Config",
      "Disables the custom DNS configuration used by default in Thorium. Useful when this config breaks something, "
      "due to external apps or a non-standard system DNS config setting.",
-     kOsDesktop, SINGLE_VALUE_TYPE("disable-thorium-dns-config")},    {"encrypted-client-hello",
+     kOsDesktop, SINGLE_VALUE_TYPE("disable-thorium-dns-config")},
+    {"encrypted-client-hello",
      "Encrypted ClientHello",
      "Controls whether Thorium allows TLS Encrypted ClientHello. Enabled still requires server support and usable HTTPS/SVCB DNS records.",
      kOsAll, MULTI_VALUE_TYPE(kEncryptedClientHelloChoices)},
+
 #if !BUILDFLAG(IS_ANDROID)
     {"show-component-extension-options",
      "Show Component Extension Options",

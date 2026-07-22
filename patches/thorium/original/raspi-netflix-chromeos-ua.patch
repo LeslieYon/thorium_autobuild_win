@@ -1,0 +1,25 @@
+diff --git a/components/embedder_support/user_agent_utils.cc b/components/embedder_support/user_agent_utils.cc
+index 74e6abbab7f30..4a3c3e2ca6bcd 100644
+--- a/components/embedder_support/user_agent_utils.cc
++++ b/components/embedder_support/user_agent_utils.cc
+@@ -422,6 +422,8 @@ std::string GetOSVersion(IncludeAndroidBuildNumber include_android_build_number,
+ #elif BUILDFLAG(IS_ANDROID)
+                       "%s%s", android_version_str.c_str(),
+                       android_info_str.c_str()
++#elif BUILDFLAG(IS_LINUX) && defined(ARCH_CPU_ARM64)
++                      "13597.84.0"
+ #else
+                       ""
+ #endif
+@@ -814,6 +816,11 @@ std::string BuildOSCpuInfoFromOSVersionAndCpuType(const std::string& os_version,
+ #elif BUILDFLAG(IS_IOS)
+                       "CPU %s OS %s like Mac OS X", cpu_type.c_str(),
+                       os_version.c_str()
++#elif BUILDFLAG(IS_LINUX) && defined(ARCH_CPU_ARM64)
++                      "CrOS "
++                      "%s %s",
++                      cpu_type.c_str(),
++                      os_version.c_str()
+ #elif BUILDFLAG(IS_POSIX)
+                       "%s %s",
+                       unixinfo.sysname,  // e.g. Linux

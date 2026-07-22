@@ -11,10 +11,10 @@ index 0f50c4d73e0cf..204179d257ed3 100644
  // Image items.
  #define IDC_CONTENT_CONTEXT_SAVEIMAGEAS 50120
 diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
-index c8aaca332d2ee..46264bc11768e 100644
+index 498c452d177f4..b759f76b3e848 100644
 --- a/chrome/app/generated_resources.grd
 +++ b/chrome/app/generated_resources.grd
-@@ -704,6 +704,9 @@ are declared in tools/grit/grit_args.gni.
+@@ -701,6 +701,9 @@ are declared in tools/grit/grit_args.gni.
            <message name="IDS_CONTENT_CONTEXT_OPENLINKNEWTAB" desc="The name of the Open Link in New Tab command in the content area context menu">
              Open link in new &amp;tab
            </message>
@@ -24,7 +24,7 @@ index c8aaca332d2ee..46264bc11768e 100644
            <message name="IDS_CONTENT_CONTEXT_OPENLINKNEWWINDOW" desc="The name of the Open Link in New Window command in the content area context menu">
              Open link in new &amp;window
            </message>
-@@ -1043,6 +1046,9 @@ are declared in tools/grit/grit_args.gni.
+@@ -1040,6 +1043,9 @@ are declared in tools/grit/grit_args.gni.
            <message name="IDS_CONTENT_CONTEXT_OPENLINKNEWTAB" desc="In Title Case: The name of the Open Link in New Tab command in the content area context menu">
              Open Link in New &amp;Tab
            </message>

@@ -1,0 +1,1067 @@
+diff --git a/chrome/app/settings_strings.grdp b/chrome/app/settings_strings.grdp
+index f050f0283ec03..9caf62a8198df 100644
+--- a/chrome/app/settings_strings.grdp
++++ b/chrome/app/settings_strings.grdp
+@@ -4041,6 +4041,27 @@
+       <message name="IDS_SETTINGS_SYSTEM" desc="Title of the system settings.">
+         System
+       </message>
++      <message name="IDS_SETTINGS_ENABLE_BOSS_KEY" desc="Label for enabling the boss key global shortcut in system settings.">
++        Enable boss key
++      </message>
++      <message name="IDS_SETTINGS_BOSS_KEY_SECTION_TITLE" desc="Title of the boss key card in system settings.">
++        Boss key
++      </message>
++      <message name="IDS_SETTINGS_BOSS_KEY_MUTE_BROWSERS" desc="Label for muting browser tabs while browser windows are hidden by the boss key.">
++        Mute all browsers when boss key is pressed
++      </message>
++      <message name="IDS_SETTINGS_BOSS_KEY_SHORTCUT_HINT" desc="Hint shown in the boss key shortcut input.">
++        Click and press a keyboard shortcut
++      </message>
++      <message name="IDS_SETTINGS_BOSS_KEY_SHORTCUT_INVALID" desc="Error shown when a boss key shortcut is invalid.">
++        Use a non-modifier key together with Ctrl, Alt, Shift, or Command
++      </message>
++      <message name="IDS_SETTINGS_BOSS_KEY_SHORTCUT_UNAVAILABLE" desc="Error shown when the operating system has rejected the boss key shortcut.">
++        This shortcut is unavailable or is already used by another application
++      </message>
++      <message name="IDS_BOSS_KEY_COMMAND_DESCRIPTION" desc="Description shown by the operating system for the boss key global shortcut.">
++        Hide or restore browser windows
++      </message>
+     </if>
+     <if expr="not is_chromeos">
+       <message name="IDS_SETTINGS_SYSTEM_HARDWARE_ACCELERATION_LABEL" desc="Label for the checkbox that forces Chrome to render via graphics acceleration (GPU) when available.">
+diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
+index 086c55c204ae6..99d70b84f6e06 100644
+--- a/chrome/browser/BUILD.gn
++++ b/chrome/browser/BUILD.gn
+@@ -1195,6 +1195,11 @@ source_set("core") {
+   }
+ 
+   if (is_win || is_mac || is_linux) {
++    sources += [
++      "boss_key/boss_key_service.cc",
++      "boss_key/boss_key_service.h",
++    ]
++
+     deps += [
+       "//chrome/browser/browser_switcher",
+       "//chrome/browser/ui/startup/default_browser_prompt",
+diff --git a/chrome/browser/boss_key/boss_key_service.cc b/chrome/browser/boss_key/boss_key_service.cc
+new file mode 100644
+index 0000000000000..b67102b7f340a
+--- /dev/null
++++ b/chrome/browser/boss_key/boss_key_service.cc
+@@ -0,0 +1,378 @@
++// Copyright 2026 The Thorium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/boss_key/boss_key_service.h"
++
++#include <utility>
++
++#include "base/functional/bind.h"
++#include "build/build_config.h"
++#include "chrome/browser/browser_process.h"
++#include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
++#include "chrome/browser/ui/browser_window/public/global_browser_collection.h"
++#include "chrome/grit/generated_resources.h"
++#include "components/prefs/pref_registry_simple.h"
++#include "components/prefs/pref_service.h"
++#include "components/tabs/public/tab_interface.h"
++#include "content/public/browser/web_contents.h"
++#include "ui/base/accelerators/command.h"
++#include "ui/base/l10n/l10n_util.h"
++#include "ui/base/base_window.h"
++#include "ui/events/event_constants.h"
++#include "ui/events/keycodes/dom/keycode_converter.h"
++#include "ui/events/keycodes/keyboard_code_conversion.h"
++#include "ui/gfx/native_ui_types.h"
++
++namespace boss_key {
++
++namespace {
++
++constexpr char kEnabledPref[] = "boss_key.enabled";
++constexpr char kMuteBrowsersPref[] = "boss_key.mute_browsers";
++constexpr char kShortcutCodePref[] = "boss_key.shortcut_code";
++constexpr char kShortcutModifiersPref[] = "boss_key.shortcut_modifiers";
++
++constexpr char kAcceleratorGroupId[] = "thorium-boss-key";
++constexpr char kAcceleratorProfileId[] = "local-state";
++constexpr char kCommandId[] = "toggle-boss-key";
++
++constexpr int kAllowedModifiers = ui::EF_CONTROL_DOWN | ui::EF_ALT_DOWN |
++                                  ui::EF_SHIFT_DOWN | ui::EF_COMMAND_DOWN;
++
++std::string ShortcutText(const std::string& code, int modifiers) {
++  std::string text;
++  if (modifiers & ui::EF_CONTROL_DOWN) {
++    text += "Ctrl+";
++  }
++  if (modifiers & ui::EF_ALT_DOWN) {
++    text += "Alt+";
++  }
++  if (modifiers & ui::EF_SHIFT_DOWN) {
++    text += "Shift+";
++  }
++  if (modifiers & ui::EF_COMMAND_DOWN) {
++    text += "Command+";
++  }
++
++  if (code.starts_with("Key") && code.size() == 4) {
++    text += code.substr(3);
++  } else if (code.starts_with("Digit") && code.size() == 6) {
++    text += code.substr(5);
++  } else {
++    text += code;
++  }
++  return text;
++}
++
++}  // namespace
++
++BossKeyService::MutedTabState::MutedTabState(
++    base::WeakPtr<tabs::TabInterface> tab,
++    bool was_muted)
++    : tab(std::move(tab)), was_muted(was_muted) {}
++BossKeyService::MutedTabState::MutedTabState(MutedTabState&&) = default;
++BossKeyService::MutedTabState& BossKeyService::MutedTabState::operator=(
++    MutedTabState&&) = default;
++BossKeyService::MutedTabState::~MutedTabState() = default;
++
++BossKeyService::BossKeyService() {
++  pref_registrar_.Init(g_browser_process->local_state());
++  pref_registrar_.Add(
++      kEnabledPref,
++      base::BindRepeating(&BossKeyService::OnHotkeyPrefsChanged,
++                          base::Unretained(this)));
++  pref_registrar_.Add(
++      kMuteBrowsersPref,
++      base::BindRepeating(&BossKeyService::OnMuteBrowsersPrefChanged,
++                          base::Unretained(this)));
++  pref_registrar_.Add(
++      kShortcutCodePref,
++      base::BindRepeating(&BossKeyService::OnHotkeyPrefsChanged,
++                          base::Unretained(this)));
++  pref_registrar_.Add(
++      kShortcutModifiersPref,
++      base::BindRepeating(&BossKeyService::OnHotkeyPrefsChanged,
++                          base::Unretained(this)));
++  UpdateHotkeyRegistration();
++}
++
++BossKeyService::~BossKeyService() {
++  UnregisterHotkey();
++}
++
++// static
++void BossKeyService::RegisterLocalStatePrefs(PrefRegistrySimple* registry) {
++  registry->RegisterBooleanPref(kEnabledPref, false);
++  registry->RegisterBooleanPref(kMuteBrowsersPref, true);
++  registry->RegisterStringPref(kShortcutCodePref, "CapsLock");
++  registry->RegisterIntegerPref(kShortcutModifiersPref,
++                                ui::EF_CONTROL_DOWN);
++}
++
++bool BossKeyService::enabled() const {
++  return g_browser_process->local_state()->GetBoolean(kEnabledPref);
++}
++
++bool BossKeyService::mute_browsers() const {
++  return g_browser_process->local_state()->GetBoolean(kMuteBrowsersPref);
++}
++
++std::string BossKeyService::shortcut_code() const {
++  return g_browser_process->local_state()->GetString(kShortcutCodePref);
++}
++
++int BossKeyService::shortcut_modifiers() const {
++  return g_browser_process->local_state()->GetInteger(
++      kShortcutModifiersPref);
++}
++
++std::string BossKeyService::shortcut_text() const {
++  return ShortcutText(shortcut_code(), shortcut_modifiers());
++}
++
++void BossKeyService::SetEnabled(bool enabled) {
++  g_browser_process->local_state()->SetBoolean(kEnabledPref, enabled);
++}
++
++void BossKeyService::SetMuteBrowsers(bool mute_browsers) {
++  g_browser_process->local_state()->SetBoolean(kMuteBrowsersPref,
++                                                mute_browsers);
++}
++
++bool BossKeyService::SetShortcut(const std::string& code, int modifiers) {
++  if (!AcceleratorFromSettings(code, modifiers).has_value()) {
++    return false;
++  }
++
++  updating_prefs_ = true;
++  PrefService* local_state = g_browser_process->local_state();
++  local_state->SetString(kShortcutCodePref, code);
++  local_state->SetInteger(kShortcutModifiersPref, modifiers);
++  updating_prefs_ = false;
++  UpdateHotkeyRegistration();
++  return true;
++}
++
++void BossKeyService::SetShortcutCaptureActive(bool active) {
++  shortcut_capture_active_ = active;
++}
++
++std::optional<ui::Accelerator> BossKeyService::AcceleratorFromSettings(
++    const std::string& code,
++    int modifiers) const {
++  if ((modifiers & ~kAllowedModifiers) != 0 ||
++      (modifiers & kAllowedModifiers) == 0) {
++    return std::nullopt;
++  }
++#if !BUILDFLAG(IS_MAC)
++  if (modifiers & ui::EF_COMMAND_DOWN) {
++    return std::nullopt;
++  }
++#endif
++
++  const ui::DomCode dom_code = ui::KeycodeConverter::CodeStringToDomCode(code);
++  const ui::KeyboardCode key_code =
++      ui::DomCodeToUsLayoutNonLocatedKeyboardCode(dom_code);
++  if (dom_code == ui::DomCode::NONE || key_code == ui::VKEY_UNKNOWN) {
++    return std::nullopt;
++  }
++
++  return ui::Accelerator(key_code, modifiers);
++}
++
++void BossKeyService::OnHotkeyPrefsChanged() {
++  if (updating_prefs_) {
++    return;
++  }
++
++  if (!enabled() && windows_hidden_) {
++    RestoreBrowsers();
++  }
++  UpdateHotkeyRegistration();
++}
++
++void BossKeyService::OnMuteBrowsersPrefChanged() {
++  if (!windows_hidden_) {
++    return;
++  }
++
++  if (mute_browsers() && muted_tabs_.empty()) {
++    MuteBrowserTabs();
++  } else if (!mute_browsers() && !muted_tabs_.empty()) {
++    RestoreBrowserTabs();
++  }
++}
++
++void BossKeyService::UpdateHotkeyRegistration() {
++  ui::GlobalAcceleratorListener* listener =
++      ui::GlobalAcceleratorListener::GetInstance();
++  if (!listener) {
++    registered_ = false;
++    return;
++  }
++
++  UnregisterHotkey();
++
++  if (!enabled()) {
++    return;
++  }
++
++  const std::optional<ui::Accelerator> accelerator =
++      AcceleratorFromSettings(shortcut_code(), shortcut_modifiers());
++  if (!accelerator.has_value()) {
++    return;
++  }
++
++  // Portal shortcuts remain registered while the input is focused. The
++  // callback is ignored during capture, avoiding repeated portal sessions.
++  if (listener->IsRegistrationHandledExternally()) {
++    ui::Command command(
++        kCommandId,
++        l10n_util::GetStringUTF16(IDS_BOSS_KEY_COMMAND_DESCRIPTION), true);
++    command.set_accelerator(*accelerator);
++    ui::CommandMap commands;
++    commands.emplace(kCommandId, std::move(command));
++    listener->OnCommandsChanged(
++        kAcceleratorGroupId, kAcceleratorProfileId, commands,
++        gfx::kNullAcceleratedWidget,
++        base::BindRepeating(&BossKeyService::ExecuteCommand,
++                            weak_ptr_factory_.GetWeakPtr()));
++    external_registration_active_ = true;
++    registered_ = true;
++    registered_accelerator_ = *accelerator;
++    return;
++  }
++
++  const bool was_suspended = listener->IsShortcutHandlingSuspended();
++  listener->SetShortcutHandlingSuspended(false);
++  registered_ = listener->RegisterAccelerator(*accelerator, this);
++  listener->SetShortcutHandlingSuspended(was_suspended);
++  if (registered_) {
++    registered_accelerator_ = *accelerator;
++  }
++}
++
++void BossKeyService::UnregisterHotkey() {
++  ui::GlobalAcceleratorListener* listener =
++      ui::GlobalAcceleratorListener::GetInstance();
++  if (!listener) {
++    registered_ = false;
++    external_registration_active_ = false;
++    return;
++  }
++
++  if (external_registration_active_) {
++    listener->OnCommandsChanged(
++        kAcceleratorGroupId, kAcceleratorProfileId, ui::CommandMap(),
++        gfx::kNullAcceleratedWidget,
++        base::BindRepeating(&BossKeyService::ExecuteCommand,
++                            weak_ptr_factory_.GetWeakPtr()));
++    external_registration_active_ = false;
++  } else if (registered_) {
++    listener->UnregisterAccelerator(registered_accelerator_, this);
++  }
++  registered_ = false;
++  registered_accelerator_ = ui::Accelerator();
++}
++
++void BossKeyService::OnKeyPressed(const ui::Accelerator& accelerator) {
++  if (!shortcut_capture_active_ && accelerator == registered_accelerator_) {
++    ToggleBrowsers();
++  }
++}
++
++void BossKeyService::ExecuteCommand(const std::string& accelerator_group_id,
++                                    const std::string& command_id) {
++  if (!shortcut_capture_active_ && accelerator_group_id == kAcceleratorGroupId &&
++      command_id == kCommandId) {
++    ToggleBrowsers();
++  }
++}
++
++void BossKeyService::ToggleBrowsers() {
++  if (windows_hidden_) {
++    RestoreBrowsers();
++  } else {
++    HideBrowsers();
++  }
++}
++
++void BossKeyService::HideBrowsers() {
++  hidden_window_ids_.clear();
++  active_window_id_.reset();
++
++  GlobalBrowserCollection* browsers = GlobalBrowserCollection::GetInstance();
++  if (BrowserWindowInterface* active = browsers->GetActiveBrowser()) {
++    active_window_id_ = active->GetSessionID();
++  }
++  browsers->ForEach([&](BrowserWindowInterface* browser) {
++    ui::BaseWindow* window = browser->GetWindow();
++    if (window && window->IsVisible()) {
++      hidden_window_ids_.push_back(browser->GetSessionID());
++      window->Hide();
++    }
++    return true;
++  });
++
++  if (hidden_window_ids_.empty()) {
++    return;
++  }
++  windows_hidden_ = true;
++  if (mute_browsers()) {
++    MuteBrowserTabs();
++  }
++}
++
++void BossKeyService::RestoreBrowsers() {
++  RestoreBrowserTabs();
++  for (const SessionID& id : hidden_window_ids_) {
++    if (BrowserWindowInterface* browser =
++            BrowserWindowInterface::FromSessionID(id)) {
++      if (ui::BaseWindow* window = browser->GetWindow()) {
++        window->ShowInactive();
++      }
++    }
++  }
++  if (active_window_id_.has_value()) {
++    if (BrowserWindowInterface* browser =
++            BrowserWindowInterface::FromSessionID(*active_window_id_)) {
++      if (ui::BaseWindow* window = browser->GetWindow()) {
++        window->Activate();
++      }
++    }
++  }
++  hidden_window_ids_.clear();
++  active_window_id_.reset();
++  windows_hidden_ = false;
++}
++
++void BossKeyService::MuteBrowserTabs() {
++  muted_tabs_.clear();
++  GlobalBrowserCollection::GetInstance()->ForEach(
++      [&](BrowserWindowInterface* browser) {
++        for (tabs::TabInterface* tab : browser->GetAllTabInterfaces()) {
++          content::WebContents* contents = tab->GetContents();
++          if (!contents) {
++            continue;
++          }
++          muted_tabs_.emplace_back(tab->GetWeakPtr(),
++                                   contents->IsAudioMuted());
++          contents->SetAudioMuted(true);
++        }
++        return true;
++      });
++}
++
++void BossKeyService::RestoreBrowserTabs() {
++  for (MutedTabState& state : muted_tabs_) {
++    if (state.tab) {
++      if (content::WebContents* contents = state.tab->GetContents()) {
++        contents->SetAudioMuted(state.was_muted);
++      }
++    }
++  }
++  muted_tabs_.clear();
++}
++
++}  // namespace boss_key
+diff --git a/chrome/browser/boss_key/boss_key_service.h b/chrome/browser/boss_key/boss_key_service.h
+new file mode 100644
+index 0000000000000..2b6a16237cf82
+--- /dev/null
++++ b/chrome/browser/boss_key/boss_key_service.h
+@@ -0,0 +1,97 @@
++// Copyright 2026 The Thorium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_BOSS_KEY_BOSS_KEY_SERVICE_H_
++#define CHROME_BROWSER_BOSS_KEY_BOSS_KEY_SERVICE_H_
++
++#include <optional>
++#include <string>
++#include <vector>
++
++#include "base/memory/weak_ptr.h"
++#include "components/prefs/pref_change_registrar.h"
++#include "components/sessions/core/session_id.h"
++#include "ui/base/accelerators/accelerator.h"
++#include "ui/base/accelerators/global_accelerator_listener/global_accelerator_listener.h"
++
++class PrefRegistrySimple;
++
++namespace tabs {
++class TabInterface;
++}
++
++namespace boss_key {
++
++// Owns the installation-wide boss key shortcut and the transient window/audio
++// state needed to restore the browser exactly as it was before it was hidden.
++class BossKeyService : public ui::GlobalAcceleratorListener::Observer {
++ public:
++  BossKeyService();
++  BossKeyService(const BossKeyService&) = delete;
++  BossKeyService& operator=(const BossKeyService&) = delete;
++  ~BossKeyService() override;
++
++  static void RegisterLocalStatePrefs(PrefRegistrySimple* registry);
++
++  bool enabled() const;
++  bool mute_browsers() const;
++  bool registered() const { return registered_; }
++  std::string shortcut_text() const;
++
++  void SetEnabled(bool enabled);
++  void SetMuteBrowsers(bool mute_browsers);
++  bool SetShortcut(const std::string& code, int modifiers);
++  void SetShortcutCaptureActive(bool active);
++
++  // ui::GlobalAcceleratorListener::Observer:
++  void OnKeyPressed(const ui::Accelerator& accelerator) override;
++  void ExecuteCommand(const std::string& accelerator_group_id,
++                      const std::string& command_id) override;
++
++ private:
++  std::string shortcut_code() const;
++  int shortcut_modifiers() const;
++
++  struct MutedTabState {
++    MutedTabState(base::WeakPtr<tabs::TabInterface> tab, bool was_muted);
++    MutedTabState(MutedTabState&&);
++    MutedTabState& operator=(MutedTabState&&);
++    ~MutedTabState();
++
++    base::WeakPtr<tabs::TabInterface> tab;
++    bool was_muted;
++  };
++
++  std::optional<ui::Accelerator> AcceleratorFromSettings(
++      const std::string& code,
++      int modifiers) const;
++  void OnHotkeyPrefsChanged();
++  void OnMuteBrowsersPrefChanged();
++  void UpdateHotkeyRegistration();
++  void UnregisterHotkey();
++
++  void ToggleBrowsers();
++  void HideBrowsers();
++  void RestoreBrowsers();
++  void MuteBrowserTabs();
++  void RestoreBrowserTabs();
++
++  PrefChangeRegistrar pref_registrar_;
++  ui::Accelerator registered_accelerator_;
++  bool registered_ = false;
++  bool external_registration_active_ = false;
++  bool shortcut_capture_active_ = false;
++  bool updating_prefs_ = false;
++  bool windows_hidden_ = false;
++
++  std::vector<SessionID> hidden_window_ids_;
++  std::optional<SessionID> active_window_id_;
++  std::vector<MutedTabState> muted_tabs_;
++
++  base::WeakPtrFactory<BossKeyService> weak_ptr_factory_{this};
++};
++
++}  // namespace boss_key
++
++#endif  // CHROME_BROWSER_BOSS_KEY_BOSS_KEY_SERVICE_H_
+diff --git a/chrome/browser/global_features.cc b/chrome/browser/global_features.cc
+index 465df1e1b9deb..52a36e8959a87 100644
+--- a/chrome/browser/global_features.cc
++++ b/chrome/browser/global_features.cc
+@@ -41,6 +41,7 @@
+ #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
+ // This causes a gn error on Android builds, because gn does not understand
+ // buildflags, so we include it only on platforms where it is used.
++#include "chrome/browser/boss_key/boss_key_service.h"
+ #include "chrome/browser/default_browser/default_browser_manager.h"
+ #include "chrome/browser/ui/startup/default_browser_prompt/default_browser_prompt_manager.h"
+ #include "chrome/browser/ui/webui/whats_new/whats_new_registrar.h"
+@@ -116,6 +117,10 @@ void GlobalFeatures::PostBrowserProcessInit() {
+ 
+   PostBrowserProcessInitCore();
+ 
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++  boss_key_service_ = std::make_unique<boss_key::BossKeyService>();
++#endif
++
+   // Create Glic global features for all users in case they are only
+   // temporarily ineligible (in which case we continue to show the entrypoint
+   // but surface IPH dialogs instead of the webclient).
+@@ -233,6 +238,10 @@ void GlobalFeatures::PostMainMessageLoopRun() {
+   profile_launch_observer_.reset();
+ #endif  // !BUILDFLAG(IS_ANDROID)
+ 
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++  boss_key_service_.reset();
++#endif
++
+ #if !BUILDFLAG(IS_ANDROID)
+   if (glic_background_mode_manager_) {
+     glic_background_mode_manager_->Shutdown();
+diff --git a/chrome/browser/global_features.h b/chrome/browser/global_features.h
+index 7a841145b6dc1..27c9748c2d8cb 100644
+--- a/chrome/browser/global_features.h
++++ b/chrome/browser/global_features.h
+@@ -20,6 +20,10 @@ class BrowserInfoBarManager;
+ 
+ class GlobalBrowserCollection;
+ 
++namespace boss_key {
++class BossKeyService;
++}
++
+ namespace system_permission_settings {
+ class PlatformHandle;
+ }  // namespace system_permission_settings
+@@ -143,6 +147,12 @@ class GlobalFeatures {
+   }
+ #endif
+ 
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++  boss_key::BossKeyService* boss_key_service() {
++    return boss_key_service_.get();
++  }
++#endif
++
+   glic::GlicProfileManager* glic_profile_manager() {
+     return glic_profile_manager_.get();
+   }
+@@ -231,6 +241,9 @@ class GlobalFeatures {
+   std::unique_ptr<default_browser::DefaultBrowserManager>
+       default_browser_manager_;
+ #endif
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++  std::unique_ptr<boss_key::BossKeyService> boss_key_service_;
++#endif
+ 
+   std::unique_ptr<glic::GlicGlobalEnabling> glic_global_enabling_;
+   std::unique_ptr<glic::GlicProfileManager> glic_profile_manager_;
+diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
+index e2f470d579aad..dd930abe9cb95 100644
+--- a/chrome/browser/prefs/browser_prefs.cc
++++ b/chrome/browser/prefs/browser_prefs.cc
+@@ -24,6 +24,9 @@
+ #include "chrome/browser/accessibility/page_colors_controller.h"
+ #include "chrome/browser/accessibility/prefers_default_scrollbar_styles_prefs.h"
+ #include "chrome/browser/browser_process_impl.h"
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++#include "chrome/browser/boss_key/boss_key_service.h"
++#endif
+ #include "chrome/browser/chrome_content_browser_client.h"
+ #include "chrome/browser/component_updater/component_updater_prefs.h"
+ #include "chrome/browser/download/download_prefs.h"
+@@ -1327,6 +1330,9 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
+   breadcrumbs::RegisterPrefs(registry);
+   browser_shutdown::RegisterPrefs(registry);
+   BrowserProcessImpl::RegisterPrefs(registry);
++#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX)
++  boss_key::BossKeyService::RegisterLocalStatePrefs(registry);
++#endif
+   ChromeContentBrowserClient::RegisterLocalStatePrefs(registry);
+ #if BUILDFLAG(CHROME_FOR_TESTING)
+   chrome_for_testing::RegisterPrefs(registry);
+diff --git a/chrome/browser/resources/settings/system_page/system_page.html b/chrome/browser/resources/settings/system_page/system_page.html
+index 55461800c1201..a58ee8c313864 100644
+--- a/chrome/browser/resources/settings/system_page/system_page.html
++++ b/chrome/browser/resources/settings/system_page/system_page.html
+@@ -3,11 +3,76 @@
+       margin-inline-start: 36px;
+     }
+ 
++    .boss-key-row {
++      align-items: center;
++      display: flex;
++      min-height: var(--cr-section-min-height);
++      padding: 0 var(--cr-section-padding);
++    }
++
++    .boss-key-row cr-checkbox {
++      flex: 1;
++    }
++
++    #bossKeyShortcut {
++      --cr-input-error-display: none;
++      width: 220px;
++    }
++
++    #bossKeyShortcut[invalid] {
++      --cr-input-error-display: block;
++    }
++
++    #bossKeyRegistrationError {
++      color: var(--cr-fallback-color-error);
++      padding: 0 var(--cr-section-padding) 12px;
++    }
++
++    #bossKeyRegistrationError[hidden] {
++      display: none;
++    }
++
+     #proxy-single-source-container {
+       display: flex;
+       flex: 1;
+     }
+   </style>
++  <settings-section page-title="$i18n{bossKeySectionTitle}"
++      class="cr-centered-card-container">
++    <div class="boss-key-row">
++      <cr-checkbox checked="{{bossKeyEnabled_}}"
++          on-change="onBossKeyEnabledChanged_">
++        $i18n{enableBossKeyLabel}
++      </cr-checkbox>
++      <cr-input id="bossKeyShortcut" readonly
++          aria-label="$i18n{bossKeyShortcutHint}"
++          disabled="[[!bossKeyEnabled_]]"
++          on-blur="onBossKeyShortcutBlur_"
++          on-focus="onBossKeyShortcutFocus_"
++          on-keydown="onBossKeyShortcutKeydown_"
++          placeholder="$i18n{bossKeyShortcutHint}"
++          value="[[bossKeyShortcut_]]"
++          invalid="[[bossKeyShortcutInvalid_]]"
++          error-message="$i18n{bossKeyShortcutInvalid}">
++      </cr-input>
++    </div>
++    <div id="bossKeyRegistrationError"
++        hidden$="[[!bossKeyRegistrationFailed_]]">
++      $i18n{bossKeyShortcutUnavailable}
++    </div>
++    <div class="hr"></div>
++    <div class="cr-row">
++      <div class="flex cr-row-text">
++        $i18n{bossKeyMuteBrowsersLabel}
++      </div>
++      <cr-toggle checked="{{bossKeyMuteBrowsers_}}"
++          disabled="[[!bossKeyEnabled_]]"
++          on-change="onBossKeyMuteBrowsersChanged_"
++          aria-label="$i18n{bossKeyMuteBrowsersLabel}">
++      </cr-toggle>
++    </div>
++  </settings-section>
++
+   <settings-section page-title="$i18n{systemPageTitle}"
+       class="cr-centered-card-container">
+ <if expr="not is_macosx">
+diff --git a/chrome/browser/resources/settings/system_page/system_page.ts b/chrome/browser/resources/settings/system_page/system_page.ts
+index 48555e95c2985..0b43e8529344a 100644
+--- a/chrome/browser/resources/settings/system_page/system_page.ts
++++ b/chrome/browser/resources/settings/system_page/system_page.ts
+@@ -8,6 +8,9 @@
+  */
+ 
+ import 'chrome://resources/cr_elements/cr_button/cr_button.js';
++import 'chrome://resources/cr_elements/cr_checkbox/cr_checkbox.js';
++import 'chrome://resources/cr_elements/cr_input/cr_input.js';
++import 'chrome://resources/cr_elements/cr_toggle/cr_toggle.js';
+ import 'chrome://resources/cr_elements/cr_icon_button/cr_icon_button.js';
+ import 'chrome://resources/cr_elements/policy/cr_policy_indicator.js';
+ import '/shared/settings/controls/cr_policy_pref_indicator.js';
+@@ -37,6 +40,7 @@ import type {OnDeviceAiBrowserProxy, OnDeviceAiEnabled} from './on_device_ai_bro
+ import {OnDeviceAiBrowserProxyImpl} from './on_device_ai_browser_proxy.js';
+ // </if>
+ import {getTemplate} from './system_page.html.js';
++import type {BossKeySettings} from './system_page_browser_proxy.js';
+ import {SystemPageBrowserProxyImpl} from './system_page_browser_proxy.js';
+ 
+ interface ProxyOverrideRule {
+@@ -93,6 +97,17 @@ export class SettingsSystemPageElement extends SettingsSystemPageElementBase
+       },
+       // </if>
+ 
++      bossKeyEnabled_: Boolean,
++      bossKeyMuteBrowsers_: Boolean,
++      bossKeyShortcut_: String,
++      bossKeyShortcutInvalid_: Boolean,
++      bossKeyRegistered_: Boolean,
++      bossKeyRegistrationFailed_: {
++        type: Boolean,
++        computed: 'computeBossKeyRegistrationFailed_(' +
++            'bossKeyEnabled_, bossKeyRegistered_)',
++      },
++
+       isProxyEnforcedByPolicy_: Boolean,
+       isProxyDefault_: Boolean,
+       isProxyEnforcedByMultipleSources_: Boolean,
+@@ -131,6 +146,12 @@ export class SettingsSystemPageElement extends SettingsSystemPageElementBase
+   private onDeviceAiBrowserProxy_: OnDeviceAiBrowserProxy =
+       OnDeviceAiBrowserProxyImpl.getInstance();
+   // </if>
++  declare private bossKeyEnabled_: boolean;
++  declare private bossKeyMuteBrowsers_: boolean;
++  declare private bossKeyShortcut_: string;
++  declare private bossKeyShortcutInvalid_: boolean;
++  declare private bossKeyRegistered_: boolean;
++  declare private bossKeyRegistrationFailed_: boolean;
+   declare private isProxyEnforcedByPolicy_: boolean;
+   declare private isProxyDefault_: boolean;
+   declare private isProxyEnforcedByMultipleSources_: boolean;
+@@ -152,15 +173,77 @@ export class SettingsSystemPageElement extends SettingsSystemPageElementBase
+   }
+   // </if>
+ 
+-  // <if expr="is_win">
+   override connectedCallback() {
+     super.connectedCallback();
++    SystemPageBrowserProxyImpl.getInstance().getBossKeySettings().then(
++        settings => this.applyBossKeySettings_(settings));
++    // <if expr="is_win">
+     CrSettingsPrefs.initialized.then(() => {
+       this.processIsolationEnabledAtStartup_ =
+           this.getPref<boolean>('isolation_state.enabled').value;
+     });
++    // </if>
++  }
++
++  private applyBossKeySettings_(settings: BossKeySettings) {
++    this.bossKeyEnabled_ = settings.enabled;
++    this.bossKeyMuteBrowsers_ = settings.muteBrowsers;
++    this.bossKeyShortcut_ = settings.shortcut;
++    this.bossKeyRegistered_ = settings.registered;
++  }
++
++  private onBossKeyShortcutBlur_() {
++    SystemPageBrowserProxyImpl.getInstance().setBossKeyCaptureActive(false);
++  }
++
++  private onBossKeyShortcutFocus_() {
++    if (!this.bossKeyEnabled_) {
++      return;
++    }
++    SystemPageBrowserProxyImpl.getInstance().setBossKeyCaptureActive(true);
++  }
++
++  private onBossKeyEnabledChanged_() {
++    if (!this.bossKeyEnabled_) {
++      this.bossKeyShortcutInvalid_ = false;
++      SystemPageBrowserProxyImpl.getInstance().setBossKeyCaptureActive(false);
++    }
++    SystemPageBrowserProxyImpl.getInstance()
++        .setBossKeyEnabled(this.bossKeyEnabled_)
++        .then(settings => this.applyBossKeySettings_(settings));
++  }
++
++  private onBossKeyMuteBrowsersChanged_() {
++    SystemPageBrowserProxyImpl.getInstance()
++        .setBossKeyMuteBrowsers(this.bossKeyMuteBrowsers_)
++        .then(settings => this.applyBossKeySettings_(settings));
++  }
++
++  private onBossKeyShortcutKeydown_(event: KeyboardEvent) {
++    if (!this.bossKeyEnabled_) {
++      return;
++    }
++    event.preventDefault();
++    event.stopPropagation();
++    if (['Alt', 'Control', 'Meta', 'Shift'].includes(event.key)) {
++      return;
++    }
++    let modifiers = 0;
++    modifiers |= event.shiftKey ? 1 << 1 : 0;
++    modifiers |= event.ctrlKey ? 1 << 2 : 0;
++    modifiers |= event.altKey ? 1 << 3 : 0;
++    modifiers |= event.metaKey ? 1 << 4 : 0;
++    SystemPageBrowserProxyImpl.getInstance()
++        .setBossKeyShortcut(event.code, modifiers)
++        .then(settings => {
++          this.bossKeyShortcutInvalid_ = !settings.shortcutValid;
++          this.applyBossKeySettings_(settings);
++        });
++  }
++
++  private computeBossKeyRegistrationFailed_(): boolean {
++    return this.bossKeyEnabled_ && !this.bossKeyRegistered_;
+   }
+-  // </if>
+ 
+   private observeProxyPrefChanged_() {
+     const pref = this.getPref('proxy');
+diff --git a/chrome/browser/resources/settings/system_page/system_page_browser_proxy.ts b/chrome/browser/resources/settings/system_page/system_page_browser_proxy.ts
+index 7773fa7ed4bb9..a7355b7f67ce6 100644
+--- a/chrome/browser/resources/settings/system_page/system_page_browser_proxy.ts
++++ b/chrome/browser/resources/settings/system_page/system_page_browser_proxy.ts
+@@ -3,12 +3,27 @@
+ // found in the LICENSE file.
+ 
+ /** @fileoverview Handles interprocess communication for the system page. */
++import {sendWithPromise} from 'chrome://resources/js/cr.js';
+ 
+ // clang-format on
+ import {loadTimeData} from '../i18n_setup.js';
+ // clang-format off
+ 
++export interface BossKeySettings {
++  enabled: boolean;
++  muteBrowsers: boolean;
++  registered: boolean;
++  shortcut: string;
++  shortcutValid: boolean;
++}
++
+ export interface SystemPageBrowserProxy {
++  getBossKeySettings(): Promise<BossKeySettings>;
++  setBossKeyEnabled(enabled: boolean): Promise<BossKeySettings>;
++  setBossKeyMuteBrowsers(mute: boolean): Promise<BossKeySettings>;
++  setBossKeyShortcut(code: string, modifiers: number): Promise<BossKeySettings>;
++  setBossKeyCaptureActive(active: boolean): void;
++
+   /** Shows the native system proxy settings. */
+   showProxySettings(): void;
+ 
+@@ -20,6 +35,27 @@ export interface SystemPageBrowserProxy {
+ }
+ 
+ export class SystemPageBrowserProxyImpl implements SystemPageBrowserProxy {
++  getBossKeySettings() {
++    return sendWithPromise<BossKeySettings>('getBossKeySettings');
++  }
++
++  setBossKeyEnabled(enabled: boolean) {
++    return sendWithPromise<BossKeySettings>('setBossKeyEnabled', enabled);
++  }
++
++  setBossKeyMuteBrowsers(mute: boolean) {
++    return sendWithPromise<BossKeySettings>('setBossKeyMuteBrowsers', mute);
++  }
++
++  setBossKeyShortcut(code: string, modifiers: number) {
++    return sendWithPromise<BossKeySettings>(
++        'setBossKeyShortcut', code, modifiers);
++  }
++
++  setBossKeyCaptureActive(active: boolean) {
++    chrome.send('setBossKeyCaptureActive', [active]);
++  }
++
+   showProxySettings() {
+     chrome.send('showProxySettings');
+   }
+diff --git a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+index b7b3ad9beb5f3..00f85ee0b69d2 100644
+--- a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
++++ b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
+@@ -4159,6 +4159,15 @@ void AddSiteDataPageStrings(content::WebUIDataSource* html_source,
+ void AddSystemStrings(content::WebUIDataSource* html_source) {
+   static constexpr webui::LocalizedString kLocalizedStrings[] = {
+       {"systemPageTitle", IDS_SETTINGS_SYSTEM},
++      {"bossKeySectionTitle", IDS_SETTINGS_BOSS_KEY_SECTION_TITLE},
++      {"enableBossKeyLabel", IDS_SETTINGS_ENABLE_BOSS_KEY},
++      {"bossKeyMuteBrowsersLabel",
++       IDS_SETTINGS_BOSS_KEY_MUTE_BROWSERS},
++      {"bossKeyShortcutHint", IDS_SETTINGS_BOSS_KEY_SHORTCUT_HINT},
++      {"bossKeyShortcutInvalid",
++       IDS_SETTINGS_BOSS_KEY_SHORTCUT_INVALID},
++      {"bossKeyShortcutUnavailable",
++       IDS_SETTINGS_BOSS_KEY_SHORTCUT_UNAVAILABLE},
+ #if !BUILDFLAG(IS_MAC)
+       {"backgroundAppsLabel", IDS_SETTINGS_SYSTEM_BACKGROUND_APPS_LABEL},
+ #endif
+diff --git a/chrome/browser/ui/webui/settings/system_handler.cc b/chrome/browser/ui/webui/settings/system_handler.cc
+index b781e81de7c04..a159f3558af98 100644
+--- a/chrome/browser/ui/webui/settings/system_handler.cc
++++ b/chrome/browser/ui/webui/settings/system_handler.cc
+@@ -8,7 +8,10 @@
+ #include "base/functional/callback_helpers.h"
+ #include "base/metrics/user_metrics.h"
+ #include "base/metrics/user_metrics_action.h"
++#include "base/values.h"
+ #include "chrome/browser/browser_process.h"
++#include "chrome/browser/boss_key/boss_key_service.h"
++#include "chrome/browser/global_features.h"
+ #include "chrome/browser/gpu/gpu_mode_manager.h"
+ #include "chrome/browser/ui/webui/settings/settings_utils.h"
+ #include "content/public/browser/web_ui.h"
+@@ -16,9 +19,30 @@
+ 
+ namespace settings {
+ 
++namespace {
++
++base::DictValue GetBossKeySettings(bool shortcut_valid = true) {
++  boss_key::BossKeyService* service =
++      g_browser_process->GetFeatures()->boss_key_service();
++  base::DictValue settings;
++  settings.Set("enabled", service->enabled());
++  settings.Set("muteBrowsers", service->mute_browsers());
++  settings.Set("registered", service->registered());
++  settings.Set("shortcut", service->shortcut_text());
++  settings.Set("shortcutValid", shortcut_valid);
++  return settings;
++}
++
++}  // namespace
++
+ SystemHandler::SystemHandler() = default;
+ 
+-SystemHandler::~SystemHandler() = default;
++SystemHandler::~SystemHandler() {
++  if (boss_key::BossKeyService* service =
++          g_browser_process->GetFeatures()->boss_key_service()) {
++    service->SetShortcutCaptureActive(false);
++  }
++}
+ 
+ // static
+ void SystemHandler::AddLoadTimeData(content::WebUIDataSource* data_source) {
+@@ -32,6 +56,26 @@ void SystemHandler::RegisterMessages() {
+       "showProxySettings",
+       base::BindRepeating(&SystemHandler::HandleShowProxySettings,
+                           base::Unretained(this)));
++  web_ui()->RegisterMessageCallback(
++      "getBossKeySettings",
++      base::BindRepeating(&SystemHandler::HandleGetBossKeySettings,
++                          base::Unretained(this)));
++  web_ui()->RegisterMessageCallback(
++      "setBossKeyEnabled",
++      base::BindRepeating(&SystemHandler::HandleSetBossKeyEnabled,
++                          base::Unretained(this)));
++  web_ui()->RegisterMessageCallback(
++      "setBossKeyMuteBrowsers",
++      base::BindRepeating(&SystemHandler::HandleSetBossKeyMuteBrowsers,
++                          base::Unretained(this)));
++  web_ui()->RegisterMessageCallback(
++      "setBossKeyShortcut",
++      base::BindRepeating(&SystemHandler::HandleSetBossKeyShortcut,
++                          base::Unretained(this)));
++  web_ui()->RegisterMessageCallback(
++      "setBossKeyCaptureActive",
++      base::BindRepeating(&SystemHandler::HandleSetBossKeyCaptureActive,
++                          base::Unretained(this)));
+ }
+ 
+ void SystemHandler::HandleShowProxySettings(const base::ListValue& args) {
+@@ -39,4 +83,45 @@ void SystemHandler::HandleShowProxySettings(const base::ListValue& args) {
+   settings_utils::ShowNetworkProxySettings(web_ui()->GetWebContents());
+ }
+ 
++void SystemHandler::HandleGetBossKeySettings(const base::ListValue& args) {
++  AllowJavascript();
++  ResolveJavascriptCallback(args[0], GetBossKeySettings());
++}
++
++void SystemHandler::HandleSetBossKeyEnabled(const base::ListValue& args) {
++  AllowJavascript();
++  g_browser_process->GetFeatures()->boss_key_service()->SetEnabled(
++      args[1].GetBool());
++  ResolveJavascriptCallback(args[0], GetBossKeySettings());
++}
++
++void SystemHandler::HandleSetBossKeyMuteBrowsers(
++    const base::ListValue& args) {
++  AllowJavascript();
++  g_browser_process->GetFeatures()->boss_key_service()->SetMuteBrowsers(
++      args[1].GetBool());
++  ResolveJavascriptCallback(args[0], GetBossKeySettings());
++}
++
++void SystemHandler::HandleSetBossKeyShortcut(const base::ListValue& args) {
++  AllowJavascript();
++  const bool valid =
++      g_browser_process->GetFeatures()->boss_key_service()->SetShortcut(
++          args[1].GetString(), args[2].GetInt());
++  ResolveJavascriptCallback(args[0], GetBossKeySettings(valid));
++}
++
++void SystemHandler::HandleSetBossKeyCaptureActive(
++    const base::ListValue& args) {
++  g_browser_process->GetFeatures()
++      ->boss_key_service()
++      ->SetShortcutCaptureActive(args[0].GetBool());
++}
++
++void SystemHandler::OnJavascriptDisallowed() {
++  g_browser_process->GetFeatures()
++      ->boss_key_service()
++      ->SetShortcutCaptureActive(false);
++}
++
+ }  // namespace settings
+diff --git a/chrome/browser/ui/webui/settings/system_handler.h b/chrome/browser/ui/webui/settings/system_handler.h
+index 7a7cc8844e8f5..cfbd10e5e5a08 100644
+--- a/chrome/browser/ui/webui/settings/system_handler.h
++++ b/chrome/browser/ui/webui/settings/system_handler.h
+@@ -28,11 +28,16 @@ class SystemHandler : public SettingsPageUIHandler {
+   // SettingsPageUIHandler:
+   void RegisterMessages() override;
+   void OnJavascriptAllowed() override {}
+-  void OnJavascriptDisallowed() override {}
++  void OnJavascriptDisallowed() override;
+ 
+  private:
+   // Handler for the "showProxySettings" message. No args.
+   void HandleShowProxySettings(const base::ListValue& args);
++  void HandleGetBossKeySettings(const base::ListValue& args);
++  void HandleSetBossKeyEnabled(const base::ListValue& args);
++  void HandleSetBossKeyMuteBrowsers(const base::ListValue& args);
++  void HandleSetBossKeyShortcut(const base::ListValue& args);
++  void HandleSetBossKeyCaptureActive(const base::ListValue& args);
+ };
+ 
+ }  // namespace settings

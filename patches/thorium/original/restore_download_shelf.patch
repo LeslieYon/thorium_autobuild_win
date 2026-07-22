@@ -1,8 +1,8 @@
 diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
-index 77a15c733cc98..c8aaca332d2ee 100644
+index 402d1d45bef22..498c452d177f4 100644
 --- a/chrome/app/generated_resources.grd
 +++ b/chrome/app/generated_resources.grd
-@@ -2291,6 +2291,10 @@ are declared in tools/grit/grit_args.gni.
+@@ -2288,6 +2288,10 @@ are declared in tools/grit/grit_args.gni.
           desc="Status that the file download will be opened when the download completes.">
          Opening when complete
        </message>
@@ -13,7 +13,7 @@ index 77a15c733cc98..c8aaca332d2ee 100644
        <message name="IDS_DOWNLOAD_STATUS_IN_PROGRESS_SHORT" desc="Short status text that appears on unknown-sized downloads in progress.">
          In progress
        </message>
-@@ -2335,6 +2339,14 @@ are declared in tools/grit/grit_args.gni.
+@@ -2332,6 +2336,14 @@ are declared in tools/grit/grit_args.gni.
           desc="Message shown to the user to validate the download when the download content is classified as uncommon by safebrowsing. This variant is shown when the user is enrolled in the Advanced Protection program.">
          <ph name="FILE_NAME">$1<ex>bla.exe</ex></ph> was blocked by Advanced Protection.
        </message>
@@ -28,7 +28,7 @@ index 77a15c733cc98..c8aaca332d2ee 100644
        <message name="IDS_PROMPT_DEEP_SCANNING_APP_DOWNLOAD"
          desc="Message shown in the download shelf when a download is being scanned for an Advanced Protection user">
          <ph name="FILE_NAME">$1<ex>bla.exe</ex></ph> is being scanned.
-@@ -2351,6 +2363,10 @@ are declared in tools/grit/grit_args.gni.
+@@ -2348,6 +2360,10 @@ are declared in tools/grit/grit_args.gni.
          desc="Message shown in the download shelf when a download is blocked for being encrypted">
          <ph name="FILE_NAME">$1<ex>bla.exe</ex></ph> is encrypted. Ask its owner to decrypt.
        </message>
@@ -39,7 +39,7 @@ index 77a15c733cc98..c8aaca332d2ee 100644
        <message name="IDS_PROMPT_DOWNLOAD_SENSITIVE_CONTENT_WARNING"
          desc="Message shown in the download shelf when a download contains sensitive content, and the admin has chosen to warn the user">
          Your organization's policies aren't met
-@@ -2530,6 +2546,15 @@ are declared in tools/grit/grit_args.gni.
+@@ -2527,6 +2543,15 @@ are declared in tools/grit/grit_args.gni.
        <message name="IDS_DOWNLOAD_NO_DOWNLOADS" desc="A message shown when the user has no downloads to show on chrome://downloads.">
          Files you download appear here
        </message>
@@ -55,7 +55,7 @@ index 77a15c733cc98..c8aaca332d2ee 100644
        <message name="IDS_DOWNLOAD_LINK_RESUME"
                 desc="In the download view, 'Resume' link text">
          Resume
-@@ -18357,6 +18382,37 @@ Please help our engineers fix this problem. Tell us what happened right before y
+@@ -18364,6 +18389,37 @@ Please help our engineers fix this problem. Tell us what happened right before y
        Data Sharing
      </message>
  
@@ -773,10 +773,10 @@ index b669d4f3ee5f3..5b8bb04a2fa99 100644
        "views/safe_browsing/tailored_security_desktop_dialog_manager.h",
        "views/safe_browsing/tailored_security_unconsented_modal.cc",
 diff --git a/chrome/browser/ui/browser.cc b/chrome/browser/ui/browser.cc
-index b6bcac3e84d22..db5e84795b137 100644
+index cf6ccbc1d44f7..677fc6547be6c 100644
 --- a/chrome/browser/ui/browser.cc
 +++ b/chrome/browser/ui/browser.cc
-@@ -995,6 +995,13 @@ std::vector<StatusBubble*> Browser::GetStatusBubblesForTesting() {
+@@ -1004,6 +1004,13 @@ std::vector<StatusBubble*> Browser::GetStatusBubblesForTesting() {
    return GetStatusBubbles();
  }
  
@@ -791,10 +791,10 @@ index b6bcac3e84d22..db5e84795b137 100644
    return profile();
  }
 diff --git a/chrome/browser/ui/browser.h b/chrome/browser/ui/browser.h
-index 718dda248e492..c61a9f62f3232 100644
+index dc7dc510df87b..3dead10c8c0fe 100644
 --- a/chrome/browser/ui/browser.h
 +++ b/chrome/browser/ui/browser.h
-@@ -705,6 +705,7 @@ class Browser : public TabStripModelObserver,
+@@ -706,6 +706,7 @@ class Browser : public TabStripModelObserver,
    Browser* GetBrowserForOpeningWebUi();
  
    std::vector<StatusBubble*> GetStatusBubblesForTesting();
@@ -905,10 +905,10 @@ index 7f51a0b1ba78c..75a4cf0f961b2 100644
    E_CPONLY(kColorDownloadToolbarButtonAnimationBackground) \
    E_CPONLY(kColorDownloadToolbarButtonAnimationForeground) \
 diff --git a/chrome/browser/ui/color/chrome_color_mixer.cc b/chrome/browser/ui/color/chrome_color_mixer.cc
-index bfdb6512f6de5..27eb3e1ca3a6d 100644
+index f6ff582becae7..f8d840f1c9be3 100644
 --- a/chrome/browser/ui/color/chrome_color_mixer.cc
 +++ b/chrome/browser/ui/color/chrome_color_mixer.cc
-@@ -366,10 +366,38 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
+@@ -371,10 +371,38 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
    mixer[kColorCastDialogHelpIcon] = {ui::kColorAccent};
    mixer[kColorDesktopMediaTabListBorder] = {ui::kColorMidground};
    mixer[kColorDesktopMediaTabListPreviewBackground] = {ui::kColorMidground};
@@ -947,7 +947,7 @@ index bfdb6512f6de5..27eb3e1ca3a6d 100644
    mixer[kColorDownloadToolbarButtonActive] =
        ui::PickGoogleColor(ui::kColorThrobber, kColorToolbar,
                            color_utils::kMinimumVisibleContrastRatio);
-@@ -1119,6 +1147,8 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
+@@ -1129,6 +1157,8 @@ void AddChromeColorMixer(ui::ColorProvider* provider,
    if (!ShouldApplyHighContrastColors(key)) {
      return;
    }
@@ -4361,3 +4361,37 @@ index b1bf0bcb52d5b..8231e4b7b5bb9 100644
    DownloadBubbleUIController* GetDownloadBubbleUIController() override;
    void ConfirmBrowserCloseWithPendingDownloads(
        int download_count,
+diff --git a/ui/base/ui_base_features.cc b/ui/base/ui_base_features.cc
+index bfaa6b1eb1861..a79aef2c7d28b 100644
+--- a/ui/base/ui_base_features.cc
++++ b/ui/base/ui_base_features.cc
+@@ -431,6 +431,14 @@ bool EnableRestoreTabButton() {
+ 
+ BASE_FEATURE(kBubbleMetricsApi, base::FEATURE_DISABLED_BY_DEFAULT);
+ 
++BASE_FEATURE(kDownloadShelf,
++             "DownloadShelf",
++             base::FEATURE_DISABLED_BY_DEFAULT);
++
++bool UseDownloadShelf() {
++  return base::FeatureList::IsEnabled(kDownloadShelf);
++}
++
+ #if BUILDFLAG(IS_WIN)
+ BASE_FEATURE(kUseGammaContrastRegistrySettings,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+diff --git a/ui/base/ui_base_features.h b/ui/base/ui_base_features.h
+index 75d351fefadef..c01b761e389f1 100644
+--- a/ui/base/ui_base_features.h
++++ b/ui/base/ui_base_features.h
+@@ -245,6 +245,10 @@ COMPONENT_EXPORT(UI_BASE_FEATURES) bool EnableRestoreTabButton();
+ COMPONENT_EXPORT(UI_BASE_FEATURES)
+ BASE_DECLARE_FEATURE(kBubbleMetricsApi);
+ 
++// Whether to use the old download shelf instead of new toolbar bubble UI
++COMPONENT_EXPORT(UI_BASE_FEATURES) BASE_DECLARE_FEATURE(kDownloadShelf);
++COMPONENT_EXPORT(UI_BASE_FEATURES) bool UseDownloadShelf();
++
+ #if BUILDFLAG(IS_WIN)
+ // Use font settings for contrast and gamma as specified in system settings.
+ // If not set, these values fall back to the pre-defined Skia defaults.

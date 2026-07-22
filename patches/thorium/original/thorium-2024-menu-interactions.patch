@@ -1,0 +1,39 @@
+diff --git a/ui/views/controls/menu/menu_config_mac.mm b/ui/views/controls/menu/menu_config_mac.mm
+index 88d9709480c3e..af4b8a924ebbc 100644
+--- a/ui/views/controls/menu/menu_config_mac.mm
++++ b/ui/views/controls/menu/menu_config_mac.mm
+@@ -40,9 +40,9 @@ void MenuConfig::InitPlatform() {
+         new gfx::PlatformFontMac(gfx::PlatformFontMac::SystemFontType::kMenu)));
+   }
+   check_selected_combobox_item = true;
+-  arrow_key_selection_wraps = false;
++  arrow_key_selection_wraps = thorium_2024;
+   use_mnemonics = false;
+-  show_context_menu_accelerators = false;
++  show_context_menu_accelerators = thorium_2024;
+   all_menus_use_prefix_selection = true;
+   if (thorium_2024) {
+     menu_horizontal_border_size = 1;
+diff --git a/ui/views/controls/menu/menu_config_win.cc b/ui/views/controls/menu/menu_config_win.cc
+index 0c02bb10cb17e..12752fea723b6 100644
+--- a/ui/views/controls/menu/menu_config_win.cc
++++ b/ui/views/controls/menu/menu_config_win.cc
+@@ -20,10 +20,14 @@ void MenuConfig::InitPlatform() {
+ 
+   const bool thorium_2024 = features::IsThorium2024();
+ 
+-  BOOL show_cues;
+-  show_mnemonics =
+-      (SystemParametersInfo(SPI_GETKEYBOARDCUES, 0, &show_cues, 0) &&
+-       show_cues == TRUE);
++  if (thorium_2024) {
++    show_mnemonics = true;
++  } else {
++    BOOL show_cues;
++    show_mnemonics =
++        (SystemParametersInfo(SPI_GETKEYBOARDCUES, 0, &show_cues, 0) &&
++         show_cues == TRUE);
++  }
+ 
+   static const bool is_win11 =
+       base::win::GetVersion() >= base::win::Version::WIN11;

@@ -1,0 +1,19 @@
+diff --git a/chrome/browser/ui/webui/cr_components/theme_color_picker/customize_chrome_colors.h b/chrome/browser/ui/webui/cr_components/theme_color_picker/customize_chrome_colors.h
+index a35723a40c9b7..0bac28b6cc76f 100644
+--- a/chrome/browser/ui/webui/cr_components/theme_color_picker/customize_chrome_colors.h
++++ b/chrome/browser/ui/webui/cr_components/theme_color_picker/customize_chrome_colors.h
+@@ -27,6 +27,14 @@ inline constexpr std::array kCustomizeChromeColorIds{
+     6,   // Yellow and white.
+     5,   // Beige and white.
+     1,   // Warm grey.
++    7,   // Green and white.
++    8,   // Light teal and white.
++    9,   // Light purple and white.
++    10,  // Pink and white.
++    11,  // Beige.
++    12,  // Orange.
++    18,  // Dark red and orange.
++    19,  // Dark green.
+ };
+ 
+ // The chrome colors selected and ordered by |kCustomizeChromeColorIds|.

@@ -1,4 +1,4 @@
-diff --git a/libavcodec/hevc/cabac.c b/libavcodec/hevc/cabac.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/cabac.c b/third_party/ffmpeg/libavcodec/hevc/cabac.c
 index 55d5741f87..f6bde3028f 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/cabac.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/cabac.c
@@ -11,7 +11,7 @@ index 55d5741f87..f6bde3028f 100644
  #include "data.h"
  #include "hevc.h"
  #include "hevcdec.h"
-diff --git a/libavcodec/hevc/dsp_template.c b/libavcodec/hevc/dsp_template.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/dsp_template.c b/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
 index e7b21127ba..d902a0ca6b 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/dsp_template.c
@@ -42,7 +42,7 @@ index e7b21127ba..d902a0ca6b 100644
  
  static void FUNC(hevc_loop_filter_luma)(uint8_t *_pix,
                                          ptrdiff_t _xstride, ptrdiff_t _ystride,
-diff --git a/libavcodec/hevc/filter.c b/libavcodec/hevc/filter.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/filter.c b/third_party/ffmpeg/libavcodec/hevc/filter.c
 index 68ae0e9ef6..e897ad5d58 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/filter.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/filter.c
@@ -55,7 +55,7 @@ index 68ae0e9ef6..e897ad5d58 100644
  
  #define LUMA 0
  #define CB 1
-diff --git a/libavcodec/hevc/hevcdec.c b/libavcodec/hevc/hevcdec.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/hevcdec.c b/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
 index 473899abc5..a0bc2537fb 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/hevcdec.c
@@ -98,7 +98,7 @@ index 473899abc5..a0bc2537fb 100644
  
  static const uint8_t hevc_pel_weight[65] = { [2] = 0, [4] = 1, [6] = 2, [8] = 3, [12] = 4, [16] = 5, [24] = 6, [32] = 7, [48] = 8, [64] = 9 };
  
-diff --git a/libavcodec/hevc/mvs.c b/libavcodec/hevc/mvs.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/mvs.c b/third_party/ffmpeg/libavcodec/hevc/mvs.c
 index 55f115ad0c..61c9e4e086 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/mvs.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/mvs.c
@@ -111,7 +111,7 @@ index 55f115ad0c..61c9e4e086 100644
  
  static const uint8_t l0_l1_cand_idx[12][2] = {
      { 0, 1, },
-diff --git a/libavcodec/hevc/parse.c b/libavcodec/hevc/parse.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/parse.c b/third_party/ffmpeg/libavcodec/hevc/parse.c
 index 29f21a5966..2f519380fb 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/parse.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/parse.c
@@ -126,7 +126,7 @@ index 29f21a5966..2f519380fb 100644
  #include "hevc.h"
  #include "parse.h"
  
-diff --git a/libavcodec/hevc/parser.c b/libavcodec/hevc/parser.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/parser.c b/third_party/ffmpeg/libavcodec/hevc/parser.c
 index 62bcd91172..af03925bad 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/parser.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/parser.c
@@ -149,7 +149,7 @@ index 62bcd91172..af03925bad 100644
  
  #define START_CODE 0x000001 ///< start_code_prefix_one_3bytes
  
-diff --git a/libavcodec/hevc/pred_template.c b/libavcodec/hevc/pred_template.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/pred_template.c b/third_party/ffmpeg/libavcodec/hevc/pred_template.c
 index e6069fd267..86870ed681 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/pred_template.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/pred_template.c
@@ -162,7 +162,7 @@ index e6069fd267..86870ed681 100644
  #include "pred.h"
  
  static void FUNC(ref_filter_3tap)(uint8_t *filtered_left,
-diff --git a/libavcodec/hevc/ps.c b/libavcodec/hevc/ps.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/ps.c b/third_party/ffmpeg/libavcodec/hevc/ps.c
 index f090a31803..6d3791ac9d 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/ps.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/ps.c
@@ -181,7 +181,7 @@ index f090a31803..6d3791ac9d 100644
  #include "libavutil/refstruct.h"
  
  static const uint8_t default_scaling_list_intra[] = {
-diff --git a/libavcodec/hevc/ps_enc.c b/libavcodec/hevc/ps_enc.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/ps_enc.c b/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
 index 7fbcb3ba4e..4e44f849ba 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/ps_enc.c
@@ -197,7 +197,7 @@ index 7fbcb3ba4e..4e44f849ba 100644
  
  static void write_ptl_layer(PutBitContext *pb, PTLCommon *ptl)
  {
-diff --git a/libavcodec/hevc/refs.c b/libavcodec/hevc/refs.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/refs.c b/third_party/ffmpeg/libavcodec/hevc/refs.c
 index 55db706a8a..248061fad7 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/refs.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/refs.c
@@ -216,7 +216,7 @@ index 55db706a8a..248061fad7 100644
  #include "libavutil/refstruct.h"
  
  void ff_hevc_unref_frame(HEVCFrame *frame, int flags)
-diff --git a/libavcodec/hevc/sei.c b/libavcodec/hevc/sei.c
+diff --git a/third_party/ffmpeg/libavcodec/hevc/sei.c b/third_party/ffmpeg/libavcodec/hevc/sei.c
 index e12803f1d3..83c726a217 100644
 --- a/third_party/ffmpeg/libavcodec/hevc/sei.c
 +++ b/third_party/ffmpeg/libavcodec/hevc/sei.c

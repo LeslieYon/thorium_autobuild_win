@@ -1,0 +1,13 @@
+diff --git a/third_party/xnnpack/build_defs.gni b/third_party/xnnpack/build_defs.gni
+index f12e9c7714e31..d3ac4c29feda1 100644
+--- a/third_party/xnnpack/build_defs.gni
++++ b/third_party/xnnpack/build_defs.gni
+@@ -16,7 +16,7 @@ xnn_defines = [
+   "XNN_ENABLE_SSSE3=1",
+   "XNN_ENABLE_SSE41=1",
+   "XNN_ENABLE_ARM_FP16_SCALAR=0",
+-  "XNN_ENABLE_ARM_FP16_VECTOR=0",
++  "XNN_ENABLE_ARM_FP16_VECTOR=1",
+   "XNN_ENABLE_ARM_BF16=0",
+ ]
+ 

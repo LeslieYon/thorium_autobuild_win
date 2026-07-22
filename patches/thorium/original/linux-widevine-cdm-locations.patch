@@ -1,0 +1,63 @@
+diff --git a/chrome/common/chrome_paths.cc b/chrome/common/chrome_paths.cc
+index af46f59fc2691..15767088c9a6d 100644
+--- a/chrome/common/chrome_paths.cc
++++ b/chrome/common/chrome_paths.cc
+@@ -308,6 +308,11 @@ bool PathProvider(int key, base::FilePath* result) {
+ 
+ #if BUILDFLAG(ENABLE_WIDEVINE)
+     case chrome::DIR_BUNDLED_WIDEVINE_CDM:
++      cur = base::FilePath(FILE_PATH_LITERAL("/opt"));
++      cur = cur.Append(kWidevineCdmBaseDirectory);
++      if (base::PathExists(cur)) {
++        break;
++      }
+       if (!GetComponentDirectory(&cur)) {
+         return false;
+       }
+diff --git a/chrome/common/media/cdm_registration.cc b/chrome/common/media/cdm_registration.cc
+index 46293c0a15611..ab4feab6fdcfd 100644
+--- a/chrome/common/media/cdm_registration.cc
++++ b/chrome/common/media/cdm_registration.cc
+@@ -60,9 +60,7 @@ namespace {
+ using Robustness = content::CdmInfo::Robustness;
+ 
+ #if BUILDFLAG(ENABLE_WIDEVINE)
+-#if (BUILDFLAG(BUNDLE_WIDEVINE_CDM) ||            \
+-     BUILDFLAG(ENABLE_WIDEVINE_CDM_COMPONENT)) && \
+-    (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS))
++#if BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ // Create a CdmInfo for a Widevine CDM, using |version|, |cdm_library_path|, and
+ // |capability|.
+ std::unique_ptr<content::CdmInfo> CreateWidevineCdmInfo(
+@@ -99,11 +97,9 @@ std::unique_ptr<content::CdmInfo> CreateCdmInfoFromWidevineDirectory(
+ 
+   return CreateWidevineCdmInfo(cdm_library_path, std::move(capability));
+ }
+-#endif  // (BUILDFLAG(BUNDLE_WIDEVINE_CDM) ||
+-        // BUILDFLAG(ENABLE_WIDEVINE_CDM_COMPONENT)) && (BUILDFLAG(IS_LINUX) ||
+-        // BUILDFLAG(IS_CHROMEOS))
++#endif  // BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
+ 
+-#if BUILDFLAG(BUNDLE_WIDEVINE_CDM) && \
++#if BUILDFLAG(ENABLE_WIDEVINE) && \
+     (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS))
+ // On Linux/ChromeOS we have to preload the CDM since it uses the zygote
+ // sandbox. On Windows and Mac, CDM registration is handled by Component
+@@ -124,7 +120,7 @@ std::unique_ptr<content::CdmInfo> GetBundledWidevine() {
+ 
+   return CreateCdmInfoFromWidevineDirectory(install_dir);
+ }
+-#endif  // BUILDFLAG(BUNDLE_WIDEVINE_CDM) &&
++#endif  // BUILDFLAG(ENABLE_WIDEVINE) &&
+         // (BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS))
+ 
+ #if (BUILDFLAG(ENABLE_WIDEVINE_CDM_COMPONENT) && \
+@@ -197,7 +193,7 @@ void AddSoftwareSecureWidevine(std::vector<content::CdmInfo>* cdms) {
+   // We should still use the version selected by Component Update (except for
+   // case #3 above).
+   std::unique_ptr<content::CdmInfo> bundled_widevine = nullptr;
+-#if BUILDFLAG(BUNDLE_WIDEVINE_CDM)
++#if BUILDFLAG(ENABLE_WIDEVINE)
+   bundled_widevine = GetBundledWidevine();
+ #endif
+ 

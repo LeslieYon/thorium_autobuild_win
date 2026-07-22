@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/ui/omnibox/omnibox_edit_model.cc b/chrome/browser/ui/omnibox/omnibox_edit_model.cc
-index 107796e919064..9286bbf4c29bd 100644
+index 2e2de8550800e..6317fac908973 100644
 --- a/chrome/browser/ui/omnibox/omnibox_edit_model.cc
 +++ b/chrome/browser/ui/omnibox/omnibox_edit_model.cc
-@@ -41,6 +41,7 @@
+@@ -42,6 +42,7 @@
  #include "chrome/browser/ui/omnibox/omnibox_popup_state_manager.h"
  #include "chrome/browser/ui/omnibox/omnibox_popup_view.h"
  #include "chrome/browser/ui/omnibox/omnibox_view.h"
@@ -10,7 +10,7 @@ index 107796e919064..9286bbf4c29bd 100644
  #include "chrome/common/chrome_features.h"
  #include "chrome/common/webui_url_constants.h"
  #include "chrome/grit/theme_resources.h"
-@@ -188,6 +189,22 @@ const char kKeywordModeUsageByEngineTypeEnteredHistogramName[] =
+@@ -189,6 +190,22 @@ const char kKeywordModeUsageByEngineTypeEnteredHistogramName[] =
  const char kKeywordModeUsageByEngineTypeAcceptedHistogramName[] =
      "Omnibox.KeywordModeUsageByEngineType.Accepted";
  
@@ -33,7 +33,7 @@ index 107796e919064..9286bbf4c29bd 100644
  void EmitEnteredKeywordModeHistogram(
      OmniboxEventProto::KeywordModeEntryMethod entry_method,
      const TemplateURL* turl,
-@@ -854,6 +871,8 @@ void OmniboxEditModel::OpenSelection(OmniboxPopupSelection selection,
+@@ -858,6 +875,8 @@ void OmniboxEditModel::OpenSelection(OmniboxPopupSelection selection,
                                       base::TimeTicks timestamp,
                                       WindowOpenDisposition disposition,
                                       bool via_keyboard) {
@@ -42,7 +42,7 @@ index 107796e919064..9286bbf4c29bd 100644
    controller_->StopAutocomplete(/*clear_result=*/false);
  
    base::UmaHistogramMicrosecondsTimes("Omnibox.InputToOpenSelection",
-@@ -2517,6 +2536,8 @@ void OmniboxEditModel::StepPopupSelection(
+@@ -2521,6 +2540,8 @@ void OmniboxEditModel::StepPopupSelection(
  
  void OmniboxEditModel::AcceptInput(WindowOpenDisposition disposition,
                                     base::TimeTicks match_selection_timestamp) {
@@ -52,7 +52,7 @@ index 107796e919064..9286bbf4c29bd 100644
    GURL alternate_nav_url;
    AutocompleteMatch match = CurrentMatchAndAlternateNavUrl(&alternate_nav_url);
 diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
-index 3966288dfbbf3..5748bc53a2024 100644
+index e344b0ab4ab14..1b70d0ec404b9 100644
 --- a/chrome/browser/ui/ui_features.cc
 +++ b/chrome/browser/ui/ui_features.cc
 @@ -171,6 +171,16 @@ BASE_FEATURE_PARAM(std::string,
