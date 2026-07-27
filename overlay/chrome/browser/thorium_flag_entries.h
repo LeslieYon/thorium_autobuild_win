@@ -33,6 +33,18 @@
      "accepted.",
      kOsDesktop | kOsAndroid,
      FEATURE_VALUE_TYPE(features::kThoriumInternalUrlSchemeBranding)},
+    {"disable-qr-code-generator",
+     "Disable QR Code Generator",
+     "Disables the QR code generator menu entries used to share page links. "
+     "The QRCodeGeneratorEnabled enterprise policy remains authoritative.",
+     kOsDesktop,
+     FEATURE_VALUE_TYPE(features::kThoriumDisableQRCodeGenerator)},
+    {"hide-cast-context-menu",
+     "Hide Cast Context Menu Item",
+     "Hides the Cast menu item from page and media context menus without "
+     "disabling Media Router or other Cast entry points.",
+     kOsDesktop,
+     FEATURE_VALUE_TYPE(features::kThoriumHideCastContextMenu)},
 #if !BUILDFLAG(IS_ANDROID)
     {"left-aligned-tab-search-button",
      "Left-Aligned Tab Search Button",
@@ -55,8 +67,9 @@
      "Force disables tab outline strokes. Thorium enables them by default, improving accessiblity in dark mode, incognito mode, and low contrast themes.",
      kOsDesktop, SINGLE_VALUE_TYPE("force-disable-tab-outlines")},
     {"disable-thorium-icons",
-     "Disable Thorium Top Bar Icons",
-     "Disables the custom colored top bar icons in Thorium, and restores the default grey Chromium icon colors.",
+     "Disable Thorium Custom Icons",
+     "Uses Chromium's default icon designs and colors instead of "
+     "Thorium's custom icons throughout the browser UI.",
      kOsDesktop, SINGLE_VALUE_TYPE("disable-thorium-icons")},
     {"disable-chrome-labs",
      "Disable Chrome Labs",

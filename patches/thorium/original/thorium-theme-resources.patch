@@ -1,5 +1,5 @@
 diff --git a/chrome/app/theme/theme_resources.grd b/chrome/app/theme/theme_resources.grd
-index 3d795c9030811..ddc44638de809 100644
+index 3d795c9030811..baf154ba17dfe 100644
 --- a/chrome/app/theme/theme_resources.grd
 +++ b/chrome/app/theme/theme_resources.grd
 @@ -163,7 +163,6 @@
@@ -36,12 +36,11 @@ index 3d795c9030811..ddc44638de809 100644
              </else>
            </if> <!-- is_linux -->
            <if expr="_is_chrome_for_testing_branded">
-@@ -206,6 +209,15 @@
+@@ -206,6 +209,14 @@
              <else> <!-- not _is_chrome_for_testing_branded -->
                <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_NAME_22" file="${branding_path_component}/product_logo_name_22.png" />
                <structure type="chrome_scaled_image" name="IDR_PRODUCT_LOGO_NAME_22_WHITE" file="${branding_path_component}/product_logo_name_22_white.png" />
 +              <structure type="chrome_scaled_image" name="IDR_PRODUCT_MASCOT" file="chromium/thorium_mascot.png" />
-+              <structure type="chrome_scaled_image" name="IDR_PRODUCT_NETERROR_FAVICON" file="chromium/dino_favicon.png" />
 +              <structure type="chrome_scaled_image" name="IDR_PRODUCT_ROBOT" file="chromium/technical_error.png" />
 +              <structure type="chrome_scaled_image" name="IDR_PRODUCT_AI_CHROME" file="chromium/ai_chrome.png" />
 +              <structure type="chrome_scaled_image" name="IDR_PRODUCT_CHROMIUM_BLANK" file="chromium/chromium_blank.png" />
@@ -52,3 +51,17 @@ index 3d795c9030811..ddc44638de809 100644
              </else>
            </if> <!-- _is_chrome_for_testing_branded -->
          </else>
+diff --git a/chrome/browser/resources/settings/about_page/about_page.html b/chrome/browser/resources/settings/about_page/about_page.html
+index 5069802bf7a17..106fbfa62a4ed 100644
+--- a/chrome/browser/resources/settings/about_page/about_page.html
++++ b/chrome/browser/resources/settings/about_page/about_page.html
+@@ -19,7 +19,9 @@
+       }
+ 
+       #product-logo {
++        height: 32px;
+         margin-inline-end: var(--about-page-image-space);
++        width: 32px;
+       }
+ 
+       .icon-container {

@@ -1,3 +1,25 @@
+diff --git a/base/version_info/nix/version_extra_utils.cc b/base/version_info/nix/version_extra_utils.cc
+index e48fbf29760fb..0cb25d08d5f6c 100644
+--- a/base/version_info/nix/version_extra_utils.cc
++++ b/base/version_info/nix/version_extra_utils.cc
+@@ -39,7 +39,7 @@ std::string GetAppName(base::Environment& env) {
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+   static constexpr std::string_view kAppName = "com.google.Chrome";
+ #else
+-  static constexpr std::string_view kAppName = "org.chromium.Chromium";
++  static constexpr std::string_view kAppName = "org.chromium.Thorium";
+ #endif
+ 
+   std::string_view suffix;
+@@ -64,7 +64,7 @@ std::string GetSessionNamePrefix(base::Environment& env) {
+ #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
+   static constexpr std::string_view kSessionNamePrefix = "chrome";
+ #else
+-  static constexpr std::string_view kSessionNamePrefix = "chromium";
++  static constexpr std::string_view kSessionNamePrefix = "thorium";
+ #endif
+ 
+   std::string_view suffix;
 diff --git a/chrome/browser/extensions/api/messaging/launch_context_win.cc b/chrome/browser/extensions/api/messaging/launch_context_win.cc
 index b4757546d8fc2..39eb4cf98d6d7 100644
 --- a/chrome/browser/extensions/api/messaging/launch_context_win.cc

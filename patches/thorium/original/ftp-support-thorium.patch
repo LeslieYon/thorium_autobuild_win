@@ -32,10 +32,10 @@ index 6fada0a2b1a1f..6b2ec4b67e015 100644
  			<key>CFBundleURLName</key>
  			<string>Local file URL</string>
 diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
-index 779262fae00af..95dbe0e3915e5 100644
+index 86731fd1704bc..fc8fda672f99b 100644
 --- a/chrome/app/generated_resources.grd
 +++ b/chrome/app/generated_resources.grd
-@@ -14901,6 +14901,9 @@ This can include information about installed software, files, your browser, the
+@@ -14907,6 +14907,9 @@ This can include information about installed software, files, your browser, the
        <message name="IDS_DIRECTORY_LISTING_DATE_MODIFIED" desc="When viewing a local directory, this is the text for the column above the last modified dates.">
          Date Modified
        </message>
@@ -46,10 +46,10 @@ index 779262fae00af..95dbe0e3915e5 100644
        <!-- Saving Page-->
        <message name="IDS_SAVE_PAGE_DESC_HTML_ONLY" desc="In the Save Page dialog, the description of saving only the HTML of a webpage.">
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
-index f888b7904d20b..c90acf5dc7efd 100644
+index a3c6b469ca0ef..3db603f5c2095 100644
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -8289,6 +8289,12 @@ const FeatureEntry kFeatureEntries[] = {
+@@ -8303,6 +8303,12 @@ const FeatureEntry kFeatureEntries[] = {
       FEATURE_VALUE_TYPE(
           heavy_ad_intervention::features::kHeavyAdPrivacyMitigations)},
  
@@ -63,19 +63,21 @@ index f888b7904d20b..c90acf5dc7efd 100644
      {"crostini-container-install",
       flag_descriptions::kCrostiniContainerInstallName,
 diff --git a/chrome/browser/flag_descriptions.h b/chrome/browser/flag_descriptions.h
-index c8f53c118f523..7b11234d3ea85 100644
+index 278c1b849a52d..dec4ef61ba959 100644
 --- a/chrome/browser/flag_descriptions.h
 +++ b/chrome/browser/flag_descriptions.h
-@@ -766,6 +766,13 @@ inline constexpr char kEnableDrDcDescription[] =
+@@ -766,6 +766,15 @@ inline constexpr char kEnableDrDcDescription[] =
      "(raster, webgl, video) "
      " continues using the gpu main thread.";
  
-+inline constexpr char kEnableFtpName[] = "Enable support for FTP URLs. Enabled by default. Thorium Flag.";
++inline constexpr char kEnableFtpName[] =
++    "Enable support for FTP URLs";
 +inline constexpr char kEnableFtpDescription[] =
 +    "When enabled, the browser will handle navigations to ftp:// URLs by "
 +    "either showing a directory listing or downloading the resource over FTP. "
 +    "When disabled, the browser has no special handling for ftp:// URLs and "
-+    "by default defers handling of the URL to the underlying platform.";
++    "by default defers handling of the URL to the underlying platform. This "
++    "Thorium flag is enabled by default.";
 +
  inline constexpr char kEnableFullscreenToAnyScreenAndroidName[] =
      "Enables use of the screen parameter for requestFullscreen.";
@@ -118,7 +120,7 @@ index c91cce0f0a87f..097de56c3b6f6 100644
  
    return network_context_params;
 diff --git a/chrome/browser/profiles/profile_io_data.cc b/chrome/browser/profiles/profile_io_data.cc
-index 3ffc9b793906c..3cd6597df28a8 100644
+index 3ffc9b793906c..c2f81e3dc43cc 100644
 --- a/chrome/browser/profiles/profile_io_data.cc
 +++ b/chrome/browser/profiles/profile_io_data.cc
 @@ -14,6 +14,7 @@
@@ -129,16 +131,20 @@ index 3ffc9b793906c..3cd6597df28a8 100644
  #include "url/gurl.h"
  
  #if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || \
-@@ -62,6 +63,9 @@ bool ProfileIOData::IsHandledProtocol(std::string_view scheme) {
-       webapps::kIsolatedAppScheme,
- #endif  // BUILDFLAG(IS_WIN) || BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) ||
+@@ -64,6 +65,13 @@ bool ProfileIOData::IsHandledProtocol(std::string_view scheme) {
          // BUILDFLAG(IS_CHROMEOS)
-+#if !BUILDFLAG(DISABLE_FTP_SUPPORT)
-+      url::kFtpScheme,
-+#endif  // !BUILDFLAG(DISABLE_FTP_SUPPORT)
    });
  
++#if !BUILDFLAG(DISABLE_FTP_SUPPORT)
++  if (scheme == url::kFtpScheme &&
++      base::FeatureList::IsEnabled(network::features::kFtpProtocol)) {
++    return true;
++  }
++#endif  // !BUILDFLAG(DISABLE_FTP_SUPPORT)
++
    return kProtocolList.contains(scheme);
+ }
+ 
 diff --git a/chrome/browser/ui/login/login_tab_helper.cc b/chrome/browser/ui/login/login_tab_helper.cc
 index 12e2c2c8925a5..f3f23aa8ca317 100644
 --- a/chrome/browser/ui/login/login_tab_helper.cc
@@ -230,6 +236,20 @@ index 406da12b8eda7..b75d68741c721 100644
        kChromeUIScheme,
        url::kFileScheme,
        url::kFileSystemScheme,
+diff --git a/content/browser/child_process_security_policy_impl.cc b/content/browser/child_process_security_policy_impl.cc
+index 6fde91c4db54d..e626c0d3454ab 100644
+--- a/content/browser/child_process_security_policy_impl.cc
++++ b/content/browser/child_process_security_policy_impl.cc
+@@ -1118,6 +1118,9 @@ void ChildProcessSecurityPolicyImpl::RegisterDefaultSchemes() {
+   RegisterWebSafeScheme(url::kWsScheme);
+   RegisterWebSafeScheme(url::kWssScheme);
+ #endif  // BUILDFLAG(ENABLE_WEBSOCKETS)
++#if !BUILDFLAG(DISABLE_FTP_SUPPORT)
++  RegisterWebSafeScheme(url::kFtpScheme);
++#endif  // !BUILDFLAG(DISABLE_FTP_SUPPORT)
+   RegisterWebSafeScheme(url::kDataScheme);
+ 
+   // TODO(nick): https://crbug.com/651534 blob: and filesystem: schemes embed
 diff --git a/content/public/common/content_switches.cc b/content/public/common/content_switches.cc
 index 7619a1bfcfdc5..f6f77a584041d 100644
 --- a/content/public/common/content_switches.cc
@@ -993,18 +1013,13 @@ index 0000000000000..f3546d9b7adb6
 +#endif  // NET_FTP_FTP_CTRL_RESPONSE_BUFFER_H_
 diff --git a/net/ftp/ftp_directory_listing_parser.cc b/net/ftp/ftp_directory_listing_parser.cc
 new file mode 100644
-index 0000000000000..14af28924c18c
+index 0000000000000..35c149b9bca38
 --- /dev/null
 +++ b/net/ftp/ftp_directory_listing_parser.cc
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,126 @@
 +// Copyright (c) 2011 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
-+
-+#ifdef UNSAFE_BUFFERS_BUILD
-+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-+#pragma allow_unsafe_buffers
-+#endif
 +
 +#include "net/ftp/ftp_directory_listing_parser.h"
 +
@@ -1069,10 +1084,10 @@ index 0000000000000..14af28924c18c
 +    },
 +  };
 +
-+  for (size_t i = 0; i < std::ranges::size(parsers); i++) {
++  for (auto& parser : parsers) {
 +    entries->clear();
-+    if (std::move(parsers[i].callback).Run()) {
-+      *server_type = parsers[i].server_type;
++    if (std::move(parser.callback).Run()) {
++      *server_type = parser.server_type;
 +      return FillInRawName(encoding, entries);
 +    }
 +  }
@@ -1098,9 +1113,9 @@ index 0000000000000..14af28924c18c
 +                            &converted_text)) {
 +    const char* const kNewlineSeparators[] = {"\n", "\r\n"};
 +
-+    for (size_t j = 0; j < std::ranges::size(kNewlineSeparators); j++) {
++    for (const char* newline_separator : kNewlineSeparators) {
 +      int rv = ParseListing(converted_text,
-+                            base::ASCIIToUTF16(kNewlineSeparators[j]),
++                            base::ASCIIToUTF16(newline_separator),
 +                            encoding_name, current_time, entries, server_type);
 +      if (rv == OK)
 +        return rv;
@@ -1450,18 +1465,13 @@ index 0000000000000..17285bd1ce2e7
 +#endif  // NET_FTP_FTP_DIRECTORY_LISTING_PARSER_LS_H_
 diff --git a/net/ftp/ftp_directory_listing_parser_vms.cc b/net/ftp/ftp_directory_listing_parser_vms.cc
 new file mode 100644
-index 0000000000000..45290c3c94d63
+index 0000000000000..bc4361967ff9e
 --- /dev/null
 +++ b/net/ftp/ftp_directory_listing_parser_vms.cc
-@@ -0,0 +1,313 @@
+@@ -0,0 +1,308 @@
 +// Copyright (c) 2012 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
-+
-+#ifdef UNSAFE_BUFFERS_BUILD
-+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-+#pragma allow_unsafe_buffers
-+#endif
 +
 +#include "net/ftp/ftp_directory_listing_parser_vms.h"
 +
@@ -1612,8 +1622,8 @@ index 0000000000000..45290c3c94d63
 +    "privilege",
 +  };
 +
-+  for (size_t i = 0; i < std::ranges::size(kPermissionDeniedMessages); i++) {
-+    if (text.find(base::ASCIIToUTF16(kPermissionDeniedMessages[i])) !=
++  for (const char* message : kPermissionDeniedMessages) {
++    if (text.find(base::ASCIIToUTF16(message)) !=
 +        std::u16string::npos)
 +      return true;
 +  }
@@ -2048,23 +2058,19 @@ index 0000000000000..d33c149e876ae
 +#endif  // NET_FTP_FTP_NETWORK_SESSION_H_
 diff --git a/net/ftp/ftp_network_transaction.cc b/net/ftp/ftp_network_transaction.cc
 new file mode 100644
-index 0000000000000..6dc9fd6086515
+index 0000000000000..fc6d64f4fbd83
 --- /dev/null
 +++ b/net/ftp/ftp_network_transaction.cc
-@@ -0,0 +1,1300 @@
+@@ -0,0 +1,1298 @@
 +// Copyright (c) 2012 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
-+
-+#ifdef UNSAFE_BUFFERS_BUILD
-+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-+#pragma allow_unsafe_buffers
-+#endif
 +
 +#include "net/ftp/ftp_network_transaction.h"
 +
 +#include <vector>
 +
++#include "base/containers/span.h"
 +#include "base/functional/bind.h"
 +#include "base/functional/callback_helpers.h"
 +#include "base/compiler_specific.h"
@@ -2559,8 +2565,10 @@ index 0000000000000..6dc9fd6086515
 +      base::MakeRefCounted<IOBufferWithSize>(command.length() + 2);
 +  write_buf_ = base::MakeRefCounted<DrainableIOBuffer>(
 +      write_command_buf_, write_command_buf_->size());
-+  memcpy(write_command_buf_->data(), command.data(), command.length());
-+  memcpy(write_command_buf_->data() + command.length(), kCRLF, 2);
++  base::span<uint8_t> command_buffer = write_command_buf_->span();
++  command_buffer.first(command.size()).copy_from(base::as_byte_span(command));
++  command_buffer.subspan(command.size())
++      .copy_from(base::byte_span_from_cstring(kCRLF));
 +
 +  net_log_.AddEventWithStringParams(NetLogEventType::FTP_COMMAND_SENT,
 +                                    "command", command_for_log);
@@ -3887,18 +3895,13 @@ index 0000000000000..9c482681e62dd
 +#endif  // NET_FTP_FTP_TRANSACTION_FACTORY_H_
 diff --git a/net/ftp/ftp_util.cc b/net/ftp/ftp_util.cc
 new file mode 100644
-index 0000000000000..e6deba973b010
+index 0000000000000..cbaa91831782c
 --- /dev/null
 +++ b/net/ftp/ftp_util.cc
-@@ -0,0 +1,377 @@
+@@ -0,0 +1,381 @@
 +// Copyright (c) 2011 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
-+
-+#ifdef UNSAFE_BUFFERS_BUILD
-+// TODO(crbug.com/40285824): Remove this and convert code to safer constructs.
-+#pragma allow_unsafe_buffers
-+#endif
 +
 +#include "net/ftp/ftp_util.h"
 +
@@ -3906,10 +3909,13 @@ index 0000000000000..e6deba973b010
 +#include <vector>
 +
 +#include "base/check_op.h"
++#include "base/compiler_specific.h"
++#include "base/containers/span.h"
 +#include "base/i18n/case_conversion.h"
 +#include "base/i18n/char_iterator.h"
 +#include "base/i18n/unicodestring.h"
 +#include "base/memory/singleton.h"
++#include "base/numerics/safe_conversions.h"
 +#include "base/strings/strcat.h"
 +#include "base/strings/string_number_conversions.h"
 +#include "base/strings/string_split.h"
@@ -4058,10 +4064,12 @@ index 0000000000000..e6deba973b010
 +    const icu::Locale* locales =
 +        icu::DateFormat::getAvailableLocales(locales_count);
 +
-+    for (int32_t locale = 0; locale < locales_count; locale++) {
++    const auto available_locales = UNSAFE_BUFFERS(
++        base::span(locales, base::checked_cast<size_t>(locales_count)));
++    for (const icu::Locale& locale : available_locales) {
 +      UErrorCode status(U_ZERO_ERROR);
 +
-+      icu::DateFormatSymbols format_symbols(locales[locale], status);
++      icu::DateFormatSymbols format_symbols(locale, status);
 +
 +      // If we cannot get format symbols for some locale, it's not a fatal
 +      // error. Just try another one.
@@ -4072,20 +4080,24 @@ index 0000000000000..e6deba973b010
 +      const icu::UnicodeString* months =
 +          format_symbols.getShortMonths(months_count);
 +
-+      for (int32_t month = 0; month < months_count; month++) {
++      const auto short_months = UNSAFE_BUFFERS(
++          base::span(months, base::checked_cast<size_t>(months_count)));
++      int month_number = 1;
++      for (const icu::UnicodeString& short_month : short_months) {
 +        std::u16string month_name(
-+            base::i18n::UnicodeStringToString16(months[month]));
++            base::i18n::UnicodeStringToString16(short_month));
 +
 +        // Ignore the case of the month names. The simplest way to handle that
 +        // is to make everything lowercase.
 +        month_name = base::i18n::ToLower(month_name);
 +
-+        map_[month_name] = month + 1;
++        map_[month_name] = month_number;
 +
 +        // Sometimes ICU returns longer strings, but in FTP listings a shorter
 +        // abbreviation is used (for example for the Russian locale). Make sure
 +        // we always have a map entry for a three-letter abbreviation.
-+        map_[month_name.substr(0, 3)] = month + 1;
++        map_[month_name.substr(0, 3)] = month_number;
++        ++month_number;
 +      }
 +    }
 +
@@ -4600,10 +4612,10 @@ index d1ff7329e9fcb..36e4379236c1d 100644
    bool suppress_setting_socket_performance_watcher_factory_for_testing_ = false;
 diff --git a/net/url_request/url_request_ftp_job.cc b/net/url_request/url_request_ftp_job.cc
 new file mode 100644
-index 0000000000000..c9f57d89b2384
+index 0000000000000..af18ffe25b1e1
 --- /dev/null
 +++ b/net/url_request/url_request_ftp_job.cc
-@@ -0,0 +1,325 @@
+@@ -0,0 +1,327 @@
 +// Copyright (c) 2012 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -4747,14 +4759,16 @@ index 0000000000000..c9f57d89b2384
 +    return;
 +  }
 +
-+  // Remove unsupported proxies from the list.
-+  proxy_info_.RemoveProxiesWithoutScheme(ProxyServer::SCHEME_QUIC);
-+
-+  if (proxy_info_.is_direct()) {
-+    StartFtpTransaction();
-+  } else {
-+    OnStartCompletedAsync(ERR_NO_SUPPORTED_PROXIES);
++  // Native FTP transactions support only direct connections. DIRECT is
++  // represented by an empty ProxyChain rather than a ProxyServer scheme.
++  for (const ProxyChain& proxy_chain : proxy_info_.proxy_list().AllChains()) {
++    if (proxy_chain.is_direct()) {
++      StartFtpTransaction();
++      return;
++    }
 +  }
++
++  OnStartCompletedAsync(ERR_NO_SUPPORTED_PROXIES);
 +}
 +
 +void URLRequestFtpJob::StartFtpTransaction() {
@@ -5106,7 +5120,7 @@ index 45c0a1a8977ca..2ff11ad1d61c6 100644
    bool reporting_enabled = base::FeatureList::IsEnabled(features::kReporting);
    if (reporting_enabled) {
 diff --git a/services/network/public/cpp/features.cc b/services/network/public/cpp/features.cc
-index f35a387444a9e..68119966280e3 100644
+index ddae47d2d6aca..a4ba276672d5e 100644
 --- a/services/network/public/cpp/features.cc
 +++ b/services/network/public/cpp/features.cc
 @@ -188,6 +188,12 @@ BASE_FEATURE_PARAM(bool,
@@ -5123,7 +5137,7 @@ index f35a387444a9e..68119966280e3 100644
  BASE_FEATURE(kCorsNonWildcardRequestHeadersSupport,
               base::FEATURE_DISABLED_BY_DEFAULT);
 diff --git a/services/network/public/cpp/features.h b/services/network/public/cpp/features.h
-index caaa7109c64b4..1d851d155d71b 100644
+index 4603a591f7ce5..6db9764cc6a08 100644
 --- a/services/network/public/cpp/features.h
 +++ b/services/network/public/cpp/features.h
 @@ -187,6 +187,9 @@ BASE_DECLARE_FEATURE(kFrameTopHeader);
@@ -5137,10 +5151,10 @@ index caaa7109c64b4..1d851d155d71b 100644
  // redirects, following 4.4. HTTP-redirect fetch:
  // https://fetch.spec.whatwg.org/#http-redirect-fetch
 diff --git a/services/network/public/cpp/simple_url_loader.cc b/services/network/public/cpp/simple_url_loader.cc
-index 1ac2f96364b60..3fdcb3a6b88a6 100644
+index d6924246efd56..a2fa0ca20003f 100644
 --- a/services/network/public/cpp/simple_url_loader.cc
 +++ b/services/network/public/cpp/simple_url_loader.cc
-@@ -1849,7 +1849,7 @@ void SimpleURLLoaderImpl::OnReceiveResponse(
+@@ -1878,7 +1878,7 @@ void SimpleURLLoaderImpl::OnReceiveResponse(
  
    // Assume a 200 response unless headers were received indicating otherwise.
    // No headers indicates this was not a real HTTP response (Could be a file

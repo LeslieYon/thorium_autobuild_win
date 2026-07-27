@@ -1,0 +1,91 @@
+diff --git a/chrome/browser/ui/qrcode_generator/qrcode_generator_bubble_controller.cc b/chrome/browser/ui/qrcode_generator/qrcode_generator_bubble_controller.cc
+index a0817fafe64dd..3409c93a3c3e5 100644
+--- a/chrome/browser/ui/qrcode_generator/qrcode_generator_bubble_controller.cc
++++ b/chrome/browser/ui/qrcode_generator/qrcode_generator_bubble_controller.cc
+@@ -10,6 +10,7 @@
+ #include "chrome/browser/ui/browser_window/public/browser_window_interface.h"
+ #include "chrome/browser/ui/browser_window/public/global_browser_collection.h"
+ #include "chrome/browser/ui/qrcode_generator/qrcode_generator_bubble_view.h"
++#include "chrome/browser/ui/ui_features.h"
+ #include "chrome/browser/ui/sharing_hub/sharing_hub_bubble_controller.h"
+ #include "chrome/browser/ui/views/qrcode_generator/qrcode_window_controller.h"
+ #include "chrome/common/pref_names.h"
+@@ -24,10 +25,15 @@ PrefService* GetPrefService() {
+   return g_browser_process ? g_browser_process->local_state() : nullptr;
+ }
+ 
+-// Returns whether the QR code generator is enabled by policy.
+-bool IsQRCodeGeneratorEnabledByPolicy() {
++// Returns whether the QR code generator is enabled by policy and Thorium's
++// user-facing flag.
++bool IsQRCodeGeneratorEnabled() {
+   const PrefService* prefs = GetPrefService();
+-  return !prefs || prefs->GetBoolean(prefs::kQRCodeGeneratorEnabled);
++  const bool enabled_by_policy =
++      !prefs || prefs->GetBoolean(prefs::kQRCodeGeneratorEnabled);
++  return enabled_by_policy &&
++         !base::FeatureList::IsEnabled(
++             features::kThoriumDisableQRCodeGenerator);
+ }
+ 
+ }  // namespace
+@@ -44,8 +50,8 @@ bool QRCodeGeneratorBubbleController::IsGeneratorAvailable(const GURL& url) {
+     return false;
+   }
+ 
+-  // Check policy.
+-  if (!IsQRCodeGeneratorEnabledByPolicy()) {
++  // Check policy and the user-facing feature.
++  if (!IsQRCodeGeneratorEnabled()) {
+     return false;
+   }
+ 
+@@ -68,8 +74,8 @@ void QRCodeGeneratorBubbleController::ShowBubble(const GURL& url,
+     return;
+   }
+ 
+-  // Check policy.
+-  if (!IsQRCodeGeneratorEnabledByPolicy()) {
++  // Check policy and the user-facing feature.
++  if (!IsQRCodeGeneratorEnabled()) {
+     return;
+   }
+ 
+@@ -136,7 +142,7 @@ void QRCodeGeneratorBubbleController::OnBackButtonPressed() {
+ }
+ 
+ void QRCodeGeneratorBubbleController::OnPolicyPrefChanged() {
+-  if (!IsQRCodeGeneratorEnabledByPolicy()) {
++  if (!IsQRCodeGeneratorEnabled()) {
+     HideBubble();
+   }
+ }
+diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
+index ac4674d331763..6da0b290218bc 100644
+--- a/chrome/browser/ui/ui_features.cc
++++ b/chrome/browser/ui/ui_features.cc
+@@ -199,6 +199,10 @@ BASE_FEATURE_PARAM(std::string,
+                    "mode",
+                    "foreground");
+ 
++// Disables the QR code generator entry points for sharing page links.
++BASE_FEATURE(kThoriumDisableQRCodeGenerator,
++             base::FEATURE_DISABLED_BY_DEFAULT);
++
+ #if BUILDFLAG(IS_WIN)
+ // Enables the UI for Process Isolation in chrome://settings/system.
+ BASE_FEATURE(kProcessIsolationSettings, base::FEATURE_DISABLED_BY_DEFAULT);
+diff --git a/chrome/browser/ui/ui_features.h b/chrome/browser/ui/ui_features.h
+index 18b9d852b7b64..9bb0af4ed0f77 100644
+--- a/chrome/browser/ui/ui_features.h
++++ b/chrome/browser/ui/ui_features.h
+@@ -392,6 +392,9 @@ BASE_DECLARE_FEATURE_PARAM(std::string, kOpenBookmarksInNewTabMode);
+ BASE_DECLARE_FEATURE(kOpenOmniboxUrlInNewTab);
+ BASE_DECLARE_FEATURE_PARAM(std::string, kOpenOmniboxUrlInNewTabMode);
+ 
++// Disables the QR code generator entry points for sharing page links.
++BASE_DECLARE_FEATURE(kThoriumDisableQRCodeGenerator);
++
+ BASE_DECLARE_FEATURE(kVerticalTabsGrabHandleRemoval);
+ BASE_DECLARE_FEATURE_PARAM(bool, kVerticalTabsGrabHandleRemovalAlways);
+ 

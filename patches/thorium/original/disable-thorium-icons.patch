@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/ui/browser_actions.cc b/chrome/browser/ui/browser_actions.cc
-index 5be3c74fb1d35..3122bb37ca9bd 100644
+index aa3427c786f00..1a19a3986e090 100644
 --- a/chrome/browser/ui/browser_actions.cc
 +++ b/chrome/browser/ui/browser_actions.cc
 @@ -11,6 +11,7 @@
@@ -10,7 +10,7 @@ index 5be3c74fb1d35..3122bb37ca9bd 100644
  #include "base/functional/bind.h"
  #include "base/functional/callback_helpers.h"
  #include "base/metrics/user_metrics.h"
-@@ -829,6 +830,9 @@ void BrowserActions::InitializeChromeMenuActions() {
+@@ -833,6 +834,9 @@ void BrowserActions::InitializeChromeMenuActions() {
    TabStripModel* const tab_strip_model = bwi_->GetTabStripModel();
    BrowserWindowInterface* const bwi = base::to_address(bwi_);
    const bool is_guest_session = profile->IsGuestSession();
@@ -20,7 +20,7 @@ index 5be3c74fb1d35..3122bb37ca9bd 100644
  
    root_action_item_->AddChild(
        ChromeMenuAction(
-@@ -841,8 +845,12 @@ void BrowserActions::InitializeChromeMenuActions() {
+@@ -845,8 +849,12 @@ void BrowserActions::InitializeChromeMenuActions() {
                profile),
            kActionNewIncognitoWindow, IDS_NEW_INCOGNITO_WINDOW,
            IDS_NEW_INCOGNITO_WINDOW,
@@ -35,7 +35,7 @@ index 5be3c74fb1d35..3122bb37ca9bd 100644
            .SetEnabled(IncognitoModePrefs::IsIncognitoAllowed(profile))
            .Build());
  
-@@ -997,9 +1005,11 @@ void BrowserActions::InitializeChromeMenuActions() {
+@@ -1001,9 +1009,11 @@ void BrowserActions::InitializeChromeMenuActions() {
                             bwi, is_incognito),
                         kActionClearBrowsingData, IDS_CLEAR_BROWSING_DATA,
                         IDS_CLEAR_BROWSING_DATA,
@@ -50,7 +50,7 @@ index 5be3c74fb1d35..3122bb37ca9bd 100644
            .SetEnabled(is_incognito ||
                        (!is_guest_session && !profile->IsSystemProfile()))
            .Build());
-@@ -1213,9 +1223,7 @@ void BrowserActions::InitializeChromeMenuActions() {
+@@ -1217,9 +1227,7 @@ void BrowserActions::InitializeChromeMenuActions() {
                  },
                  bwi),
              kActionShowChromeLabs, IDS_CHROMELABS, IDS_CHROMELABS,
@@ -323,7 +323,7 @@ index 95ad4098919a8..82f91a9db81d1 100644
                           kClearBrowsingDataMenuItem);
  
 diff --git a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
-index 5b4a2131316f4..17bec4a17837f 100644
+index 390bc2ae56136..ed6990a5bdc38 100644
 --- a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
 +++ b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
 @@ -4,6 +4,7 @@
@@ -357,6 +357,66 @@ index 5b4a2131316f4..17bec4a17837f 100644
          kColorExtensionMenuIcon, small_icon_size);
  
      button_builder.SetHorizontalAlignment(gfx::ALIGN_RIGHT)
+@@ -281,9 +287,15 @@ void ExtensionsMenuEntryView::UpdateContextMenuButton(
+     ExtensionsMenuViewModel::ControlState button_state) {
+   const int icon_size = ChromeLayoutProvider::Get()->GetDistanceMetric(
+       DISTANCE_EXTENSIONS_MENU_BUTTON_ICON_SIZE);
++  static const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   auto three_dot_icon = ui::ImageModel::FromVectorIcon(
+-      features::IsRoundedIconsEnabled() ? kMoreVertIcon
+-                                        : kBrowserToolsChromeRefreshOldIcon,
++      disable_thorium_icons
++          ? (features::IsRoundedIconsEnabled()
++                 ? kMoreVertIcon
++                 : kBrowserToolsChromeRefreshOldIcon)
++          : kBrowserToolsOldIcon,
+       kColorExtensionMenuIcon, icon_size);
+ 
+   // Show a pin button for the context menu normal state icon when the action is
+diff --git a/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc b/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
+index d0f3cd61eabe1..27b4c4e5cfb3d 100644
+--- a/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
++++ b/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
+@@ -8,6 +8,7 @@
+ #include <string>
+ #include <utility>
+ 
++#include "base/command_line.h"
+ #include "base/functional/bind.h"
+ #include "base/functional/callback_helpers.h"
+ #include "base/metrics/user_metrics.h"
+@@ -149,16 +150,23 @@ ExtensionMenuItemView::ExtensionMenuItemView(
+                       view_model_->GetActionName()))
+                   .SetImageModel(views::Button::STATE_NORMAL,
+                                  ui::ImageModel::FromVectorIcon(
+-                                     features::IsRoundedIconsEnabled()
+-                                         ? kMoreVertIcon
+-                                         : kBrowserToolsChromeRefreshOldIcon,
++                                     base::CommandLine::ForCurrentProcess()
++                                             ->HasSwitch(
++                                                 "disable-thorium-icons")
++                                         ? (features::IsRoundedIconsEnabled()
++                                                ? kMoreVertIcon
++                                                : kBrowserToolsChromeRefreshOldIcon)
++                                         : kBrowserToolsOldIcon,
+                                      kColorExtensionMenuIcon, icon_size))
+                   .SetImageModel(
+                       views::Button::STATE_DISABLED,
+                       ui::ImageModel::FromVectorIcon(
+-                          features::IsRoundedIconsEnabled()
+-                              ? kMoreVertIcon
+-                              : kBrowserToolsChromeRefreshOldIcon,
++                          base::CommandLine::ForCurrentProcess()->HasSwitch(
++                              "disable-thorium-icons")
++                              ? (features::IsRoundedIconsEnabled()
++                                     ? kMoreVertIcon
++                                     : kBrowserToolsChromeRefreshOldIcon)
++                              : kBrowserToolsOldIcon,
+                           kColorExtensionMenuIconDisabled, icon_size)));
+ 
+   if (allow_pinning) {
 diff --git a/chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.cc b/chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.cc
 index 5e008d4166e48..d1977d97c5fb7 100644
 --- a/chrome/browser/ui/views/global_media_controls/media_toolbar_button_view.cc
@@ -554,8 +614,48 @@ index 990eab66ec0c1..0fd9167999671 100644
  }
  
  void ProfileMenuView::MaybeBuildSignoutButton() {
+diff --git a/chrome/browser/ui/views/toolbar/back_forward_button.cc b/chrome/browser/ui/views/toolbar/back_forward_button.cc
+index bbbdc846ef822..b1862af8ef913 100644
+--- a/chrome/browser/ui/views/toolbar/back_forward_button.cc
++++ b/chrome/browser/ui/views/toolbar/back_forward_button.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "chrome/browser/ui/views/toolbar/back_forward_button.h"
+ 
++#include "base/command_line.h"
+ #include "base/metrics/user_metrics.h"
+ #include "base/time/time.h"
+ #include "chrome/app/vector_icons/vector_icons.h"
+@@ -43,10 +44,15 @@ BackForwardButton::BackForwardButton(Direction direction,
+   SetHideInkDropWhenShowingContextMenu(false);
+   SetTriggerableEventFlags(ui::EF_LEFT_MOUSE_BUTTON |
+                            ui::EF_MIDDLE_MOUSE_BUTTON);
++  const bool disable_thorium_icons =
++      base::CommandLine::ForCurrentProcess()->HasSwitch(
++          "disable-thorium-icons");
+   if (direction == Direction::kBack) {
+     SetVectorIcons(features::IsRoundedIconsEnabled()
+                        ? vector_icons::kArrowBackIcon
+-                       : vector_icons::kBackArrowChromeRefreshOldIcon,
++                       : disable_thorium_icons
++                             ? vector_icons::kBackArrowChromeRefreshOldIcon
++                             : vector_icons::kBackArrowChromeRefreshThoriumIcon,
+                    features::IsRoundedIconsEnabled() ? kArrowBackIcon
+                                                      : kBackArrowTouchOldIcon);
+     SetTooltipText(l10n_util::GetStringUTF16(IDS_TOOLTIP_BACK));
+@@ -59,7 +65,9 @@ BackForwardButton::BackForwardButton(Direction direction,
+   } else {
+     SetVectorIcons(features::IsRoundedIconsEnabled()
+                        ? vector_icons::kArrowForwardIcon
+-                       : vector_icons::kForwardArrowChromeRefreshOldIcon,
++                       : disable_thorium_icons
++                             ? vector_icons::kForwardArrowChromeRefreshOldIcon
++                             : vector_icons::kForwardArrowChromeRefreshThoriumIcon,
+                    features::IsRoundedIconsEnabled()
+                        ? kArrowForwardIcon
+                        : kForwardArrowTouchOldIcon);
 diff --git a/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc b/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc
-index 77612f77f3acb..c4bea2e6332bd 100644
+index 77612f77f3acb..272cde24b8a06 100644
 --- a/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc
 +++ b/chrome/browser/ui/views/toolbar/browser_app_menu_button.cc
 @@ -1,4 +1,4 @@
@@ -590,7 +690,7 @@ index 77612f77f3acb..c4bea2e6332bd 100644
 +          ? kMoreVertIcon
 +          : disable_thorium_icons ? kBrowserToolsChromeRefreshOldIcon
 +                                  : kBrowserToolsChromeRefreshThoriumIcon;
-+  // Fix Thorium hamburger menu size.
++  // Keep the Thorium hamburger menu size independent of icon selection.
 +  constexpr int icon_size = 22;
  
    for (auto state : kButtonStates) {
@@ -630,7 +730,7 @@ index d23ce42d48414..f3994c578a924 100644
                                                     : kNavigateHomeTouchOldIcon);
    SetTooltipText(l10n_util::GetStringUTF16(IDS_TOOLTIP_HOME));
 diff --git a/chrome/browser/ui/views/toolbar/reload_button.cc b/chrome/browser/ui/views/toolbar/reload_button.cc
-index a2ed2085675b2..7e7270382e950 100644
+index 7979627da8eec..547261be5d5a1 100644
 --- a/chrome/browser/ui/views/toolbar/reload_button.cc
 +++ b/chrome/browser/ui/views/toolbar/reload_button.cc
 @@ -1,4 +1,4 @@

@@ -1,0 +1,55 @@
+diff --git a/chrome/browser/renderer_context_menu/render_view_context_menu.cc b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+index 5b1a90402fd36..7e9850d7f0475 100644
+--- a/chrome/browser/renderer_context_menu/render_view_context_menu.cc
++++ b/chrome/browser/renderer_context_menu/render_view_context_menu.cc
+@@ -2305,7 +2305,9 @@ void RenderViewContextMenu::AppendVideoItems() {
+     menu_model_.AddItemWithStringId(IDC_CONTENT_CONTEXT_PICTUREINPICTURE,
+                                     IDS_CONTENT_CONTEXT_PICTUREINPICTURE);
+ 
+-    if (media_router::MediaRouterEnabled(browser_context_)) {
++    if (media_router::MediaRouterEnabled(browser_context_) &&
++        !base::FeatureList::IsEnabled(
++            features::kThoriumHideCastContextMenu)) {
+       menu_model_.AddItemWithStringIdAndIcon(
+           IDC_ROUTE_MEDIA, IDS_MEDIA_ROUTER_MENU_ITEM_TITLE,
+           ui::ImageModel::FromVectorIcon(kCastChromeRefreshOldIcon,
+@@ -2715,7 +2717,9 @@ void RenderViewContextMenu::AppendTranslateItem() {
+ }
+ 
+ void RenderViewContextMenu::AppendMediaRouterItem() {
+-  if (media_router::MediaRouterEnabled(browser_context_)) {
++  if (media_router::MediaRouterEnabled(browser_context_) &&
++      !base::FeatureList::IsEnabled(
++          features::kThoriumHideCastContextMenu)) {
+     AddItemWithOptionalIcon(IDC_ROUTE_MEDIA, IDS_MEDIA_ROUTER_MENU_ITEM_TITLE,
+                             kCastChromeRefreshOldIcon);
+   }
+diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
+index 6da0b290218bc..e3a4f4143dfb7 100644
+--- a/chrome/browser/ui/ui_features.cc
++++ b/chrome/browser/ui/ui_features.cc
+@@ -203,6 +203,10 @@ BASE_FEATURE_PARAM(std::string,
+ BASE_FEATURE(kThoriumDisableQRCodeGenerator,
+              base::FEATURE_DISABLED_BY_DEFAULT);
+ 
++// Hides Cast entries from the rendered-page context menu.
++BASE_FEATURE(kThoriumHideCastContextMenu,
++             base::FEATURE_DISABLED_BY_DEFAULT);
++
+ #if BUILDFLAG(IS_WIN)
+ // Enables the UI for Process Isolation in chrome://settings/system.
+ BASE_FEATURE(kProcessIsolationSettings, base::FEATURE_DISABLED_BY_DEFAULT);
+diff --git a/chrome/browser/ui/ui_features.h b/chrome/browser/ui/ui_features.h
+index 9bb0af4ed0f77..bf7407be1b15d 100644
+--- a/chrome/browser/ui/ui_features.h
++++ b/chrome/browser/ui/ui_features.h
+@@ -395,6 +395,9 @@ BASE_DECLARE_FEATURE_PARAM(std::string, kOpenOmniboxUrlInNewTabMode);
+ // Disables the QR code generator entry points for sharing page links.
+ BASE_DECLARE_FEATURE(kThoriumDisableQRCodeGenerator);
+ 
++// Hides Cast entries from the rendered-page context menu.
++BASE_DECLARE_FEATURE(kThoriumHideCastContextMenu);
++
+ BASE_DECLARE_FEATURE(kVerticalTabsGrabHandleRemoval);
+ BASE_DECLARE_FEATURE_PARAM(bool, kVerticalTabsGrabHandleRemovalAlways);
+ 

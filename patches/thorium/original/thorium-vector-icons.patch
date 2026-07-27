@@ -1,5 +1,5 @@
 diff --git a/components/vector_icons/BUILD.gn b/components/vector_icons/BUILD.gn
-index f4969982faa44..2d600ff25007a 100644
+index f4969982faa44..dd5dfddeaa634 100644
 --- a/components/vector_icons/BUILD.gn
 +++ b/components/vector_icons/BUILD.gn
 @@ -1,4 +1,4 @@
@@ -8,7 +8,7 @@ index f4969982faa44..2d600ff25007a 100644
  # Use of this source code is governed by a BSD-style license that can be
  # found in the LICENSE file.
  
-@@ -509,6 +509,23 @@ if (current_toolchain == default_toolchain) {
+@@ -509,6 +509,24 @@ if (current_toolchain == default_toolchain) {
        "work_old.icon",
      ]
  
@@ -20,7 +20,8 @@ index f4969982faa44..2d600ff25007a 100644
 +        "thorium/close_chrome_refresh_thorium.icon",
 +        "thorium/cookie_chrome_refresh_thorium.icon",
 +        "thorium/extension_chrome_refresh_thorium.icon",
-+        "thorium/reload_thorium.icon",
++        "thorium/back_arrow_chrome_refresh_thorium.icon",
++        "thorium/forward_arrow_chrome_refresh_thorium.icon",
 +        "thorium/reload_chrome_refresh_thorium.icon",
 +        "thorium/restore_tab.icon",
 +        "thorium/submenu_arrow_chrome_refresh_thorium.icon",

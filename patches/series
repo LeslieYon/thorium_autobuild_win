@@ -42,7 +42,6 @@ thorium/original/ftp-support-thorium.patch
 thorium/original/views-menu-delay.patch
 thorium/original/thorium-2024-ui-core.patch
 thorium/original/thorium-2024-menu-interactions.patch
-thorium/original/windows-menu-style-overrides.patch
 thorium/original/mini_installer.patch
 thorium/original/open_in_same_tab.patch
 thorium/original/thorium_webui.patch
@@ -120,13 +119,11 @@ thorium/original/restore_download_shelf.patch
 # disable-middle-click-paste-with-autoscroll: Split from thorium-2024-ui.patch
 thorium/original/disable-middle-click-paste-with-autoscroll.patch
 # New UI patches (category 50)
-thorium/original/classic-bookmarks.patch
 thorium/original/classic-omnibox.patch
 thorium/original/custom-tab-width.patch
 thorium/original/downloads-page-enhancements.patch
 thorium/original/enable-sharing-hub-page-action.patch
 thorium/original/expand-chrome-color-choices.patch
-thorium/original/new-tab-button-middle-click.patch
 thorium/original/new-tab-to-left-context-menu.patch
 thorium/original/prominent-active-tab-titles.patch
 thorium/original/rectangular-tabs.patch
@@ -139,7 +136,6 @@ thorium/original/thorium-internal-url-scheme-alias.patch
 thorium/original/thorium-internal-url-scheme-branding.patch
 thorium/original/thorium-views-vector-icons.patch
 thorium/original/toolbar-avatar-button-visibility.patch
-thorium/original/transparent-tabs.patch
 
 # Windows installer (category 60)
 # Windows support for thorium-flags.conf
@@ -155,6 +151,8 @@ thorium/original/add-flag-for-right-click-close-tab.patch
 thorium/original/add-flag-for-hover-activate-tab.patch
 thorium/original/add-flag-for-open-bookmarks-in-new-tab.patch
 thorium/original/add-flag-for-open-omnibox-url-in-new-tab.patch
+thorium/original/disable-qr-code-generator.patch
+thorium/original/hide-cast-context-menu.patch
 thorium/original/add-flag-for-incognito-themes.patch
 thorium/original/add-flag-to-hide-extensions-menu.patch
 thorium/original/add-flag-to-hide-tab-close-buttons.patch
@@ -201,9 +199,75 @@ thorium/original/disable-aero.patch
 # add-quick-extension-toggle-menu.patch: Quick extension toggles menu
 thorium/original/add-quick-extension-toggle-menu.patch
 
+# Third-party child repository patches (applied from Chromium root, converted from upstream directory-prefix format)
+thorium/original/zstd-clang-cl-bmi2-detection.patch
+
 # google api keys in inject to this patch when build start
 # the template file is thorium/new/thorium-set-api-keys.prepatch
 thorium/new/thorium-set-api-keys.patch
 # noto color emoji support (our custom patch, needs adaptation to 150)
 thorium/new/add-support-Noto-Color-Emoji.patch
 thorium/new/thorium-build-output-1.patch
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# DELETED / UNUSED PATCHES (kept as reference - removed from disk 2026-07-27)
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Removed upstream (code removed from Thorium)
+# thorium/original/add-boss-key.patch            - upstream M150-LTS Stage 163: Remove boss key feature
+# thorium/original/classic-bookmarks.patch        - upstream M150-LTS Stage 155: removed (obsolete)
+# thorium/original/new-tab-button-middle-click.patch - upstream M150-LTS Stage 162: removed
+# thorium/original/transparent-tabs.patch         - upstream M150-LTS Stage 162: removed
+# thorium/original/windows-menu-style-overrides.patch - upstream M150-LTS Stage 162: removed
+
+# Replaced by external patches (see patches/series.external)
+# thorium/original/disable-fetching-field-trials.patch  - replaced by extra/core/bromite/disable-fetching-field-trials.patch
+# thorium/original/disable-privacy-sandbox.patch        - replaced by core/ungoogled-chromium/disable-privacy-sandbox.patch
+# thorium/original/disable-download-quarantine.patch    - replaced by extra/ungoogled-chromium/disable-download-quarantine.patch
+
+# Replaced by other Thorium patches
+# thorium/original/thorium-default-api-keys.patch       - replaced by thorium/new/thorium-set-api-keys.patch (prepatch mechanism)
+# thorium/original/thorium-chrome-build-targets.patch   - chrome→thorium rename handled by external patches
+# thorium/original/GPC.patch                            - replaced by thorium/external_temp/Enable-Global-Privacy-Control.patch
+# thorium/original/thorium-2024-ui.patch                - split into thorium-2024-ui-core + menu-interactions
+# thorium/original/llvm-optimized-avx2-build.patch      - merged into llvm-optimized-toolchain-build.patch
+
+# Already covered by external patches (series comments explain why)
+# thorium/original/allow_manifest_v2_extensions.patch   - already applied by external extensions-manifestv2.patch
+# thorium/original/chrome-web-store-protection.patch    - already applied
+# thorium/original/allow-insecure-downloads.patch       - code restructured by external patches
+
+# Android-only (not applicable for Windows builds)
+# thorium/original/android-thorium-branding.patch
+# thorium/original/android-extensions-support.patch
+# thorium/original/android-disable-signin-without-account-manager.patch
+# thorium/original/enable-extension-in-incognito.patch
+# thorium/original/fix-ffmpeg-android-x86-disable-hevc-nasm.patch
+
+# Linux-only (not applicable for Windows builds)
+# thorium/original/linux-disable-custom-titlebar-default.patch
+# thorium/original/linux-memory-details-branding.patch
+# thorium/original/linux-obsolete-system-policy.patch
+# thorium/original/linux-shell-integration-branding.patch
+# thorium/original/linux-widevine-cdm-locations.patch
+# thorium/original/content-gpu-vaapi-libva-config.patch
+# thorium/original/thorium-linux-installer-packaging.patch
+# thorium/original/add-flag-for-system-linux-theme.patch
+
+# ARM / Raspi-only (not applicable for Windows builds)
+# thorium/original/enable-xnnpack-arm-fp16-vector.patch
+# thorium/original/raspi-netflix-chromeos-ua.patch
+
+# ThoriumOS-only (not applicable for Windows builds)
+# thorium/original/thoriumos-ash-vector-icons.patch
+# thorium/original/thoriumos-disable-stats-reporting.patch
+# thorium/original/thoriumos-help-app-discovery.patch
+# thorium/original/thoriumos-sample-system-web-app.patch
+
+# Never used in series (orphaned files from upstream copy)
+# thorium/original/default-apps-ublock-origin.patch
+# thorium/original/thorium-app-grd-registration.patch
+# thorium/original/thorium-mini-installer-manifest.patch
+# thorium/original/thorium-v8-simd-opts.patch
+# thorium/original/widevine-cdm-host-verification.patch
+# thorium/original/win_updater.patch

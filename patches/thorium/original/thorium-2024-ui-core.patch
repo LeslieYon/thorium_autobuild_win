@@ -11,10 +11,10 @@ index 9694b7eefa644..17a2547c61383 100644
    <meta charset="utf-8">
    <meta name="color-scheme" content="light dark">
 diff --git a/chrome/browser/ui/bookmarks/bookmark_utils.cc b/chrome/browser/ui/bookmarks/bookmark_utils.cc
-index ed11adf55026f..31a8cb627f99c 100644
+index ed11adf55026f..034a5f66e2848 100644
 --- a/chrome/browser/ui/bookmarks/bookmark_utils.cc
 +++ b/chrome/browser/ui/bookmarks/bookmark_utils.cc
-@@ -383,15 +383,31 @@ bool CanAllBeEditedByUser(
+@@ -383,15 +383,37 @@ bool CanAllBeEditedByUser(
  
  ui::ImageModel GetBookmarkFolderIcon(BookmarkFolderIconType icon_type,
                                       ui::ColorVariant color) {
@@ -23,10 +23,16 @@ index ed11adf55026f..31a8cb627f99c 100644
 +#if BUILDFLAG(IS_WIN)
 +  if (thorium_2024) {
 +    const int default_id = (icon_type == BookmarkFolderIconType::kNormal)
-+                               ? IDR_FOLDER_CLOSED
++                               ? IDR_THORIUM_FOLDER_CLOSED
 +                               : IDR_BOOKMARK_BAR_FOLDER_MANAGED;
 +    return ui::ImageModel::FromImageSkia(
 +        *ui::ResourceBundle::GetSharedInstance().GetImageSkiaNamed(default_id));
++  }
++#elif BUILDFLAG(IS_LINUX)
++  if (thorium_2024 && icon_type == BookmarkFolderIconType::kNormal) {
++    return ui::ImageModel::FromImageSkia(
++        *ui::ResourceBundle::GetSharedInstance().GetImageSkiaNamed(
++            IDR_THORIUM_FOLDER_CLOSED));
 +  }
 +#endif
 +
@@ -414,7 +420,7 @@ index 4357fc482b7f4..ef2ff5bce8c7e 100644
               ? omnibox::kSendIcon
               : omnibox::kShareLinuxChromeRefreshOldIcon;
 diff --git a/chrome/browser/ui/tabs/tab_style.cc b/chrome/browser/ui/tabs/tab_style.cc
-index fbfe095b4c1a3..2e896f7d4cbbe 100644
+index fbfe095b4c1a3..845c89f703b9f 100644
 --- a/chrome/browser/ui/tabs/tab_style.cc
 +++ b/chrome/browser/ui/tabs/tab_style.cc
 @@ -20,12 +20,16 @@ namespace {
@@ -475,17 +481,16 @@ index fbfe095b4c1a3..2e896f7d4cbbe 100644
    return gfx::Insets::TLBR(GetLayoutConstant(LayoutConstant::kTabStripPadding),
                             kSeparatorHorizontalMargin,
                             GetLayoutConstant(LayoutConstant::kTabStripPadding),
-@@ -130,6 +144,9 @@ gfx::Insets TabStyle::GetSeparatorMargins() const {
+@@ -130,7 +144,7 @@ gfx::Insets TabStyle::GetSeparatorMargins() const {
  }
  
  int TabStyle::GetSeparatorCornerRadius() const {
-+  if (features::IsThorium2024()) {
-+    return 0;
-+  }
-   return GetSeparatorSize().width() / 2;
+-  return GetSeparatorSize().width() / 2;
++  return 0;
  }
  
-@@ -268,6 +285,15 @@ SkColor TabStyle::GetCurrentTabBackgroundColor(
+ std::tuple<float, float, float, SkColor> TabStyle::GetContrastRatioValues(
+@@ -268,6 +282,15 @@ SkColor TabStyle::GetCurrentTabBackgroundColor(
  }
  
  gfx::Insets TabStyle::GetContentsInsets() const {
@@ -648,7 +653,7 @@ index 6446b2ba7287c..3227de2af4029 100644
  
  DownloadBubbleRowView* DownloadBubblePrimaryView::GetRow(
 diff --git a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
-index 405cb0f1204b7..5b4a2131316f4 100644
+index 405cb0f1204b7..390bc2ae56136 100644
 --- a/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
 +++ b/chrome/browser/ui/views/extensions/extensions_menu_entry_view.cc
 @@ -64,9 +64,11 @@ views::Builder<HoverButton> GetSitePermissionsButtonBuilder(
@@ -666,50 +671,6 @@ index 405cb0f1204b7..5b4a2131316f4 100644
          kColorExtensionMenuIcon, small_icon_size);
  
      button_builder.SetHorizontalAlignment(gfx::ALIGN_RIGHT)
-@@ -280,8 +282,10 @@ void ExtensionsMenuEntryView::UpdateContextMenuButton(
-   const int icon_size = ChromeLayoutProvider::Get()->GetDistanceMetric(
-       DISTANCE_EXTENSIONS_MENU_BUTTON_ICON_SIZE);
-   auto three_dot_icon = ui::ImageModel::FromVectorIcon(
--      features::IsRoundedIconsEnabled() ? kMoreVertIcon
--                                        : kBrowserToolsChromeRefreshOldIcon,
-+      features::IsThorium2024()
-+          ? kBrowserToolsOldIcon
-+          : features::IsRoundedIconsEnabled() ? kMoreVertIcon
-+                                              : kBrowserToolsChromeRefreshOldIcon,
-       kColorExtensionMenuIcon, icon_size);
- 
-   // Show a pin button for the context menu normal state icon when the action is
-diff --git a/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc b/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
-index d0f3cd61eabe1..ad2d9a0a44fd5 100644
---- a/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
-+++ b/chrome/browser/ui/views/extensions/extensions_menu_item_view.cc
-@@ -149,16 +149,20 @@ ExtensionMenuItemView::ExtensionMenuItemView(
-                       view_model_->GetActionName()))
-                   .SetImageModel(views::Button::STATE_NORMAL,
-                                  ui::ImageModel::FromVectorIcon(
--                                     features::IsRoundedIconsEnabled()
--                                         ? kMoreVertIcon
--                                         : kBrowserToolsChromeRefreshOldIcon,
-+                                     features::IsThorium2024()
-+                                         ? kBrowserToolsOldIcon
-+                                         : features::IsRoundedIconsEnabled()
-+                                             ? kMoreVertIcon
-+                                             : kBrowserToolsChromeRefreshOldIcon,
-                                      kColorExtensionMenuIcon, icon_size))
-                   .SetImageModel(
-                       views::Button::STATE_DISABLED,
-                       ui::ImageModel::FromVectorIcon(
--                          features::IsRoundedIconsEnabled()
--                              ? kMoreVertIcon
--                              : kBrowserToolsChromeRefreshOldIcon,
-+                          features::IsThorium2024()
-+                              ? kBrowserToolsOldIcon
-+                              : features::IsRoundedIconsEnabled()
-+                                  ? kMoreVertIcon
-+                                  : kBrowserToolsChromeRefreshOldIcon,
-                           kColorExtensionMenuIconDisabled, icon_size)));
- 
-   if (allow_pinning) {
 diff --git a/chrome/browser/ui/views/frame/browser_frame_view_layout_linux.cc b/chrome/browser/ui/views/frame/browser_frame_view_layout_linux.cc
 index 6625553e74359..a07063e646be8 100644
 --- a/chrome/browser/ui/views/frame/browser_frame_view_layout_linux.cc
@@ -769,7 +730,7 @@ index f829637e45840..fa0323c4db2a6 100644
    caption_button_container_->SetBounds(
        CaptionButtonsOnLeadingEdge()
 diff --git a/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc b/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
-index 3c1d24e875bd2..2e04ec6dd7506 100644
+index 021ae254abc9e..1af903c54fcab 100644
 --- a/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
 +++ b/chrome/browser/ui/views/frame/horizontal_tab_strip_region_view.cc
 @@ -10,6 +10,7 @@
@@ -794,7 +755,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
              Edge::kNone, Edge::kNone, browser);
  
      new_tab_button_ = AddChildView(std::move(tab_strip_control_button));
-@@ -355,7 +359,9 @@ HorizontalTabStripRegionView::HorizontalTabStripRegionView(
+@@ -358,7 +362,9 @@ HorizontalTabStripRegionView::HorizontalTabStripRegionView(
      tab_search_button_->SetProperty(
          views::kMarginsKey,
          gfx::Insets::TLBR(0, 0, 0,
@@ -805,7 +766,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
    }
    if (tab_strip_action_container) {
      tab_strip_action_container_ =
-@@ -510,14 +516,20 @@ void HorizontalTabStripRegionView::Layout(PassKey) {
+@@ -513,14 +519,20 @@ void HorizontalTabStripRegionView::Layout(PassKey) {
      // negative margins.
      gfx::Size button_size = button_to_paint_to_layer->GetPreferredSize();
  
@@ -829,7 +790,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
      gfx::Rect button_new_bounds = gfx::Rect(button_new_position, button_size);
  
      // If the tabsearch button is before the tabstrip container, then manually
-@@ -738,10 +750,14 @@ void HorizontalTabStripRegionView::LogTabSearchPositionForTesting() {
+@@ -741,10 +753,14 @@ void HorizontalTabStripRegionView::LogTabSearchPositionForTesting() {
  }
  
  void HorizontalTabStripRegionView::UpdateButtonBorders() {
@@ -845,7 +806,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
    const int top_inset = extra_vertical_space / 2;
    const int bottom_inset =
        extra_vertical_space - top_inset +
-@@ -811,7 +827,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+@@ -814,7 +830,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
  
      tab_strip_right_margin =
          button_to_paint_to_layer->GetPreferredSize().width() +
@@ -856,7 +817,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
    }
  
    // If the tab search button is before the tab strip, it also overlaps the
-@@ -825,7 +843,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+@@ -828,7 +846,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
      CHECK(tab_search_button_->GetProperty(views::kViewIgnoredByLayoutKey));
      current_leading_width +=
          tab_search_button_->GetPreferredSize().width() +
@@ -867,7 +828,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
    }
  
    if (unfocus_button_ && unfocus_button_->GetVisible()) {
-@@ -834,7 +854,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+@@ -837,7 +857,9 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
      unfocus_button_->SetProperty(views::kViewIgnoredByLayoutKey, true);
      current_leading_width +=
          unfocus_button_->GetPreferredSize().width() +
@@ -878,7 +839,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
    }
  
    if (combo_button_) {
-@@ -843,13 +865,17 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
+@@ -846,13 +868,17 @@ void HorizontalTabStripRegionView::UpdateTabStripMargin() {
      combo_button_->SetProperty(views::kViewIgnoredByLayoutKey, true);
      current_leading_width +=
          combo_button_->GetPreferredSize().width() +
@@ -898,7 +859,7 @@ index 3c1d24e875bd2..2e04ec6dd7506 100644
          TabStyle::Get()->GetBottomCornerRadius();
    }
  
-@@ -867,10 +893,14 @@ void HorizontalTabStripRegionView::AdjustViewBoundsRect(View* view,
+@@ -870,10 +896,14 @@ void HorizontalTabStripRegionView::AdjustViewBoundsRect(View* view,
                                                          int offset) {
    const gfx::Size view_size = view->GetPreferredSize();
    const int x = tab_strip_->x() + TabStyle::Get()->GetBottomCornerRadius() -
@@ -1477,7 +1438,7 @@ index b7663b7b03f9b..c82d7aaf806bf 100644
        GetColorProvider()->GetColor(kColorSidePanelHoverResizeAreaHandle);
    SetBackground(CreateRoundedRectBackground(resize_handle_color, 2));
 diff --git a/chrome/browser/ui/views/tabs/tab.cc b/chrome/browser/ui/views/tabs/tab.cc
-index d9287b9ed5296..f3e5410e042f2 100644
+index f80c98d3bd162..466a47b4ae49a 100644
 --- a/chrome/browser/ui/views/tabs/tab.cc
 +++ b/chrome/browser/ui/views/tabs/tab.cc
 @@ -1,4 +1,4 @@
@@ -1642,7 +1603,7 @@ index c62091a212ecf..92b1e02986950 100644
  
  int TabSearchButton::GetFlatCornerRadius() const {
 diff --git a/chrome/browser/ui/views/tabs/tab_style_views.cc b/chrome/browser/ui/views/tabs/tab_style_views.cc
-index 44a60df681ef2..33db8044c9c51 100644
+index 44a60df681ef2..095f0009ae8c5 100644
 --- a/chrome/browser/ui/views/tabs/tab_style_views.cc
 +++ b/chrome/browser/ui/views/tabs/tab_style_views.cc
 @@ -238,7 +238,7 @@ SkPath TabStyleViewsImpl::GetPath(TabStyle::PathType path_type,
@@ -1672,6 +1633,17 @@ index 44a60df681ef2..33db8044c9c51 100644
        // Don't round the top corners to avoid creating dead space between tabs.
        top_left_corner_radius = 0;
        top_right_corner_radius = 0;
+@@ -976,6 +976,10 @@ void TabStyleViewsImpl::PaintTabBackgroundFill(
+     cc::PaintFlags flags;
+     flags.setAntiAlias(true);
+     flags.setColor(GetCurrentTabBackgroundColor(selection_state, hovered));
++    if (features::IsThorium2024() &&
++        selection_state != TabStyle::TabSelectionState::kActive) {
++      flags.setAlphaf(0.7f);
++    }
+     canvas->DrawRect(gfx::ScaleToEnclosingRect(tab_->GetLocalBounds(), scale),
+                      flags);
+   }
 diff --git a/chrome/browser/ui/views/toolbar/toolbar_button.cc b/chrome/browser/ui/views/toolbar/toolbar_button.cc
 index d4c4f01c14c21..8e906b84fef0e 100644
 --- a/chrome/browser/ui/views/toolbar/toolbar_button.cc
@@ -1740,7 +1712,7 @@ index bc7c354550ad4..1c59bd5517619 100644
        return "--tab-separator-height";
      case kTabPreTitlePadding:
 diff --git a/ui/base/ui_base_features.cc b/ui/base/ui_base_features.cc
-index f9d1b0539a91e..91771b5b4d2b7 100644
+index 434225ce92bff..7b3997fe2f7c9 100644
 --- a/ui/base/ui_base_features.cc
 +++ b/ui/base/ui_base_features.cc
 @@ -411,6 +411,16 @@ bool IsVariableRefreshRateAlwaysOn() {
@@ -1775,6 +1747,20 @@ index a68a5fbcd74e7..f2c85b7721b0c 100644
  COMPONENT_EXPORT(UI_BASE_FEATURES)
  BASE_DECLARE_FEATURE(kBubbleMetricsApi);
  
+diff --git a/ui/resources/ui_resources.grd b/ui/resources/ui_resources.grd
+index 120ebdc3b601e..a7f01025526ec 100644
+--- a/ui/resources/ui_resources.grd
++++ b/ui/resources/ui_resources.grd
+@@ -41,6 +41,9 @@
+           <structure type="chrome_html" name="IDR_FINGERPRINT_ICON_ANIMATION_DARK" file="vector/common/fingerprint_enrollment_dark.json" compress="gzip" />
+           <structure type="chrome_html" name="IDR_FINGERPRINT_ICON_ANIMATION_LIGHT" file="vector/common/fingerprint_enrollment_light.json" compress="gzip" />
+         </if>
++        <if expr="not is_android and not is_ios">
++          <structure type="chrome_scaled_image" name="IDR_THORIUM_FOLDER_CLOSED" file="win/folder_closed.png" />
++        </if>
+         <if expr="is_macosx or is_ios">
+           <structure type="chrome_scaled_image" name="IDR_FOLDER_CLOSED" file="mac/folder.png" />
+           <structure type="chrome_scaled_image" name="IDR_FOLDER_CLOSED_WHITE" file="mac/folder_white.png" />
 diff --git a/ui/views/controls/button/toggle_button.cc b/ui/views/controls/button/toggle_button.cc
 index 585e7889f9af4..abb46b385ab80 100644
 --- a/ui/views/controls/button/toggle_button.cc
