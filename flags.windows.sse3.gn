@@ -1,7 +1,2 @@
-use_sse3=true
-use_sse41=false
-use_sse42=false
-use_avx=false
-use_avx2=false
-use_avx512=false
-use_fma=false
+thorium_x86_profile = "sse3"
+rtc_enable_avx2 = false

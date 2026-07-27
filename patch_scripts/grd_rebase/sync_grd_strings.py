@@ -1251,9 +1251,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = build_arg_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Validate all configuration inputs before preparing or writing changes.
     file_allowlist_rows = load_csv_rows(

@@ -331,6 +331,7 @@ def _clone_chromium_source(source_tree, chromium_version, args):
     uc_clone.clone(argparse.Namespace(
         output=_GclientSafePath(source_tree),
         custom_config=None,
+        dt_commit=None,
         pgo='win32' if args.x86 else 'win-arm64' if args.arm else 'win64',
         sysroot=None,
     ))
