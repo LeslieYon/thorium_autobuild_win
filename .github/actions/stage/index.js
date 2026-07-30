@@ -56,6 +56,7 @@ async function run() {
             await artifact.downloadArtifact(artifactInfo.artifact.id, {
                 path: `${WORKSPACE_ROOT}\\build`
             });
+            await new Promise(r => setTimeout(r, 10000));
             await exec.exec('7z', ['x', `${WORKSPACE_ROOT}\\build\\artifacts.zip`,
                 `-o${WORKSPACE_ROOT}\\build`, '-y']);
             await io.rmRF(`${WORKSPACE_ROOT}\\build\\artifacts.zip`);
