@@ -1,99 +1,123 @@
 # Development Utilities
 
-Scripts in this directory assist with patching workflow, diagnostics, and
-maintenance of the Thorium autobuild project.
+Local maintenance tools for the Thorium patch workflow: simulation, validation
+and patch-authoring helpers.
 
-## Quick Start
+Nothing in this directory runs during `build.py` or in CI.
+`patches/series`, `patches/series.external` and `build.py` remain the single
+sources of truth for what is applied and in which order — these scripts only
+help you verify or regenerate that state.
 
-```cmd
-:: Dry-run: check all patches independently (fast, no source changes)
-python devutils\simulate_patching.py
+## Scripts at a glance
 
-:: Sequential: apply in build.py order, then revert (more accurate)
-python devutils\simulate_patching.py --sequential
-```
+| Script | Status | Purpose |
+|--------|--------|---------|
+| `simulate_patching.py` | active | Replay the whole patch pipeline against a pristine Chromium tree in a scratch directory and report per-patch results. |
+| `check_patch_files.sh` | active | Assert that every entry in `patches/series` exists on disk. |
+| `setup_thorium_source.sh` | active | Thin wrapper for `python build.py --prepare-only`. |
+| `set_quilt_vars.sh` | active | `source` it to point quilt at Thorium's `patches/` + `series`. |
+| `fix_fuzz_v3.py` | one-off | Regenerate fuzzed hunks in Thorium patches from a pristine test tree. |
+| `generate_patches.py` | broken | Wrapper importing `batch_generate_patches`, which is not in the tree. |
+| `find_new_brand_strings.py` | broken | Imports `patch_scripts.brand_string_ids` / `patch_scripts.sync_brand_strings`; that code now lives in `patch_scripts/grd_rebase/`. |
 
-## Script Reference
+The non-functional files are covered in [Stale scripts](#stale-scripts).
 
-### `simulate_patching.py`
+## simulate_patching.py
 
-Simulate the `build.py` patching process on a local Chromium source tree
-without running the actual build. Verifies all patches (ungoogled + Thorium),
-checks pruning lists, and analyzes overlay file coverage.
+The primary tool. It reproduces the patching phase of `build.py` without running
+a build and **without ever modifying the pristine source tree**.
 
-**Two modes:**
+**Pipeline**
 
-| Mode | Flag | Description |
-|------|------|-------------|
-| Dry-run | *(default)* | `git apply --check` on each patch independently. Fast, no source modification. |
-| Sequential | `--sequential` | Applies patches in series order, accumulating changes. Then reverts. More accurate but slower. |
+1. Discover patches from `patches/series.external` and `patches/series`.
+2. Parse each patch to find the files it touches.
+3. Copy only those files from the pristine tree into a scratch directory.
+4. Apply in `build.py` order: external patches → `overlay/` → Thorium patches.
+5. Print a per-patch result table; exit non-zero if anything failed.
 
-**Options:**
+**Limits** — a green run is not a full build rehearsal:
+
+- pruning is only *reported*, never executed (`pruning.list` / `keeping.list`);
+- archives listed in `downloads.ini` are not unpacked;
+- `build.py`'s safe-browsing patch extraction and brand-string sync are skipped.
+
+**Options** (all optional)
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--source-dir PATH` | `../chromium` | Path to the Chromium source tree |
-| `--git-cmd PATH` | Auto-detected | Path to the git executable |
-| `--quick` | — | Skip pruning & overlay checks; test patches only |
-| `--sequential` | — | Enable sequential mode |
+| `--source-dir PATH` | `build/src_original/` | Pristine Chromium tree; must contain `BUILD.gn`. |
+| `--work-dir PATH` | auto temp dir | Scratch directory. Implies `--keep-work-dir`. |
+| `--keep-work-dir` | off | Keep the scratch directory after the run. |
+| `--sequential` | off | Stop at the first failing patch instead of running them all. |
+| `--skip-overlay` | off | Do not copy `overlay/` files. |
+| `--skip-pruning` | off | Skip the pruning report. |
+| `--export-json PATH` | off | Write `{"summary", "patches"}` results to JSON. |
 
-**Examples:**
+By default every patch is attempted and failures are collected, so a single run
+shows the whole picture. `--sequential` trades that for an early stop.
+
+**Environment**
+
+| Variable | Purpose |
+|----------|---------|
+| `PATCH_BIN` | Override the `patch` executable. Resolution order: the bundled `patch.exe` shipped with the build toolchain → `$PATCH_BIN` → `patch` on `PATH`. |
+
+`--source-dir` is read-only. Without `--work-dir` the scratch tree is a
+`thorium-simulate-*` temp directory that is removed on exit.
+
+**Examples**
 
 ```cmd
-:: Default dry-run against ../chromium
+:: Full simulation against the default pristine tree
 python devutils\simulate_patching.py
 
-:: Sequential mode with custom source tree
-python devutils\simulate_patching.py --sequential --source-dir D:\chromium\src
+:: Fast patch-chain-only check
+python devutils\simulate_patching.py --skip-overlay --skip-pruning
 
-:: Quick check (patches only)
-python devutils\simulate_patching.py --quick
+:: Inspect the scratch tree after a failure
+python devutils\simulate_patching.py --work-dir D:\tmp\patch_test
 
-:: Use depot_tools' bundled git
-python devutils\simulate_patching.py --git-cmd ..\..\depot_tools\git\bin\git.exe
+:: Stop at the first failure
+python devutils\simulate_patching.py --sequential
+
+:: Machine-readable results for scripting
+python devutils\simulate_patching.py --export-json results.json
 ```
 
-### `make_patch.py`
+## check_patch_files.sh
 
-Create a single Thorium patch from uncommitted changes in `build/src/`.
-Automatically classifies the patch, generates the correctly-named file in
-`patches/thorium/<category>/`, and appends to `patches/series`.
+Fails if any patch listed in `patches/series` is missing from disk. Run it after
+adding, renaming or dropping patches:
 
-**Use when** you've modified a file in `build/src/` and need to turn it into a
-proper Thorium patch without manual bookkeeping.
-
-```cmd
-:: From the project root:
-python devutils\make_patch.py chrome/browser/foo.cc
-python devutils\make_patch.py --category media third_party/libjxl/BUILD.gn
-python devutils\make_patch.py --dry-run chrome/browser/foo.cc
-python devutils\make_patch.py --no-series chrome/browser/foo.cc
+```bash
+bash devutils/check_patch_files.sh
 ```
 
-| Flag | Description |
-|------|-------------|
-| `--category`, `-c` | Force a category (auto-detected by default) |
-| `--no-series` | Skip adding the entry to `patches/series` |
-| `--dry-run`, `-n` | Show what would be done without writing |
-| `--src-dir PATH` | Path to `build/src/` (default: `<root>/build/src`) |
-| `--git-cmd PATH` | Path to git executable (auto-detected) |
+## setup_thorium_source.sh and set_quilt_vars.sh
 
-**Note:** The file must have uncommitted changes in `build/src/` (i.e. after
-overlay and patches have been applied). The script reads the diff via `git diff`
-and strips the unstable `diff --git` / `index` header lines.
+- `setup_thorium_source.sh` forwards its arguments to
+  `python build.py --prepare-only` — use it to fetch, prune and unpack sources
+  without compiling.
+- `set_quilt_vars.sh` is meant to be `source`d, not executed. It exports
+  `QUILT_PATCHES` / `QUILT_SERIES` so quilt treats Thorium's `patches/`
+  directory as its patch stack.
 
-### Other Scripts
+## Stale scripts
 
-| Script | Purpose |
+Present in the tree but not usable as-is; fix or delete them before relying on
+them.
+
+| Script | Problem |
 |--------|---------|
-| `generate_patches.py` | Generate Thorium patch files from diff between chromium/ and thorium/src |
-| `migrate_patches.py` | Migrate/update patch series when rebasing |
-| `batch_generate_patches.py` | Batch generate patches for multiple categories |
-| `check_patch_files.sh` | Shell script to validate patch series integrity |
+| `find_new_brand_strings.py` | Imports `patch_scripts.brand_string_ids` and `patch_scripts.sync_brand_strings`; brand-string handling moved to `patch_scripts/grd_rebase/`. |
+| `fix_fuzz_v3.py` | Runs, but expects inputs from an older single-file patch layout (`--json <results> --test-dir <tree>`); not part of the normal workflow. |
 
-## Notes
+## Conventions
 
-- All scripts expect to be run from the project root (`thorium_autobuild_win/`)
-- Sequential mode modifies the source tree temporarily, then reverts via
-  `git checkout -- .` and `git clean -fd`
-- The `--source-dir` must point to a git checkout of Chromium
+- Run commands from the project root.
+- `build/src_original/` is the pristine tree the patch tools read from;
+  `build/src/` is the working tree that gets modified.
+- `devutils/test_new/` is scratch output and is git-ignored.
+- Patch authoring rules — generate with `git diff`, CRLF line endings, no
+  `diff --git` / `index` headers, exact hunk counts, never a blank line between
+  hunks — are documented in [`../patches/README.md`](../patches/README.md).
