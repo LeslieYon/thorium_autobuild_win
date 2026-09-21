@@ -73,6 +73,41 @@ uc_patches: Any = _uc_patches
 
 _PATCH_BIN_RELPATH = Path('third_party/git/usr/bin/patch.exe')
 
+
+def _positive_int_env(name, default):
+    """Read a positive integer from the environment, falling back to default."""
+    raw = os.environ.get(name)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        value = int(str(raw).strip())
+    except (TypeError, ValueError):
+        get_logger().warning(
+            'Ignoring invalid %s value %r (expected a positive integer); '
+            'using %d.', name, raw, default)
+        return default
+    if value <= 0:
+        get_logger().warning(
+            'Ignoring non-positive %s value %r; using %d.', name, raw, default)
+        return default
+    return value
+
+
+# Retry policy for transient ninja build failures.
+#
+# Some build steps - most notably node.exe driving the devtools-frontend
+# rollup bundler - intermittently die with a native access violation
+# (reported by node.py as "exit=3221225477", i.e. 0xC0000005).  These crashes
+# are unrelated to our patches and succeed when the exact same command is
+# re-run.  Ninja is resumable, so retrying continues from the failed target
+# instead of rebuilding everything from scratch.
+#
+# Both values can be overridden from the environment (e.g. in CI) with
+# THORIUM_BUILD_RETRY_LIMIT and THORIUM_BUILD_RETRY_DELAY.
+_BUILD_RETRY_LIMIT = _positive_int_env('THORIUM_BUILD_RETRY_LIMIT', 3)
+_BUILD_RETRY_DELAY = _positive_int_env('THORIUM_BUILD_RETRY_DELAY', 10)
+
+
 _THORIUM_PATCH_DIR = _ROOT_DIR / 'patches' / 'thorium'
 _THORIUM_SERIES_FILE = _ROOT_DIR / 'patches' / 'series'
 _UNGOOGLED_PATCH_DIR = _UNGOOGLED_WINDOWS_DIR / 'patches'
@@ -272,6 +307,70 @@ def _run_build_process_timeout(*args, timeout):
             except Exception:
                 proc.kill()
             raise KeyboardInterrupt
+
+
+# A single CI job may run for at most 6 hours, so the ninja phase is given a
+# 5.25h budget measured from JOB_START_TIME. 4.35h is used when the job start
+# time is unavailable.
+_CI_BUILD_BUDGET_SECONDS = 5.25 * 60 * 60
+_CI_BUILD_DEFAULT_TIMEOUT_SECONDS = 4.35 * 60 * 60
+
+
+def _compute_ci_build_timeout():
+    """
+    Returns the remaining ninja timeout budget for the current CI job.
+    """
+    job_start = os.environ.get('JOB_START_TIME')
+    if not job_start:
+        get_logger().info('JOB_START_TIME not set, using default timeout')
+        return _CI_BUILD_DEFAULT_TIMEOUT_SECONDS
+    try:
+        elapsed = time.time() - float(job_start)
+    except (ValueError, TypeError):
+        get_logger().warning('Invalid JOB_START_TIME value, using default timeout')
+        return _CI_BUILD_DEFAULT_TIMEOUT_SECONDS
+    timeout = max(0, _CI_BUILD_BUDGET_SECONDS - elapsed)
+    get_logger().info(
+        'Dynamic timeout: %.1fs (%.1fh elapsed of %.1fh budget)',
+        timeout, elapsed / 3600, _CI_BUILD_BUDGET_SECONDS / 3600)
+    return timeout
+
+
+def _run_build_process_with_retry(*args, max_attempts=3, retry_delay=10, timeout=None):
+    """
+    Runs a build command, retrying transient failures after a short delay.
+
+    Occasional flaky failures (crashed helpers such as node.exe/rollup, file
+    locks or antivirus interference) usually disappear on a second run, and
+    ninja resumes from the failed edge instead of rebuilding everything.
+
+    Only RuntimeError / subprocess.CalledProcessError are retried.
+    KeyboardInterrupt (the CI timeout signal) is deliberately left unhandled so
+    the job can be resumed by the next stage.
+    """
+    max_attempts = max(1, max_attempts)
+    for attempt in range(1, max_attempts + 1):
+        attempt_timeout = timeout
+        if timeout is not None and attempt > 1:
+            # Refuse to overrun the CI job budget when retrying.
+            attempt_timeout = _compute_ci_build_timeout()
+        try:
+            if attempt_timeout is None:
+                _run_build_process(*args)
+            else:
+                _run_build_process_timeout(*args, timeout=attempt_timeout)
+            return
+        except (RuntimeError, subprocess.CalledProcessError) as exc:
+            if attempt >= max_attempts:
+                get_logger().error(
+                    'Build failed after %d attempt(s), giving up.', max_attempts)
+                raise
+            get_logger().warning(
+                'Build failed (attempt %d/%d): %s\nCommand: %s\n'
+                'Retrying in %d second(s)...',
+                attempt, max_attempts, exc, ' '.join(args), retry_delay)
+            if retry_delay > 0:
+                time.sleep(retry_delay)
 
 
 def _make_tmp_paths():
@@ -1048,6 +1147,15 @@ def main():
         help=('URL to a compressed archive that will be downloaded and applied '
               'as an additional overlay after the standard overlay/ directory. '
               'Can also be set via THORIUM_EXTRA_OVERLAY_URL environment variable.'))
+    parser.add_argument(
+        '--build-retries', type=int, default=3,
+        help=('Number of attempts for each ninja build phase. Transient '
+              'failures (crashed helpers, file locks, ...) are retried after '
+              'a short delay. Default: %(default)s'))
+    parser.add_argument(
+        '--retry-delay', type=int, default=10,
+        help=('Seconds to wait before retrying a failed ninja build phase. '
+              'Default: %(default)s'))
     args = parser.parse_args()
 
     # Read target Chromium version from chromium_version.txt
@@ -1280,26 +1388,13 @@ def main():
         # Run ninja build in phases
         get_logger().info('Starting Thorium build for SIMD variant: %s', args.simd)
         if args.ci:
-            # Dynamic timeout: max 5.25h, subtract elapsed time since job start
-            _job_start = os.environ.get('JOB_START_TIME')
-            if _job_start:
-                try:
-                    _elapsed = time.time() - float(_job_start)
-                    _build_timeout = max(0, 5.25 * 60 * 60 - _elapsed)
-                    get_logger().info(
-                        'Dynamic timeout: %.1fs (%.1fh elapsed of %.1fh budget)',
-                        _build_timeout, _elapsed / 3600, 5.25)
-                except (ValueError, TypeError):
-                    get_logger().warning(
-                        'Invalid JOB_START_TIME value, using default timeout')
-                    _build_timeout = 4.35 * 60 * 60
-            else:
-                get_logger().info(
-                    'JOB_START_TIME not set, using default timeout')
-                _build_timeout = 4.35 * 60 * 60
             try:
                 for phase_args in all_ninja_phases:
-                    _run_build_process_timeout(*phase_args, timeout=_build_timeout)
+                    _run_build_process_with_retry(
+                        *phase_args,
+                        max_attempts=args.build_retries,
+                        retry_delay=args.retry_delay,
+                        timeout=_compute_ci_build_timeout())
             except KeyboardInterrupt:
                 get_logger().info('Build timed out, will resume in next stage.')
                 sys.exit(2)
@@ -1308,7 +1403,10 @@ def main():
             subprocess.run([sys.executable, 'package.py', '--simd', args.simd])
         else:
             for phase_args in all_ninja_phases:
-                _run_build_process(*phase_args)
+                _run_build_process_with_retry(
+                    *phase_args,
+                    max_attempts=args.build_retries,
+                    retry_delay=args.retry_delay)
         os.chdir(_ROOT_DIR)
 
     if not args.prepare_only:
